@@ -1,0 +1,233 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Modern Crypto Dark Theme */
+    --background: 210 24% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 210 20% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 210 20% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Bitcoin Gold Primary */
+    --primary: 38 92% 50%;
+    --primary-foreground: 210 24% 6%;
+
+    --secondary: 210 15% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 210 15% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Ethereum Blue Accent */
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 24% 6%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 15% 15%;
+    --input: 210 15% 12%;
+    --ring: 38 92% 50%;
+
+    /* Crypto Green Success */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+
+    /* Bitcoin Orange Warning */
+    --warning: 25 95% 53%;
+    --warning-foreground: 210 24% 6%;
+
+    /* Modern Crypto Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(38 92% 50%), hsl(217 91% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(210 15% 15%), hsl(210 20% 8%));
+    --gradient-card: linear-gradient(135deg, hsl(210 20% 8%) 0%, hsl(210 15% 12%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(210 24% 6%) 0%, hsl(210 20% 8%) 50%, hsl(217 91% 60% / 0.1) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 26%));
+    --gradient-warning: linear-gradient(135deg, hsl(25 95% 53%), hsl(38 92% 50%));
+
+    /* Enhanced Shadows */
+    --shadow-glow: 0 0 60px hsl(38 92% 50% / 0.2);
+    --shadow-card: 0 20px 60px hsl(210 24% 6% / 0.5);
+    --shadow-primary: 0 10px 40px hsl(38 92% 50% / 0.3);
+    --shadow-accent: 0 10px 40px hsl(217 91% 60% / 0.3);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: hsl(var(--sidebar-accent));
+    --sidebar-background-yellow: 38 92% 30%;
+    
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .light {
+    /* Modern Crypto Light Theme */
+    --background: 0 0% 98%;
+    --foreground: 210 24% 6%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 24% 6%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 24% 6%;
+
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 94%;
+    --secondary-foreground: 210 24% 6%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 20% 40%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 31% 91%;
+    --input: 214 31% 91%;
+    --ring: 38 92% 50%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 25 95% 53%;
+    --warning-foreground: 0 0% 100%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(38 92% 50%), hsl(217 91% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 94%), hsl(0 0% 100%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 40% 96%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 98%) 0%, hsl(210 40% 96%) 50%, hsl(217 91% 60% / 0.1) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
+    --gradient-warning: linear-gradient(135deg, hsl(25 95% 53%), hsl(38 92% 50%));
+
+    --shadow-glow: 0 0 60px hsl(38 92% 50% / 0.15);
+    --shadow-card: 0 20px 60px hsl(210 24% 6% / 0.1);
+    --shadow-primary: 0 10px 40px hsl(38 92% 50% / 0.2);
+    --shadow-accent: 0 10px 40px hsl(217 91% 60% / 0.2);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+    body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary;
+  }
+}
+
+/* Modern Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.2); }
+  50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.4); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* Utility Classes */
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.1), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.glass-effect {
+  backdrop-filter: blur(20px);
+  background: hsl(var(--card) / 0.8);
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.crypto-card {
+  @apply bg-gradient-card border border-border/50 shadow-card backdrop-blur-sm hover:shadow-primary transition-all duration-300;
+}
+
+.crypto-button-primary {
+  @apply bg-gradient-primary text-primary-foreground shadow-primary hover:scale-105 transition-all duration-200;
+}
+
+.crypto-button-secondary {
+  @apply bg-gradient-secondary text-secondary-foreground border border-border hover:bg-gradient-primary hover:text-primary-foreground transition-all duration-200;
+}
+
+.status-active {
+  @apply text-success bg-success/10 border-success/20;
+}
+
+.status-pending {
+  @apply text-warning bg-warning/10 border-warning/20;
+}
+
+.status-completed {
+  @apply text-accent bg-accent/10 border-accent/20;
+}
+
+.chart-gradient {
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.2) 0%, transparent 100%);
+}
