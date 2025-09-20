@@ -85,16 +85,83 @@ const UserInvestmentDetails = () => {
 
   const calculateProgress = (investment: any) => {
     if (investment.status !== 'active' || !investment.approved_at) {
-      return { progress: 0, days_left: investment.duration };
+      return { progress: 0, days_left: 7 };
     }
 
     const approvedAt = new Date(investment.approved_at);
     const now = new Date();
     const daysPassed = Math.floor((now.getTime() - approvedAt.getTime()) / (1000 * 60 * 60 * 24));
-    const progress = Math.min(Math.floor((daysPassed / investment.duration) * 100), 100);
-    const daysLeft = Math.max(investment.duration - daysPassed, 0);
+    const progress = Math.min(Math.floor((daysPassed / 7) * 100), 100);
+    const daysLeft = Math.max(7 - daysPassed, 0);
 
     return { progress, days_left: daysLeft };
+  };
+
+  const handleReinvest = async (investmentId: string) => {
+    const investment = investments.find(inv => inv.id === investmentId);
+    if (!investment) return;
+
+    const newInvestment = {
+      user_id: investment.user_id,
+      crypto: investment.crypto,
+      amount: investment.amount,
+      return: investment.return,
+      duration: 7,
+      status: 'pending',
+    };
+
+    const { data: newInvestmentData, error: newInvestmentError } = await supabase
+      .from('investments')
+      .insert([newInvestment]);
+
+    if (newInvestmentError) {
+      console.error('Error reinvesting:', newInvestmentError);
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from('investments')
+      .update({ status: 'completed' })
+      .eq('id', investmentId);
+
+    if (updateError) {
+      console.error('Error updating investment status:', updateError);
+    } else {
+      setInvestments(investments.map(inv =>
+        inv.id === investmentId ? { ...inv, status: 'completed' } : inv
+      ).concat(newInvestmentData || []));
+    }
+  };
+
+  const handleWithdraw = async (investmentId: string) => {
+    const investment = investments.find(inv => inv.id === investmentId);
+    if (!investment || !user) return;
+
+    const newWithdrawableBalance = (user.withdrawable_balance || 0) + investment.return;
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ withdrawable_balance: newWithdrawableBalance })
+      .eq('id', user.id);
+
+    if (profileError) {
+      console.error('Error updating withdrawable balance:', profileError);
+      return;
+    }
+
+    const { error: investmentError } = await supabase
+      .from('investments')
+      .update({ status: 'completed' })
+      .eq('id', investmentId);
+
+    if (investmentError) {
+      console.error('Error updating investment status:', investmentError);
+    } else {
+      setUser({ ...user, withdrawable_balance: newWithdrawableBalance });
+      setInvestments(investments.map(inv =>
+        inv.id === investmentId ? { ...inv, status: 'completed' } : inv
+      ));
+    }
   };
 
   if (loading) {
@@ -141,6 +208,10 @@ const UserInvestmentDetails = () => {
               <p>{user.status}</p>
             </div>
             <div>
+              <p className="text-sm text-muted-foreground">Withdrawable Balance</p>
+              <p>${user.withdrawable_balance?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
               <p className="text-sm text-muted-foreground">Joined</p>
               <p>{new Date(user.created_at).toLocaleDateString()}</p>
             </div>
@@ -173,6 +244,12 @@ const UserInvestmentDetails = () => {
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline" className="text-success border-success" onClick={() => handleApprove(investment.id)}>Approve</Button>
                         <Button size="sm" variant="outline" className="text-destructive border-destructive" onClick={() => handleDeny(investment.id)}>Deny</Button>
+                      </div>
+                    )}
+                    {days_left === 0 && investment.status === 'active' && (
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="text-primary border-primary" onClick={() => handleReinvest(investment.id)}>Reinvest</Button>
+                        <Button size="sm" variant="outline" className="text-secondary border-secondary" onClick={() => handleWithdraw(investment.id)}>Withdraw</Button>
                       </div>
                     )}
                   </div>

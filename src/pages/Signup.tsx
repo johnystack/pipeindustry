@@ -50,6 +50,8 @@ const Signup = () => {
           first_name: formData.firstName,
           last_name: formData.lastName,
           referral_code: formData.referralCode,
+          role: 'user',
+          status: 'pending',
         },
       },
     });

@@ -10,13 +10,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Wallet, ArrowDownToLine, Clock, CheckCircle, AlertCircle, Shield } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
-import { useLocation } from "react-router-dom";
-
 const Withdraw = () => {
-  const location = useLocation();
-  const { withdrawableBalance } = location.state || {};
+  const { user } = useAuth();
+  const [withdrawableBalance, setWithdrawableBalance] = useState(0);
   const [selectedCrypto, setSelectedCrypto] = useState("bitcoin");
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
@@ -38,23 +37,48 @@ const Withdraw = () => {
     fetchCryptos();
   }, []);
 
-  
+  useEffect(() => {
+    const fetchWithdrawableBalance = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('withdrawable_balance')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching withdrawable balance:', error);
+        } else {
+          setWithdrawableBalance(data?.withdrawable_balance || 0);
+        }
+      }
+    };
+
+    fetchWithdrawableBalance();
+  }, [user]);
 
   const [withdrawalHistory, setWithdrawalHistory] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchWithdrawalHistory = async () => {
-      const { data, error } = await supabase.from("investments").select("*");
+      if(user) {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("type", "withdrawal")
+          .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching withdrawal history:", error);
-      } else {
-        setWithdrawalHistory(data);
+        if (error) {
+          console.error("Error fetching withdrawal history:", error);
+        } else {
+          setWithdrawalHistory(data);
+        }
       }
     };
 
     fetchWithdrawalHistory();
-  }, []);
+  }, [user]);
 
   const getConversionRate = (symbol: string) => {
     let conversionRate = 1;
@@ -74,30 +98,51 @@ const Withdraw = () => {
   const receiveAmount = selectedCryptoData && amount ? 
     (parseFloat(amount) - selectedCryptoData.fee).toFixed(6) : "0";
 
-  const handleWithdraw = () => {
-    if (!amount || !address) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleWithdraw = async () => {
+        if (!amount || !address) {
+          toast({
+            title: "Error",
+            description: "Please fill in all required fields",
+            variant: "destructive"
+          });
+          return;
+        }
 
-    if (selectedCryptoData && parseFloat(amount) < selectedCryptoData.min_withdraw) {
-      toast({
-        title: "Error", 
-        description: `Minimum withdrawal is ${selectedCryptoData.min_withdraw} ${selectedCryptoData.symbol}`,
-        variant: "destructive"
-      });
-      return;
-    }
+        if (selectedCryptoData && parseFloat(amount) > withdrawableBalance) {
+          toast({
+            title: "Error",
+            description: "You cannot withdraw more than your available balance.",
+            variant: "destructive"
+          });
+          return;
+        }
 
-    toast({
-      title: "Withdrawal Requested",
-      description: "Your withdrawal request has been submitted for processing",
-    });
-  };
+        const { error } = await supabase.from("transactions").insert([
+          {
+            user_id: user.id,
+            type: "withdrawal",
+            amount: Number(amount),
+            status: "pending",
+            description: `Withdrawal to ${address}`,
+            withdrawal_type: "to_wallet",
+            crypto: selectedCrypto,
+            address: address,
+          },
+        ]);
+
+        if (error) {
+          toast({
+            title: "Error requesting withdrawal",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Withdrawal Requested",
+            description: "Your withdrawal request has been submitted for processing",
+          });
+        }
+      };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -299,14 +344,16 @@ const Withdraw = () => {
                           {getStatusIcon(withdrawal.status)}
                           <div>
                             <div className="font-medium">
-                              {withdrawal.amount} {withdrawal.crypto}
+                              {withdrawal.description}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {withdrawal.usdValue}
+                              {withdrawal.withdrawal_type === 'to_balance' ? 'Internal Transfer' : 'External Withdrawal'}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              To: {withdrawal.address ? `${withdrawal.address.slice(0, 10)}...${withdrawal.address.slice(-6)}` : 'N/A'}
-                            </div>
+                            {withdrawal.withdrawal_type === 'to_wallet' && (
+                              <div className="text-xs text-muted-foreground">
+                                To: {withdrawal.address ? `${withdrawal.address.slice(0, 10)}...${withdrawal.address.slice(-6)}` : 'N/A'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -321,13 +368,11 @@ const Withdraw = () => {
                           {withdrawal.status}
                         </Badge>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {withdrawal.date}
+                          {new Date(withdrawal.created_at).toLocaleDateString()}
                         </div>
-                        {withdrawal.txHash !== 'pending...' && withdrawal.txHash !== 'processing...' && (
-                          <div className="text-xs text-accent mt-1">
-                            TX: {withdrawal.txHash}
-                          </div>
-                        )}
+                        <div className="text-lg font-semibold">
+                          ${withdrawal.amount.toLocaleString()}
+                        </div>
                       </div>
                     </div>
                   ))}

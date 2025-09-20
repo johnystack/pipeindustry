@@ -57,6 +57,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       if (user) {
         // Call the function to update due investments
+        await supabase.rpc('update_due_investments');
 
         const { data: investmentsData, error: investmentsError } = await supabase
           .from('investments')
@@ -89,13 +90,11 @@ const Dashboard = () => {
 
           const activeInvestmentsCount = activeInvestments.length;
 
-          const totalEarnings = activeInvestments.reduce((acc, investment) => {
-            const daysPassed = Math.floor((new Date().getTime() - new Date(investment.approved_at).getTime()) / (1000 * 60 * 60 * 24));
-            const dailyPercentage = getDailyPercentage(investment.plan_name);
-            const dailyEarning = investment.amount * dailyPercentage;
-            const totalEarning = dailyEarning * daysPassed;
-            return acc + totalEarning;
-          }, 0) || 0;
+          console.log("All Investments:", investmentsData);
+          const completedInvestments = investmentsData.filter(investment => ['completed', 'withdrawn'].includes(investment.status.trim().toLowerCase()));
+          console.log("Completed and Withdrawn Investments:", completedInvestments);
+          const totalEarnings = completedInvestments.reduce((acc, investment) => acc + Number(investment.return), 0) || 0;
+          console.log("Total Earnings:", totalEarnings);
 
           setStatsData((prev: any) => ({ ...prev, totalBalance, activeInvestments: activeInvestmentsCount, totalEarnings }));
         }
@@ -131,7 +130,6 @@ const Dashboard = () => {
   }, [user]);
 
   const getDailyPercentage = (planName: string) => {
-    console.log("planName:", planName);
     switch (planName) {
       case 'Starter Plan':
         return 0.04;
@@ -148,15 +146,14 @@ const Dashboard = () => {
 
   const calculateProgress = (investment: any) => {
     if (investment.status !== 'active' || !investment.approved_at) {
-      return { progress: 0, days_left: investment.duration };
+      return { progress: 0, days_left: 7 };
     }
 
     const approvedAt = new Date(investment.approved_at);
     const now = new Date();
     const daysPassed = Math.floor((now.getTime() - approvedAt.getTime()) / (1000 * 60 * 60 * 24));
-    const dailyPercentage = getDailyPercentage(investment.plan_name);
-    const progress = Math.min(Math.floor(daysPassed * dailyPercentage * 100), 100);
-    const daysLeft = Math.max(investment.duration - daysPassed, 0);
+    const progress = Math.min(Math.floor((daysPassed / 7) * 100), 100);
+    const daysLeft = Math.max(7 - daysPassed, 0);
 
     return { progress, days_left: daysLeft };
   };
@@ -256,11 +253,14 @@ const Dashboard = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Amount: {investment.amount} • <span className="text-green-500">Profit Earned: {(() => {
+                            Amount: {investment.amount} • <span className="text-green-500">Profit Earned ({(() => {
+                              const daysPassed = Math.floor((new Date().getTime() - new Date(investment.approved_at).getTime()) / (1000 * 60 * 60 * 24));
+                              return Math.min(daysPassed, 7);
+                            })()} days): {(() => {
                               const daysPassed = Math.floor((new Date().getTime() - new Date(investment.approved_at).getTime()) / (1000 * 60 * 60 * 24));
                               const dailyPercentage = getDailyPercentage(investment.plan_name);
                               const dailyEarning = investment.amount * dailyPercentage;
-                              const accumulatedProfit = dailyEarning * daysPassed;
+                              const accumulatedProfit = dailyEarning * Math.min(daysPassed, 7);
                               return accumulatedProfit.toFixed(2);
                             })()}</span>
                           </p>

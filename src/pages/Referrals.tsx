@@ -23,6 +23,7 @@ const Referrals = () => {
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { user } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
   const [referralStats, setReferralStats] = useState({
     totalReferrals: 0,
     activeReferrals: 0,
@@ -32,7 +33,73 @@ const Referrals = () => {
   const [recentReferrals, setRecentReferrals] = useState<any[]>([]);
   const [commissionEarnings, setCommissionEarnings] = useState<any[]>([]);
 
+  const handleWithdrawReferrals = async () => {
+    if (!profile || profile.referral_earnings <= 0) {
+      toast({
+        title: "No earnings to withdraw",
+        description: "You do not have any referral earnings to withdraw.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newWithdrawableBalance = profile.withdrawable_balance + profile.referral_earnings;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        withdrawable_balance: newWithdrawableBalance,
+        referral_earnings: 0,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error withdrawing earnings",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      const { error: transactionError } = await supabase.from("transactions").insert([
+        {
+          user_id: user.id,
+          type: "withdrawal",
+          amount: profile.referral_earnings,
+          status: "completed",
+          description: "Referral earnings to withdrawable balance",
+          withdrawal_type: "to_balance",
+        },
+      ]);
+
+      if (transactionError) {
+        console.error("Error creating transaction:", transactionError);
+      }
+
+      setProfile({ ...profile, withdrawable_balance: newWithdrawableBalance, referral_earnings: 0 });
+      toast({
+        title: "Withdrawal successful",
+        description: `Your referral earnings of ${profile.referral_earnings.toLocaleString()} have been added to your withdrawable balance.`,
+      });
+    }
+  };
+
   useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(data);
+        }
+      }
+    };
+
     const fetchReferralData = async () => {
       if (user) {
         // Fetch referred users
@@ -99,6 +166,7 @@ const Referrals = () => {
       }
     };
 
+    fetchProfile();
     fetchReferralData();
     fetchCommissionEarnings();
   }, [user]);
@@ -156,9 +224,7 @@ const Referrals = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">${referralStats.totalEarned.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Total commission earned
-              </p>
+              <Button size="sm" className="mt-2" onClick={handleWithdrawReferrals}>Withdraw</Button>
             </CardContent>
           </Card>
           <Card className="bg-gradient-card border-border shadow-card">

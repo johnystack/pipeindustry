@@ -21,6 +21,7 @@ import {
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Link } from "react-router-dom";
+import EditCryptoModal from "@/components/admin/EditCryptoModal";
 
 const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -29,6 +30,21 @@ const Admin = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [cryptos, setCryptos] = useState<any[]>([]);
+  const [editingCrypto, setEditingCrypto] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchCryptos = async () => {
+      const { data, error } = await supabase.from('cryptocurrencies').select('*');
+      if (error) {
+        console.error('Error fetching cryptocurrencies:', error);
+      } else {
+        setCryptos(data || []);
+      }
+    };
+    fetchCryptos();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -74,6 +90,21 @@ const Admin = () => {
     } else {
       setUsers(users.map(user =>
         user.id === userId ? { ...user, status: 'verified' } : user
+      ));
+    }
+  };
+
+  const handleSuspend = async (userId: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ status: 'suspended' })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error suspending user:', error);
+    } else {
+      setUsers(users.map(user =>
+        user.id === userId ? { ...user, status: 'suspended' } : user
       ));
     }
   };
@@ -233,6 +264,14 @@ const Admin = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-8">
+      <EditCryptoModal
+        crypto={editingCrypto}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={(updatedCrypto) => {
+          setCryptos(cryptos.map(c => c.id === updatedCrypto.id ? updatedCrypto : c));
+        }}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -268,7 +307,7 @@ const Admin = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-          <TabsTrigger value="plans">Investment Plans</TabsTrigger>
+          <TabsTrigger value="cryptocurrencies">Cryptocurrencies</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -325,14 +364,24 @@ const Admin = () => {
                               Details
                             </Button>
                           </Link>
-                          <Button variant="outline" size="sm" onClick={() => handleVerify(user.id)}>
-                            <UserCheck className="h-3 w-3 mr-1" />
-                            Verify
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-destructive">
-                            <UserX className="h-3 w-3 mr-1" />
-                            Suspend
-                          </Button>
+                          {user.status === 'pending' && (
+                            <Button variant="outline" size="sm" onClick={() => handleVerify(user.id)}>
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              Verify
+                            </Button>
+                          )}
+                          {user.status === 'verified' && (
+                            <Button variant="outline" size="sm" className="text-destructive" onClick={() => handleSuspend(user.id)}>
+                              <UserX className="h-3 w-3 mr-1" />
+                              Suspend
+                            </Button>
+                          )}
+                          {user.status === 'suspended' && (
+                            <Button variant="outline" size="sm" onClick={() => handleVerify(user.id)}>
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              Activate
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -421,58 +470,30 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="plans" className="space-y-6">
+
+
+        <TabsContent value="cryptocurrencies" className="space-y-6">
           <Card className="bg-gradient-card border-border shadow-card">
             <CardHeader>
-              <CardTitle>Investment Plans Management</CardTitle>
+              <CardTitle>Cryptocurrency Management</CardTitle>
               <CardDescription>
-                Create and manage investment plans and their parameters
+                Manage cryptocurrency wallet addresses
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-end">
-                  <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Plan
-                  </Button>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  {investmentPlans.map((plan, index) => (
-                    <div key={index} className="p-4 rounded-lg border bg-background/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold">{plan.name}</h4>
-                        <Badge variant="default" className="bg-success">
-                          {plan.status}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Range:</span>
-                          <span>{plan.minAmount} - {plan.maxAmount}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Daily Return:</span>
-                          <span className="text-success">{plan.dailyReturn}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Duration:</span>
-                          <span>{plan.duration}</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1 text-destructive">
-                          Disable
-                        </Button>
-                      </div>
+                {cryptos.map((crypto) => (
+                  <div key={crypto.id} className="flex items-center justify-between p-4 rounded-lg border bg-background/50">
+                    <div className="space-y-1">
+                      <h4 className="font-medium">{crypto.name} ({crypto.symbol})</h4>
+                      <p className="text-sm text-muted-foreground font-mono">{crypto.address}</p>
                     </div>
-                  ))}
-                </div>
+                    <Button variant="outline" size="sm" onClick={() => { setEditingCrypto(crypto); setIsEditModalOpen(true); }}>
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

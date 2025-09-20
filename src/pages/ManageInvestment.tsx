@@ -2,6 +2,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -102,6 +103,7 @@ const ManageInvestment = () => {
         }
         toast({
           title: "Re-invested successfully",
+          description: `You have successfully reinvested ${amountToReinvest.toLocaleString()}. The remaining ${remainingBalance.toLocaleString()} has been added to your withdrawable balance. Your new withdrawable balance is ${(withdrawableBalance + remainingBalance).toLocaleString()}.`,
         });
         navigate("/dashboard");
       }
@@ -123,7 +125,7 @@ const ManageInvestment = () => {
     const { error: profileError } = await supabase
       .from("profiles")
       .update({ withdrawable_balance: withdrawableBalance + totalReturn })
-      .eq("user_id", user.id);
+      .eq("id", user.id);
 
     if (profileError) {
       toast({
@@ -145,9 +147,24 @@ const ManageInvestment = () => {
           variant: "destructive",
         });
       } else {
+        const { error: transactionError } = await supabase.from("transactions").insert([
+          {
+            user_id: user.id,
+            type: "withdrawal",
+            amount: totalReturn,
+            status: "completed",
+            description: "Investment return to withdrawable balance",
+            withdrawal_type: "to_balance",
+          },
+        ]);
+
+        if (transactionError) {
+          console.error("Error creating transaction:", transactionError);
+        }
+
         toast({
           title: "Withdrawal successful",
-          description: "The total return has been added to your withdrawable balance.",
+          description: `The total return of ${totalReturn.toLocaleString()} has been added to your withdrawable balance. Your new withdrawable balance is ${(withdrawableBalance + totalReturn).toLocaleString()}.`,
         });
         navigate("/withdraw", { state: { withdrawableBalance: withdrawableBalance + totalReturn } });
       }
