@@ -215,7 +215,7 @@ const Referrals = () => {
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input
-              value={`https://pipindustry.com/ref/${profile?.username}`}
+              value={`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`}
               readOnly
               className="bg-background/50"
             />

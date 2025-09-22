@@ -27,6 +27,9 @@ import {
 const Dashboard = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [statsData, setStatsData] = useState<any>({});
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,39 +111,6 @@ const Dashboard = () => {
     return { progress, days_left: daysLeft };
   };
 
-  const stats = [
-    {
-      title: "Total Balance",
-      value: `${statsData.totalBalance?.toLocaleString() || "0.00"}`,
-      icon: Wallet,
-      positive: true,
-    },
-    {
-      title: "Active Investments",
-      value: statsData.activeInvestments?.toLocaleString() || "0",
-      icon: TrendingUp,
-      positive: true,
-    },
-    {
-      title: "Total Earnings",
-      value: `${statsData.totalEarnings?.toLocaleString() || "0.00"}`,
-      icon: DollarSign,
-      positive: true,
-    },
-    {
-      title: "Referral Earnings",
-      value: `${statsData.referralEarnings?.toLocaleString() || "0.00"}`,
-      icon: Users,
-      positive: true,
-    },
-    {
-      title: "Withdrawable Balance",
-      value: `${statsData.withdrawableBalance?.toLocaleString() || "0.00"}`,
-      icon: Wallet,
-      positive: true,
-    },
-  ];
-
   return (
     <div className="container mx-auto p-6 space-y-8 flex flex-col items-center">
       {/* Welcome Section */}
@@ -162,7 +132,38 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {[
+          {
+            title: "Total Balance",
+            value: `${statsData.totalBalance?.toLocaleString() || "0.00"}`,
+            icon: Wallet,
+            positive: true,
+          },
+          {
+            title: "Active Investments",
+            value: statsData.activeInvestments?.toLocaleString() || "0",
+            icon: TrendingUp,
+            positive: true,
+          },
+          {
+            title: "Total Earnings",
+            value: `${statsData.totalEarnings?.toLocaleString() || "0.00"}`,
+            icon: DollarSign,
+            positive: true,
+          },
+          {
+            title: "Referral Earnings",
+            value: `${statsData.referralEarnings?.toLocaleString() || "0.00"}`,
+            icon: Users,
+            positive: true,
+          },
+          {
+            title: "Withdrawable Balance",
+            value: `${statsData.withdrawableBalance?.toLocaleString() || "0.00"}`,
+            icon: Wallet,
+            positive: true,
+          },
+        ].map((stat, index) => (
           <Card
             key={index}
             className="bg-gradient-card border-border shadow-card"
