@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users,
   Copy,
@@ -113,6 +114,16 @@ const Referrals = () => {
 
     fetchReferralPageData();
   }, [user]);
+
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Referral link copied to clipboard",
+    });
+  };
 
   const commissionStructure = [
     {
@@ -219,7 +230,10 @@ const Referrals = () => {
               readOnly
               className="bg-background/50"
             />
-            <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
+            <Button 
+              className="bg-gradient-primary text-primary-foreground shadow-glow"
+              onClick={() => copyToClipboard(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`)}
+            >
               <Copy className="h-4 w-4 mr-2" />
               Copy
             </Button>
