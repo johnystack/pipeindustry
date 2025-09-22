@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { createContext, useContext, useEffect, useState } from "react";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   session: Session | null;
@@ -20,19 +20,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getSessionAndRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
           .single();
 
         if (error) {
-          console.error('Error fetching user role:', error);
+          console.error("Error fetching user role:", error);
         } else {
           setRole(data?.role || null);
         }
@@ -42,28 +44,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     getSessionAndRole();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const fetchRole = async () => {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          const fetchRole = async () => {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("role")
+              .eq("id", session.user.id)
+              .single();
 
-          if (error) {
-            console.error('Error fetching user role:', error);
-          } else {
-            setRole(data?.role || null);
-          }
-        };
-        fetchRole();
-      } else {
-        setRole(null);
-      }
-    });
+            if (error) {
+              console.error("Error fetching user role:", error);
+            } else {
+              setRole(data?.role || null);
+            }
+          };
+          fetchRole();
+        } else {
+          setRole(null);
+        }
+      },
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -83,28 +87,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { user, loading } = useAuth();
-    const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!loading && !user) {
-            navigate('/login');
-        }
-    }, [user, loading, navigate]);
-
-    if (loading) {
-        return <div>Loading...</div>; // Or a spinner component
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login");
     }
+  }, [user, loading, navigate]);
 
-    if (!user) {
-        return null; // Or a redirect component, though useEffect handles it
-    }
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
 
-    return <>{children}</>;
+  if (!user) {
+    return null; // Or a redirect component, though useEffect handles it
+  }
+
+  return <>{children}</>;
 };

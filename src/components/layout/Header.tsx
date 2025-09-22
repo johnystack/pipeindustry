@@ -40,7 +40,9 @@ const Header = () => {
       <div className="flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 select-none">
           <TrendingUp className="h-5 w-5 text-primary" />
-          <span className="text-lg font-semibold text-foreground">PipIndustry</span>
+          <span className="text-lg font-semibold text-foreground">
+            PipIndustry
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 xl:gap-8">
@@ -49,8 +51,11 @@ const Header = () => {
               key={item.name}
               to={item.href}
               className={`text-sm font-medium transition-colors ${
-                isActive(item.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }`}>
+                isActive(item.href)
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
               {item.name}
             </Link>
           ))}
@@ -60,7 +65,11 @@ const Header = () => {
           {!user ? (
             <div className="hidden md:flex items-center gap-2">
               <Link to="/login">
-                <Button variant="ghost" size="sm" className="text-sm font-medium">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-sm font-medium"
+                >
                   Sign In
                 </Button>
               </Link>
@@ -105,7 +114,8 @@ const Header = () => {
                       isActive(item.href)
                         ? "text-primary"
                         : "text-muted-foreground hover:text-foreground"
-                    }`}>
+                    }`}
+                  >
                     {item.name}
                   </Link>
                 ))}
@@ -113,7 +123,11 @@ const Header = () => {
                 {!user ? (
                   <div className="pt-4 mt-4 border-t">
                     <Link to="/login">
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                      >
                         Sign In
                       </Button>
                     </Link>
@@ -125,13 +139,22 @@ const Header = () => {
                   </div>
                 ) : (
                   <div className="pt-4 mt-4 border-t">
-                     <Link to="/profile">
-                        <Button variant="ghost" size="sm" className="w-full justify-start">
-                           <User className="mr-2 h-4 w-4"/> Profile
-                        </Button>
+                    <Link to="/profile">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                      >
+                        <User className="mr-2 h-4 w-4" /> Profile
+                      </Button>
                     </Link>
-                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4"/> Logout
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" /> Logout
                     </Button>
                   </div>
                 )}

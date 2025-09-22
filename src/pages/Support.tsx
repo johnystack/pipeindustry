@@ -1,25 +1,42 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { 
-  MessageCircle, 
-  Phone, 
-  Mail, 
-  Clock, 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  MessageCircle,
+  Phone,
+  Mail,
+  Clock,
   HelpCircle,
   FileText,
   Shield,
   DollarSign,
   Users,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useToast } from "@/hooks/use-toast";
@@ -37,17 +54,20 @@ const Support = () => {
       questions: [
         {
           question: "How do I get started with PipIndustry?",
-          answer: "To get started, simply create an account, verify your email, deposit cryptocurrency, and choose an investment plan that suits your goals. Our team will guide you through the process."
+          answer:
+            "To get started, simply create an account, verify your email, deposit cryptocurrency, and choose an investment plan that suits your goals. Our team will guide you through the process.",
         },
         {
           question: "What cryptocurrencies do you accept?",
-          answer: "We accept Bitcoin (BTC), Ethereum (ETH), Tether (USDT), and TRON (TRX). All deposits are processed automatically and credited to your account upon confirmation."
+          answer:
+            "We accept Bitcoin (BTC), Ethereum (ETH), Tether (USDT), and TRON (TRX). All deposits are processed automatically and credited to your account upon confirmation.",
         },
         {
           question: "Is my investment safe with PipIndustry?",
-          answer: "Yes, we use bank-level security measures including SSL encryption, cold storage for funds, and multi-signature wallets. Your investments are protected by our comprehensive security protocols."
-        }
-      ]
+          answer:
+            "Yes, we use bank-level security measures including SSL encryption, cold storage for funds, and multi-signature wallets. Your investments are protected by our comprehensive security protocols.",
+        },
+      ],
     },
     {
       category: "Investments",
@@ -55,17 +75,20 @@ const Support = () => {
       questions: [
         {
           question: "What are the minimum and maximum investment amounts?",
-          answer: "Our Starter Plan begins at $100, Silver Plan at $1,000, Gold Plan at $5,000, and VIP Plan at $10,000. Maximum amounts vary by plan, with VIP having unlimited investment capacity."
+          answer:
+            "Our Starter Plan begins at $100, Silver Plan at $1,000, Gold Plan at $5,000, and VIP Plan at $10,000. Maximum amounts vary by plan, with VIP having unlimited investment capacity.",
         },
         {
           question: "When will I see returns on my investment?",
-          answer: "Returns are calculated daily and credited to your account. You can see your daily profits in your dashboard, and withdrawals are available according to your plan terms."
+          answer:
+            "Returns are calculated daily and credited to your account. You can see your daily profits in your dashboard, and withdrawals are available according to your plan terms.",
         },
         {
           question: "Can I reinvest my profits?",
-          answer: "Yes, you can reinvest your profits into any available plan to compound your earnings. This is a great way to maximize your investment growth over time."
-        }
-      ]
+          answer:
+            "Yes, you can reinvest your profits into any available plan to compound your earnings. This is a great way to maximize your investment growth over time.",
+        },
+      ],
     },
     {
       category: "Withdrawals",
@@ -73,17 +96,20 @@ const Support = () => {
       questions: [
         {
           question: "How long do withdrawals take?",
-          answer: "Withdrawals are processed within 24 hours during business days. Cryptocurrency withdrawals depend on network confirmation times, typically 1-6 confirmations."
+          answer:
+            "Withdrawals are processed within 24 hours during business days. Cryptocurrency withdrawals depend on network confirmation times, typically 1-6 confirmations.",
         },
         {
           question: "Are there withdrawal fees?",
-          answer: "Yes, we charge network fees for cryptocurrency withdrawals. Bitcoin: 0.0005 BTC, Ethereum: 0.005 ETH, USDT: $5. These fees cover blockchain transaction costs."
+          answer:
+            "Yes, we charge network fees for cryptocurrency withdrawals. Bitcoin: 0.0005 BTC, Ethereum: 0.005 ETH, USDT: $5. These fees cover blockchain transaction costs.",
         },
         {
           question: "What's the minimum withdrawal amount?",
-          answer: "Minimum withdrawals are: Bitcoin: 0.001 BTC, Ethereum: 0.01 ETH, USDT: $10. This ensures cost-effective processing of your withdrawal requests."
-        }
-      ]
+          answer:
+            "Minimum withdrawals are: Bitcoin: 0.001 BTC, Ethereum: 0.01 ETH, USDT: $10. This ensures cost-effective processing of your withdrawal requests.",
+        },
+      ],
     },
     {
       category: "Referrals",
@@ -91,18 +117,21 @@ const Support = () => {
       questions: [
         {
           question: "How does the referral program work?",
-          answer: "Share your unique referral link with friends. When they sign up and make their first investment, you earn a commission. Higher-tier plans offer better referral rates."
+          answer:
+            "Share your unique referral link with friends. When they sign up and make their first investment, you earn a commission. Higher-tier plans offer better referral rates.",
         },
         {
           question: "What are the referral commission rates?",
-          answer: "Commission rates vary by plan: Starter (5%), Silver (7%), Gold (10%), VIP (15%). Commissions are paid instantly when your referrals invest."
+          answer:
+            "Commission rates vary by plan: Starter (5%), Silver (7%), Gold (10%), VIP (15%). Commissions are paid instantly when your referrals invest.",
         },
         {
           question: "Is there a limit to how many people I can refer?",
-          answer: "No, there's no limit! You can refer unlimited people and earn ongoing commissions from their investments. Build your network and maximize your earnings."
-        }
-      ]
-    }
+          answer:
+            "No, there's no limit! You can refer unlimited people and earn ongoing commissions from their investments. Build your network and maximize your earnings.",
+        },
+      ],
+    },
   ];
 
   const supportTickets = [
@@ -113,26 +142,26 @@ const Support = () => {
       status: "open",
       priority: "high",
       date: "2024-01-15 10:30",
-      lastReply: "Support Team"
+      lastReply: "Support Team",
     },
     {
-      id: "TKT-002", 
+      id: "TKT-002",
       subject: "Investment Plan Upgrade",
       category: "Investments",
       status: "resolved",
       priority: "medium",
       date: "2024-01-12 14:20",
-      lastReply: "You"
+      lastReply: "You",
     },
     {
       id: "TKT-003",
       subject: "Referral Commission Question",
-      category: "Referrals", 
+      category: "Referrals",
       status: "pending",
       priority: "low",
       date: "2024-01-10 09:15",
-      lastReply: "Support Team"
-    }
+      lastReply: "Support Team",
+    },
   ];
 
   const handleSubmitTicket = () => {
@@ -140,14 +169,15 @@ const Support = () => {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     toast({
       title: "Ticket Submitted",
-      description: "Your support ticket has been created. We'll respond within 24 hours.",
+      description:
+        "Your support ticket has been created. We'll respond within 24 hours.",
     });
 
     setSubject("");
@@ -160,7 +190,7 @@ const Support = () => {
       open: "bg-success/10 text-success border-success/20",
       pending: "bg-warning/10 text-warning border-warning/20",
       resolved: "bg-accent/10 text-accent border-accent/20",
-      closed: "bg-muted/10 text-muted-foreground border-muted/20"
+      closed: "bg-muted/10 text-muted-foreground border-muted/20",
     };
     return variants[status as keyof typeof variants] || "bg-muted";
   };
@@ -169,7 +199,7 @@ const Support = () => {
     const variants = {
       high: "bg-destructive/10 text-destructive border-destructive/20",
       medium: "bg-warning/10 text-warning border-warning/20",
-      low: "bg-accent/10 text-accent border-accent/20"
+      low: "bg-accent/10 text-accent border-accent/20",
     };
     return variants[priority as keyof typeof variants] || "bg-muted";
   };
@@ -182,7 +212,8 @@ const Support = () => {
             Support Center
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Get help with your account, investments, and any questions you may have. Our support team is here 24/7.
+            Get help with your account, investments, and any questions you may
+            have. Our support team is here 24/7.
           </p>
         </div>
 
@@ -239,13 +270,17 @@ const Support = () => {
                       {category.category}
                     </CardTitle>
                     <CardDescription>
-                      Frequently asked questions about {category.category.toLowerCase()}
+                      Frequently asked questions about{" "}
+                      {category.category.toLowerCase()}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Accordion type="single" collapsible className="w-full">
                       {category.questions.map((faq, faqIndex) => (
-                        <AccordionItem key={faqIndex} value={`item-${index}-${faqIndex}`}>
+                        <AccordionItem
+                          key={faqIndex}
+                          value={`item-${index}-${faqIndex}`}
+                        >
                           <AccordionTrigger className="text-left">
                             {faq.question}
                           </AccordionTrigger>
@@ -293,7 +328,9 @@ const Support = () => {
                       <SelectItem value="withdrawals">Withdrawals</SelectItem>
                       <SelectItem value="investments">Investments</SelectItem>
                       <SelectItem value="referrals">Referrals</SelectItem>
-                      <SelectItem value="technical">Technical Issues</SelectItem>
+                      <SelectItem value="technical">
+                        Technical Issues
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -309,7 +346,10 @@ const Support = () => {
                   />
                 </div>
 
-                <Button onClick={handleSubmitTicket} className="w-full crypto-button-primary">
+                <Button
+                  onClick={handleSubmitTicket}
+                  className="w-full crypto-button-primary"
+                >
                   Submit Ticket
                 </Button>
               </CardContent>
@@ -327,10 +367,13 @@ const Support = () => {
               <CardContent>
                 <div className="space-y-4">
                   {supportTickets.map((ticket) => (
-                    <div key={ticket.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-background/50">
+                    <div
+                      key={ticket.id}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg bg-background/50"
+                    >
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          {ticket.status === 'resolved' ? (
+                          {ticket.status === "resolved" ? (
                             <CheckCircle className="h-4 w-4 text-success" />
                           ) : (
                             <AlertCircle className="h-4 w-4 text-warning" />
@@ -347,10 +390,16 @@ const Support = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={getStatusBadge(ticket.status)}>
+                        <Badge
+                          variant="outline"
+                          className={getStatusBadge(ticket.status)}
+                        >
                           {ticket.status}
                         </Badge>
-                        <Badge variant="outline" className={getPriorityBadge(ticket.priority)}>
+                        <Badge
+                          variant="outline"
+                          className={getPriorityBadge(ticket.priority)}
+                        >
                           {ticket.priority}
                         </Badge>
                         <Button size="sm" variant="outline">
@@ -377,11 +426,15 @@ const Support = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h4 className="font-semibold mb-2">Live Chat & Email</h4>
-                <p className="text-sm text-muted-foreground">24/7 - Available all the time</p>
+                <p className="text-sm text-muted-foreground">
+                  24/7 - Available all the time
+                </p>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Phone Support</h4>
-                <p className="text-sm text-muted-foreground">Monday - Friday: 9:00 AM - 6:00 PM (UTC)</p>
+                <p className="text-sm text-muted-foreground">
+                  Monday - Friday: 9:00 AM - 6:00 PM (UTC)
+                </p>
               </div>
             </div>
           </CardContent>

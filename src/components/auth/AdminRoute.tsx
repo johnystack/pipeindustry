@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from './AuthProvider';
+import { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "./AuthProvider";
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -13,7 +13,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return <div>Loading...</div>; // Or a spinner component
   }
 
-  if (role !== 'admin') {
+  if (role !== "admin") {
     return <Navigate to="/" replace />;
   }
 

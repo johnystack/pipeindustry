@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Wallet, Loader2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabaseClient";
 
@@ -22,6 +28,13 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { username } = useParams();
+
+  useEffect(() => {
+    if (username) {
+      setFormData((prev) => ({ ...prev, referralCode: username }));
+    }
+  }, [username]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
@@ -33,11 +46,19 @@ const Signup = () => {
 
   const handleSignup = async () => {
     if (formData.password !== formData.confirmPassword) {
-      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.terms) {
-      toast({ title: "Error", description: "You must agree to the terms of service.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "You must agree to the terms of service.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -50,8 +71,8 @@ const Signup = () => {
           first_name: formData.firstName,
           last_name: formData.lastName,
           referral_code: formData.referralCode,
-          role: 'user',
-          status: 'pending',
+          role: "user",
+          status: "pending",
         },
       },
     });
@@ -59,11 +80,16 @@ const Signup = () => {
     setLoading(false);
 
     if (error) {
-      toast({ title: "Signup Error", description: error.message, variant: "destructive" });
+      toast({
+        title: "Signup Error",
+        description: error.message,
+        variant: "destructive",
+      });
     } else {
       toast({
         title: "Success!",
-        description: "Please check your email for a confirmation link to complete your registration.",
+        description:
+          "Please check your email for a confirmation link to complete your registration.",
       });
       navigate("/login");
     }
@@ -85,45 +111,97 @@ const Signup = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" className="bg-background/50" value={formData.firstName} onChange={handleChange} />
+              <Input
+                id="firstName"
+                className="bg-background/50"
+                value={formData.firstName}
+                onChange={handleChange}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" className="bg-background/50" value={formData.lastName} onChange={handleChange} />
+              <Input
+                id="lastName"
+                className="bg-background/50"
+                value={formData.lastName}
+                onChange={handleChange}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" className="bg-background/50" value={formData.email} onChange={handleChange} />
+            <Input
+              id="email"
+              type="email"
+              className="bg-background/50"
+              value={formData.email}
+              onChange={handleChange}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" className="bg-background/50" value={formData.password} onChange={handleChange} />
+            <Input
+              id="password"
+              type="password"
+              className="bg-background/50"
+              value={formData.password}
+              onChange={handleChange}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" type="password" className="bg-background/50" value={formData.confirmPassword} onChange={handleChange} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              className="bg-background/50"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-            <Input id="referralCode" className="bg-background/50" value={formData.referralCode} onChange={handleChange} />
+            <Input
+              id="referralCode"
+              className="bg-background/50"
+              value={formData.referralCode}
+              onChange={handleChange}
+            />
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox id="terms" checked={formData.terms} onCheckedChange={(checked) => setFormData(prev => ({...prev, terms: !!checked}))} />
-            <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            <Checkbox
+              id="terms"
+              checked={formData.terms}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({ ...prev, terms: !!checked }))
+              }
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
               I agree to the{" "}
-              <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>{" "}
+              <Link to="/terms" className="text-primary hover:underline">
+                Terms of Service
+              </Link>{" "}
               and{" "}
-              <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+              <Link to="/privacy" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
             </label>
           </div>
-          <Button onClick={handleSignup} disabled={loading} className="w-full bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            onClick={handleSignup}
+            disabled={loading}
+            className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account
           </Button>
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+            <Link to="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
           </div>
           <div className="text-center text-sm text-muted-foreground">
             <Link to="/" className="text-primary hover:underline">
