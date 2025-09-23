@@ -14,6 +14,7 @@ import { Wallet, Loader2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabaseClient";
+import { sendEmail } from "../lib/email";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
