@@ -97,9 +97,10 @@ const Signup = () => {
       });
     } else {
       toast({
-        title: "Success!",
+        title: "Verify Email",
         description:
           "Please check your email for a confirmation link to complete your registration.",
+        variant: "success",
       });
       navigate("/login");
     }
