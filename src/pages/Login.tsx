@@ -87,6 +87,12 @@ const Login = () => {
             >
               Forgot password?
             </Link>
+            <Link
+              to="/resend-email"
+              className="text-sm text-primary hover:underline"
+            >
+              Resend email
+            </Link>
           </div>
           <Button
             onClick={handleLogin}

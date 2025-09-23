@@ -24,6 +24,7 @@ import UserInvestmentDetails from "./pages/UserInvestmentDetails";
 
 import ManageInvestment from "./pages/ManageInvestment";
 import NotFound from "./pages/NotFound";
+import ResendEmail from "./pages/ResendEmail";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
             </Route>
             <Route path="/signup" element={<Signup />} />
             <Route path="/ref/:username" element={<Signup />} />
+            <Route path="/resend-email" element={<ResendEmail />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<ContactUs />} />
 

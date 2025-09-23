@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 import {
   Users,
   Copy,
@@ -96,26 +97,30 @@ const Referrals = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchReferralPageData = async () => {
-      if (user) {
-        const { data, error } = await supabase.rpc('get_referral_data', { p_user_id: user.id });
+  const { toast } = useToast();
 
-        if (error) {
-          console.error('Error fetching referral data:', error);
-        } else {
-          setProfile(data.profile);
-          setReferralStats(data.referral_stats);
-          setRecentReferrals(data.recent_referrals || []);
-          setCommissionEarnings(data.commission_earnings || []);
-        }
+  const fetchReferralPageData = async () => {
+    if (user) {
+      const { data, error } = await supabase.rpc('get_referral_data', { p_user_id: user.id });
+
+      if (error) {
+        console.error('Error fetching referral data:', error);
+      } else {
+        setProfile(data.profile);
+        setReferralStats(data.referral_stats);
+        setRecentReferrals(data.recent_referrals || []);
+        setCommissionEarnings(data.commission_earnings || []);
       }
-    };
+    }
+  };
 
+  const refreshData = () => {
+    fetchReferralPageData();
+  };
+
+  useEffect(() => {
     fetchReferralPageData();
   }, [user]);
-
-  const { toast } = useToast();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -224,30 +229,41 @@ const Referrals = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              value={`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`}
-              readOnly
-              className="bg-background/50"
-            />
-            <Button 
-              className="bg-gradient-primary text-primary-foreground shadow-glow"
-              onClick={() => copyToClipboard(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`)}
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share via Email
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share on Social
-            </Button>
-          </div>
+          {profile?.username ? (
+            <>
+              <div className="flex gap-2">
+                <Input
+                  value={`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`}
+                  readOnly
+                  className="bg-background/50"
+                />
+                <Button 
+                  className="bg-gradient-primary text-primary-foreground shadow-glow"
+                  onClick={() => copyToClipboard(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`)}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share via Email
+                </Button>
+                <Button variant="outline" className="flex-1">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share on Social
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <p>To get your referral link, you need to set a username.</p>
+              <Button asChild variant="link" className="text-primary">
+                <Link to="/settings">Go to Settings</Link>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -304,11 +320,14 @@ const Referrals = () => {
 
         <TabsContent value="referrals">
           <Card className="bg-gradient-card border-border shadow-card">
-            <CardHeader>
-              <CardTitle>Recent Referrals</CardTitle>
-              <CardDescription>
-                Track your referred users and their investment activity
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Referrals</CardTitle>
+                <CardDescription>
+                  Track your referred users and their investment activity
+                </CardDescription>
+              </div>
+              <Button onClick={refreshData} size="sm">Refresh</Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

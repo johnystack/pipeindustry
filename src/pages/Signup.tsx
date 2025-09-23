@@ -19,6 +19,7 @@ const Signup = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -45,6 +46,14 @@ const Signup = () => {
   };
 
   const handleSignup = async () => {
+    if (!formData.username) {
+      toast({
+        title: "Error",
+        description: "Please enter a username.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
@@ -70,6 +79,7 @@ const Signup = () => {
         data: {
           first_name: formData.firstName,
           last_name: formData.lastName,
+          username: formData.username,
           referral_code: formData.referralCode,
           role: "user",
           status: "pending",
@@ -128,8 +138,17 @@ const Signup = () => {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                className="bg-background/50"
+                value={formData.username}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"

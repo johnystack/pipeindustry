@@ -60,9 +60,11 @@ const Settings = () => {
   const timezones = useMemo(() => moment.tz.names(), []);
 
   // Profile Settings
+  const [originalProfile, setOriginalProfile] = useState(null);
   const [profileData, setProfileData] = useState({
     first_name: "",
     last_name: "",
+    username: "",
     email: user?.email || "",
     phone: "",
     country: "",
@@ -95,7 +97,7 @@ const Settings = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from("profiles")
-          .select("first_name, last_name, phone, country, timezone")
+          .select("first_name, last_name, username, phone, country, timezone")
           .eq("id", user.id)
           .single();
 
@@ -108,7 +110,16 @@ const Settings = () => {
             variant: "destructive",
           });
         } else if (data) {
-          setProfileData((prev) => ({ ...prev, ...data }));
+          setOriginalProfile(data);
+          setProfileData({
+            first_name: data.first_name || "",
+            last_name: data.last_name || "",
+            username: data.username || "",
+            email: user.email || "",
+            phone: data.phone || "",
+            country: data.country || "",
+            timezone: data.timezone || "",
+          });
         }
         setLoading(false);
       }
@@ -120,15 +131,51 @@ const Settings = () => {
   const handleSaveProfile = async () => {
     if (!user) return;
 
+    // If the user is trying to set a username for the first time
+    if (profileData.username && !originalProfile.username) {
+      // Check if username is already taken
+      const { data: existingUser, error: checkError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", profileData.username)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // 'PGRST116' means no rows found, which is good
+        console.error("Error checking username:", checkError);
+        toast({
+          title: "Error",
+          description: "Could not check username availability. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (existingUser) {
+        toast({
+          title: "Username taken",
+          description: "This username is already in use. Please choose another one.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    const updateData = {
+      first_name: profileData.first_name,
+      last_name: profileData.last_name,
+      phone: profileData.phone,
+      country: profileData.country,
+      timezone: profileData.timezone,
+    };
+
+    // Only add username to updateData if it's being set for the first time
+    if (profileData.username && !originalProfile.username) {
+      updateData.username = profileData.username;
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        phone: profileData.phone,
-        country: profileData.country,
-        timezone: profileData.timezone,
-      })
+      .update(updateData)
       .eq("id", user.id);
 
     if (error) {
@@ -274,6 +321,22 @@ const Settings = () => {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <input
+                  id="username"
+                  defaultValue={profileData.username}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      username: e.target.value,
+                    })
+                  }
+                  readOnly={!!profileData.username}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                />
               </div>
 
               <div className="space-y-2">
