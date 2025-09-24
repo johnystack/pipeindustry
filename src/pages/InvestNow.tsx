@@ -36,7 +36,7 @@ const plans = [
     name: "Starter Plan",
     icon: "Star", // Using string for icon for now, will import later
     popular: false,
-    minInvestment: "100",
+    minInvestment: "300",
     maxInvestment: "999",
     duration: "7 days",
     dailyReturn: "4%",
@@ -56,7 +56,7 @@ const plans = [
     name: "Silver Plan",
     icon: "Crown",
     popular: true,
-    minInvestment: "1,000",
+    minInvestment: "1000",
     maxInvestment: "4,999",
     duration: "7 days",
     dailyReturn: "6%",
