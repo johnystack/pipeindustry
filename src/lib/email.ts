@@ -11,7 +11,7 @@ interface SendEmailProps {
 export async function sendEmail({ to, subject, html }: SendEmailProps) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Replace with your verified domain
+      from: 'pipindustry35@gmail.com',
       to: [to],
       subject: subject,
       html: html,
