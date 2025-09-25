@@ -28,6 +28,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Link } from "react-router-dom";
 import EditCryptoModal from "@/components/admin/EditCryptoModal";
+import GiveBonusModal from '@/components/admin/GiveBonusModal';
 
 const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -39,6 +40,36 @@ const Admin = () => {
   const [cryptos, setCryptos] = useState<any[]>([]);
   const [editingCrypto, setEditingCrypto] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+
+    let query = supabase
+      .from("profiles")
+      .select("*", { count: "exact" })
+      .range(from, to);
+
+    if (searchTerm) {
+      query = query.or(
+        `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
+      );
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Error fetching users:", error);
+    } else {
+      setUsers(data || []);
+      setTotalUsers(count || 0);
+    }
+    setLoading(false);
+  };
+
 
   useEffect(() => {
     const fetchCryptos = async () => {
@@ -55,33 +86,6 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      const from = (currentPage - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-
-      let query = supabase
-        .from("profiles")
-        .select("*", { count: "exact" })
-        .range(from, to);
-
-      if (searchTerm) {
-        query = query.or(
-          `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
-        );
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error("Error fetching users:", error);
-      } else {
-        setUsers(data || []);
-        setTotalUsers(count || 0);
-      }
-      setLoading(false);
-    };
-
     const debounceFetch = setTimeout(() => {
       fetchUsers();
     }, 500); // 500ms debounce
@@ -316,6 +320,16 @@ const Admin = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-8">
+      {selectedUser && (
+        <GiveBonusModal
+          isOpen={isBonusModalOpen}
+          onClose={() => setIsBonusModalOpen(false)}
+          user={selectedUser}
+          onBonusAdded={() => {
+            fetchUsers(); // Refetch users to show updated balance
+          }}
+        />
+      )}
       <EditCryptoModal
         crypto={editingCrypto}
         isOpen={isEditModalOpen}
@@ -427,7 +441,7 @@ const Admin = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {user.email}
+                            {user.email} - Balance: ${user.withdrawable_balance?.toLocaleString() || 0}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             ID: {user.id} • Joined:{" "}
@@ -442,6 +456,17 @@ const Admin = () => {
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsBonusModalOpen(true);
+                            }}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Give Bonus
+                          </Button>
                           <Link to={`/admin/users/${user.id}/investments`}>
                             <Button variant="outline" size="sm">
                               <Edit className="h-3 w-3 mr-1" />
