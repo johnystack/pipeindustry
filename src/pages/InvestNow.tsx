@@ -137,7 +137,7 @@ const InvestNow = () => {
     const fetchCryptos = async () => {
       const { data, error } = await supabase
         .from("cryptocurrencies")
-        .select("* ");
+        .select("*, address"); // Explicitly select address
 
       if (error) {
         console.error("Error fetching cryptocurrencies:", error);
@@ -452,21 +452,6 @@ const InvestNow = () => {
                         {selectedCryptoData?.network}
                       </Badge>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Min Deposit:</span>
-                      <span className="text-sm">
-                        {selectedCryptoData?.minDeposit}{" "}
-                        {selectedCryptoData?.symbol}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        Confirmations:
-                      </span>
-                      <span className="text-sm">
-                        {selectedCryptoData?.confirmations}
-                      </span>
-                    </div>
                   </div>
                 )}
               </CardContent>
@@ -521,14 +506,6 @@ const InvestNow = () => {
                     <ul className="text-xs space-y-1 text-muted-foreground">
                       <li>
                         • Only send {selectedCryptoData?.name} to this address
-                      </li>
-                      <li>
-                        • Minimum deposit: {selectedCryptoData?.minDeposit}{" "}
-                        {selectedCryptoData?.symbol}
-                      </li>
-                      <li>
-                        • Requires {selectedCryptoData?.confirmations} network
-                        confirmations
                       </li>
                       <li>
                         • Funds will be credited automatically after

@@ -56,7 +56,7 @@ const Withdraw = () => {
     const fetchCryptos = async () => {
       const { data, error } = await supabase
         .from("cryptocurrencies")
-        .select("*");
+        .select("*, address"); // Explicitly select address
 
       if (error) {
         console.error("Error fetching cryptocurrencies:", error);
