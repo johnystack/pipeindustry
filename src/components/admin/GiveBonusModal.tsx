@@ -20,6 +20,15 @@ const GiveBonusModal = ({ isOpen, onClose, user, onBonusAdded }: GiveBonusModalP
   const { toast } = useToast();
 
   const handleGiveBonus = async () => {
+    if (!user.has_invested) {
+      toast({
+        title: "Cannot Give Bonus",
+        description: "This user has not made any investments yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const bonusAmount = parseFloat(amount);
     if (isNaN(bonusAmount) || bonusAmount <= 0) {
       toast({

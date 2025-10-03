@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Clock,
   Plus,
+  Minus,
   Edit,
   Loader2,
 } from "lucide-react";
@@ -29,6 +30,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Link } from "react-router-dom";
 import EditCryptoModal from "@/components/admin/EditCryptoModal";
 import GiveBonusModal from '@/components/admin/GiveBonusModal';
+import { DeductBalanceModal } from '@/components/admin/DeductBalanceModal';
 
 const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -42,6 +44,8 @@ const Admin = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
+  const [isDeductBalanceModalOpen, setIsDeductBalanceModalOpen] = useState(false);
+
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -330,6 +334,17 @@ const Admin = () => {
           }}
         />
       )}
+      {selectedUser && (
+        <DeductBalanceModal
+          userId={selectedUser.id}
+          isOpen={isDeductBalanceModalOpen}
+          onOpenChange={setIsDeductBalanceModalOpen}
+          onClose={() => {
+            fetchUsers(); // Refetch users to show updated balance
+            setIsDeductBalanceModalOpen(false);
+          }}
+        />
+      )}
       <EditCryptoModal
         crypto={editingCrypto}
         isOpen={isEditModalOpen}
@@ -466,6 +481,17 @@ const Admin = () => {
                           >
                             <Plus className="h-3 w-3 mr-1" />
                             Give Bonus
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsDeductBalanceModalOpen(true);
+                            }}
+                          >
+                            <Minus className="h-3 w-3 mr-1" />
+                            Deduct Balance
                           </Button>
                           <Link to={`/admin/users/${user.id}/investments`}>
                             <Button variant="outline" size="sm">
