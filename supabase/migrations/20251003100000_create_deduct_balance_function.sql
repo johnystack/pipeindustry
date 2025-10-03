@@ -4,16 +4,16 @@ CREATE OR REPLACE FUNCTION deduct_balance(
 )
 RETURNS VOID AS $$
 DECLARE
-    v_current_balance DECIMAL;
+    v_current_withdrawable_balance DECIMAL;
 BEGIN
-    -- Get the current balance of the user
-    SELECT balance INTO v_current_balance FROM profiles WHERE id = p_user_id;
+    -- Get the current withdrawable_balance of the user
+    SELECT withdrawable_balance INTO v_current_withdrawable_balance FROM profiles WHERE id = p_user_id;
 
-    -- Check if the user has sufficient balance
-    IF v_current_balance >= p_amount THEN
-        -- Deduct the amount from the user's balance
+    -- Check if the user has sufficient withdrawable_balance
+    IF v_current_withdrawable_balance >= p_amount THEN
+        -- Deduct the amount from the user's withdrawable_balance
         UPDATE profiles
-        SET balance = balance - p_amount
+        SET withdrawable_balance = withdrawable_balance - p_amount
         WHERE id = p_user_id;
     ELSE
         RAISE EXCEPTION 'Insufficient balance';
