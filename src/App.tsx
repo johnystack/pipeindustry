@@ -1,11 +1,9 @@
-import { useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
 import { AuthProvider, ProtectedRoute } from "./components/auth/AuthProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
@@ -23,10 +21,10 @@ import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import AdminRoute from "./components/auth/AdminRoute";
 import UserInvestmentDetails from "./pages/UserInvestmentDetails";
-
 import ManageInvestment from "./pages/ManageInvestment";
 import NotFound from "./pages/NotFound";
 import ResendEmail from "./pages/ResendEmail";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +35,6 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthHandler />
           <AuthProvider>
             <Routes>
               {/* Public Routes */}
@@ -51,6 +48,7 @@ const App = () => {
               <Route path="/resend-email" element={<ResendEmail />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<ContactUs />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
 
               {/* Protected Routes */}
               <Route
@@ -98,31 +96,6 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
-
-const AuthHandler = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('type=signup')) {
-      // Clear the hash to prevent the logic from re-running on refresh
-      window.history.replaceState(null, '', ' ');
-
-      toast({
-        className: "bg-green-600 border-0 text-white font-bold",
-        title: "✅ Email Verified!",
-        description: "You have successfully verified your email. Redirecting to login...",
-      });
-
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    }
-  }, [navigate, toast]);
-
-  return null; // This component does not render anything
 };
 
 export default App;
