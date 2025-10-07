@@ -376,10 +376,10 @@ const Withdraw = () => {
               </CardContent>
             </Card>
 
-            {/* Available Balance */}
+            {/* Withdrawable Balance */}
             <Card className="crypto-card">
               <CardHeader>
-                <CardTitle>Available Balance</CardTitle>
+                <CardTitle>Withdrawable Balance</CardTitle>
                 <CardDescription>
                   Your current cryptocurrency holdings
                 </CardDescription>
@@ -388,7 +388,7 @@ const Withdraw = () => {
                 <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-background/50">
                   <div>
                     <div className="font-medium">
-                      Total Withdrawable Balance
+                      Withdrawable Balance
                     </div>
                     <div className="text-2xl font-bold text-primary">
                       $
