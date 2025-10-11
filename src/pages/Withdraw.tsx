@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Crypto, Transaction } from "@/lib/types";
 

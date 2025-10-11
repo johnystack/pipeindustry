@@ -6,12 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
-
-interface User {
-  id: string;
-  first_name?: string;
-  email?: string;
-}
+import { User } from '@/lib/types';
 
 interface GiveBonusModalProps {
   isOpen: boolean;

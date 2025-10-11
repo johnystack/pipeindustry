@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,

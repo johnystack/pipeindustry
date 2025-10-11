@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import countryList from "country-list";
 import moment from "moment-timezone";

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, ArrowLeft } from "lucide-react";
+import { Loader2, User as UserIcon, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const UserInvestmentDetails = () => {
@@ -213,7 +213,7 @@ const UserInvestmentDetails = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="h-6 w-6" />
+            <UserIcon className="h-6 w-6" />
             {user.first_name} {user.last_name}'s Profile
           </CardTitle>
           <CardDescription>{user.email}</CardDescription>
