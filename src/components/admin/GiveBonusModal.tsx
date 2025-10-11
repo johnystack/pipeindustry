@@ -7,10 +7,16 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 
+interface User {
+  id: string;
+  first_name?: string;
+  email?: string;
+}
+
 interface GiveBonusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: any;
+  user: User;
   onBonusAdded: () => void;
 }
 

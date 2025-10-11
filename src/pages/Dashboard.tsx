@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { User, Investment, StatsData, Transaction } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -26,10 +27,10 @@ import {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
-  const [statsData, setStatsData] = useState<any>({});
-  const [investments, setInvestments] = useState<any[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [profile, setProfile] = useState<User | null>(null);
+  const [statsData, setStatsData] = useState<StatsData>({});
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,17 +45,17 @@ const Dashboard = () => {
           setRecentTransactions(data.recent_transactions || []);
 
           const activeInvestments = (data.investments || []).filter(
-            (investment: any) => investment.status === 'active'
+            (investment: Investment) => investment.status === 'active'
           );
 
           const totalBalance = activeInvestments.reduce(
-            (acc: any, investment: any) => acc + investment.amount,
+            (acc: number, investment: Investment) => acc + investment.amount,
             0
           );
 
           const activeInvestmentsCount = activeInvestments.length;
 
-          const completedInvestments = (data.investments || []).filter((investment: any) =>
+          const completedInvestments = (data.investments || []).filter((investment: Investment) =>
             ['completed', 'withdrawn'].includes(
               investment.status.trim().toLowerCase()
             )
@@ -62,7 +63,7 @@ const Dashboard = () => {
 
           const totalEarnings =
             completedInvestments.reduce(
-              (acc: any, investment: any) => acc + Number(investment.return),
+              (acc: number, investment: Investment) => acc + Number(investment.return),
               0
             ) || 0;
 
@@ -95,7 +96,7 @@ const Dashboard = () => {
     }
   };
 
-  const calculateProgress = (investment: any) => {
+  const calculateProgress = (investment: Investment) => {
     if (investment.status !== "active" || !investment.approved_at) {
       return { progress: 0, days_left: 7 };
     }

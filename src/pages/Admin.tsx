@@ -25,29 +25,30 @@ import {
   Edit,
   Loader2,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Link } from "react-router-dom";
 import EditCryptoModal from "@/components/admin/EditCryptoModal";
 import GiveBonusModal from '@/components/admin/GiveBonusModal';
 import { DeductBalanceModal } from '@/components/admin/DeductBalanceModal';
+import { User, Crypto, AdminStat } from '@/lib/types';
 
 const Admin = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [cryptos, setCryptos] = useState<any[]>([]);
-  const [editingCrypto, setEditingCrypto] = useState<any>(null);
+  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [editingCrypto, setEditingCrypto] = useState<Crypto | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const [isDeductBalanceModalOpen, setIsDeductBalanceModalOpen] = useState(false);
 
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     const from = (currentPage - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
@@ -72,7 +73,7 @@ const Admin = () => {
       setTotalUsers(count || 0);
     }
     setLoading(false);
-  };
+  }, [currentPage, itemsPerPage, searchTerm]);
 
 
   useEffect(() => {
@@ -95,7 +96,7 @@ const Admin = () => {
     }, 500); // 500ms debounce
 
     return () => clearTimeout(debounceFetch);
-  }, [currentPage, itemsPerPage, searchTerm]);
+  }, [fetchUsers]);
 
   const handleVerify = async (userId: string) => {
     const { error } = await supabase
@@ -131,7 +132,7 @@ const Admin = () => {
     }
   };
 
-  const [adminStats, setAdminStats] = useState<any[]>([]);
+  const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
 
   useEffect(() => {
     const fetchAdminStats = async () => {
@@ -177,7 +178,7 @@ const Admin = () => {
         const totalUsers = usersCount || 0;
         const totalInvestments =
           investments?.reduce(
-            (acc, investment) => acc + investment.amount,
+            (acc, investment: { amount: number }) => acc + investment.amount,
             0,
           ) || 0;
         const activePlans = activePlansCount || 0;

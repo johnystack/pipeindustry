@@ -53,10 +53,11 @@ export function DeductBalanceModal({
         description: `Successfully deducted $${deductAmount} from the user's balance.`,
       });
       onClose();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred.";
       toast({
         title: "Error Deducting Balance",
-        description: error.message || "An unexpected error occurred.",
+        description: message,
         variant: "destructive",
       });
     }
