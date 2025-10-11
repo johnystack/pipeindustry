@@ -25,15 +25,12 @@ const ResetPassword = () => {
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.substring(1)); // remove #
     const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
 
-    if (accessToken && refreshToken) {
+    if (accessToken) {
       supabase.auth.setSession({
         access_token: accessToken,
-        refresh_token: refreshToken,
+        refresh_token: '' // We don't get a refresh token in the reset flow
       });
-    } else if (accessToken) {
-      setToken(accessToken);
     }
   }, []);
 
