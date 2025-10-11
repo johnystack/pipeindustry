@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { User, Referral, CommissionEarning } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,15 +31,15 @@ const Referrals = () => {
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { user } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [referralStats, setReferralStats] = useState({
     total_referrals: 0,
     active_referrals: 0,
     total_earned: 0,
     currentLevel: "Bronze", // Default level
   });
-  const [recentReferrals, setRecentReferrals] = useState<any[]>([]);
-  const [commissionEarnings, setCommissionEarnings] = useState<any[]>([]);
+  const [recentReferrals, setRecentReferrals] = useState<Referral[]>([]);
+  const [commissionEarnings, setCommissionEarnings] = useState<CommissionEarning[]>([]);
 
   const handleWithdrawReferrals = async () => {
     if (!profile || profile.referral_earnings <= 0) {
@@ -99,7 +100,7 @@ const Referrals = () => {
 
   const { toast } = useToast();
 
-  const fetchReferralPageData = async () => {
+  const fetchReferralPageData = useCallback(async () => {
     if (user) {
       const { data, error } = await supabase.rpc('get_referral_data', { p_user_id: user.id });
 
@@ -112,7 +113,7 @@ const Referrals = () => {
         setCommissionEarnings(data.commission_earnings || []);
       }
     }
-  };
+  }, [user]);
 
   const refreshData = () => {
     fetchReferralPageData();
@@ -120,7 +121,7 @@ const Referrals = () => {
 
   useEffect(() => {
     fetchReferralPageData();
-  }, [user]);
+  }, [fetchReferralPageData]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

@@ -41,6 +41,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
+import { Crypto, Transaction } from "@/lib/types";
 
 const Withdraw = () => {
   const { user } = useAuth();
@@ -50,7 +51,7 @@ const Withdraw = () => {
   const [address, setAddress] = useState("");
   const { toast } = useToast();
 
-  const [cryptosData, setCryptosData] = useState<any[]>([]);
+  const [cryptosData, setCryptosData] = useState<Crypto[]>([]);
 
   useEffect(() => {
     const fetchCryptos = async () => {
@@ -88,7 +89,7 @@ const Withdraw = () => {
     fetchWithdrawableBalance();
   }, [user]);
 
-  const [withdrawalHistory, setWithdrawalHistory] = useState<any[]>([]);
+  const [withdrawalHistory, setWithdrawalHistory] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const fetchWithdrawalHistory = async () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { User, Investment } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -15,8 +16,8 @@ import { Link } from "react-router-dom";
 
 const UserInvestmentDetails = () => {
   const { userId } = useParams();
-  const [user, setUser] = useState<any>(null);
-  const [investments, setInvestments] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,7 +100,7 @@ const UserInvestmentDetails = () => {
     }
   };
 
-  const calculateProgress = (investment: any) => {
+  const calculateProgress = (investment: Investment) => {
     if (investment.status !== "active" || !investment.approved_at) {
       return { progress: 0, days_left: 7 };
     }

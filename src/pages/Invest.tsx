@@ -13,18 +13,7 @@ import { Check, Star, Crown, Diamond } from "lucide-react";
 
 import investmentPlansImage from "@/assets/investment-plans.jpg";
 
-const Invest = () => {
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(1); // Silver plan selected by default
-  const [investmentAmount, setInvestmentAmount] = useState<number>(0);
-  const [selectedCalculatorPlan, setSelectedCalculatorPlan] =
-    useState<string>("");
-  const navigate = useNavigate();
-
-  const handleSelectPlan = () => {
-    navigate("/signup");
-  };
-
-  const plans = [
+const plans = [
     {
       name: "Starter Plan",
       icon: Star,
@@ -112,6 +101,17 @@ const Invest = () => {
       bgColor: "bg-purple-500/10",
     },
   ];
+
+const Invest = () => {
+  const [selectedPlan, setSelectedPlan] = useState<number | null>(1); // Silver plan selected by default
+  const [investmentAmount, setInvestmentAmount] = useState<number>(0);
+  const [selectedCalculatorPlan, setSelectedCalculatorPlan] =
+    useState<string>("");
+  const navigate = useNavigate();
+
+  const handleSelectPlan = () => {
+    navigate("/signup");
+  };
 
   // Initialize selectedCalculatorPlan on mount
   useEffect(() => {

@@ -122,6 +122,7 @@ const plans = [
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { Crypto, Deposit } from "@/lib/types";
 
 const InvestNow = () => {
   const { user } = useAuth();
@@ -130,8 +131,8 @@ const InvestNow = () => {
   const [selectedPlan, setSelectedPlan] = useState(plans[0].name);
   const { toast } = useToast();
 
-  const [cryptos, setCryptos] = useState<any[]>([]);
-  const [recentDeposits, setRecentDeposits] = useState<any[]>([]);
+  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [recentDeposits, setRecentDeposits] = useState<Deposit[]>([]);
 
   useEffect(() => {
     const fetchCryptos = async () => {

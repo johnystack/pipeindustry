@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { Transaction } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -38,7 +39,7 @@ const Transactions = () => {
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const fetchTransactions = async () => {
