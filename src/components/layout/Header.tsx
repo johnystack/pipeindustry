@@ -82,11 +82,11 @@ const Header = () => {
           ) : (
             <div className="hidden md:flex items-center gap-1.5">
               <Link to="/profile">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" title="Profile">
                   <User className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
