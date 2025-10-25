@@ -1,10 +1,227 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Users,
+  DollarSign,
+  TrendingUp,
+  Settings,
+  UserCheck,
+  UserX,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Plus,
+  Minus,
+  Edit,
+  Loader2,
+} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { Link } from "react-router-dom";
+import EditCryptoModal from "@/components/admin/EditCryptoModal";
+import GiveBonusModal from '@/components/admin/GiveBonusModal';
+import { DeductBalanceModal } from '@/components/admin/DeductBalanceModal';
+import { User, Crypto, AdminStat, Transaction } from '@/lib/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// ... (imports)
-
 const Admin = () => {
-  // ... (state variables)
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [editingCrypto, setEditingCrypto] = useState<Crypto | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
+  const [isDeductBalanceModalOpen, setIsDeductBalanceModalOpen] = useState(false);
+  const [withdrawalRequests, setWithdrawalRequests] = useState<Transaction[]>([]);
+  const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+
+    let query = supabase
+      .from("profiles")
+      .select("*", { count: "exact" })
+      .range(from, to);
+
+    if (searchTerm) {
+      query = query.or(
+        `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
+      );
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Error fetching users:", error);
+    } else {
+      setUsers(data || []);
+      setTotalUsers(count || 0);
+    }
+    setLoading(false);
+  }, [currentPage, itemsPerPage, searchTerm]);
+
+  const fetchCryptos = async () => {
+    const { data, error } = await supabase
+      .from("cryptocurrencies")
+      .select("*");
+    if (error) {
+      console.error("Error fetching cryptocurrencies:", error);
+    } else {
+      setCryptos(data || []);
+    }
+  };
+
+  const fetchAdminStats = async () => {
+    const {
+      data: users,
+      error: usersError,
+      count: usersCount,
+    } = await supabase.from("profiles").select("id", { count: "exact" });
+    const { data: investments, error: investmentsError } = await supabase
+      .from("investments")
+      .select("amount");
+    const {
+      data: activePlans,
+      error: activePlansError,
+      count: activePlansCount,
+    } = await supabase
+      .from("investments")
+      .select("plan_name", { count: "exact" })
+      .eq("status", "active");
+    const {
+      data: pendingWithdrawals,
+      error: pendingWithdrawalsError,
+      count: pendingWithdrawalsCount,
+    } = await supabase
+      .from("transactions")
+      .select("id", { count: "exact" })
+      .eq("status", "pending");
+
+    if (
+      usersError ||
+      investmentsError ||
+      activePlansError ||
+      pendingWithdrawalsError
+    ) {
+      console.error(
+        "Error fetching admin stats:",
+        usersError,
+        investmentsError,
+        activePlansError,
+        pendingWithdrawalsError,
+      );
+    } else {
+      const totalUsers = usersCount || 0;
+      const totalInvestments =
+        investments?.reduce(
+          (acc, investment: { amount: number }) => acc + investment.amount,
+          0,
+        ) || 0;
+      const activePlans = activePlansCount || 0;
+      const pendingWithdrawals = pendingWithdrawalsCount || 0;
+
+      const newAdminStats = [
+        {
+          title: "Total Users",
+          value: totalUsers.toLocaleString(),
+          icon: Users,
+          color: "text-blue-500",
+        },
+        {
+          title: "Total Investments",
+          value: `${totalInvestments.toLocaleString()}`,
+          icon: DollarSign,
+          color: "text-green-500",
+        },
+        {
+          title: "Active Plans",
+          value: activePlans.toLocaleString(),
+          icon: TrendingUp,
+          color: "text-yellow-500",
+        },
+        {
+          title: "Pending Withdrawals",
+          value: pendingWithdrawals.toLocaleString(),
+          icon: AlertTriangle,
+          color: "text-red-500",
+        },
+      ];
+      setAdminStats(newAdminStats);
+    }
+  };
+
+  const fetchWithdrawalRequests = async () => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*, profiles(first_name, last_name, email)")
+      .eq("type", "withdrawal")
+      .eq("status", "pending");
+
+    if (error) {
+      console.error("Error fetching withdrawal requests:", error);
+    } else {
+      setWithdrawalRequests(data || []);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchCryptos();
+    fetchAdminStats();
+    fetchWithdrawalRequests();
+  }, [fetchUsers]);
+
+  const handleVerify = async (userId: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status: "verified" })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("Error verifying user:", error);
+    } else {
+      setUsers(
+        users.map((user) =>
+          user.id === userId ? { ...user, status: "verified" } : user,
+        ),
+      );
+    }
+  };
+
+  const handleSuspend = async (userId: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status: "suspended" })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("Error suspending user:", error);
+    } else {
+      setUsers(
+        users.map((user) =>
+          user.id === userId ? { ...user, status: "suspended" } : user,
+        ),
+      );
+    }
+  };
 
   const handleApprove = async (transaction: any) => {
     const { error } = await supabase
@@ -37,7 +254,7 @@ const Admin = () => {
             </div>
             <div>
               <p class="font-bold">Transaction Details</p>
-              <p>Amount: ${transaction.amount}</p>
+              <p>Amount: $${transaction.amount}</p>
               <p>Date: ${new Date(transaction.created_at).toLocaleDateString()}</p>
               <p>Status: approved</p>
             </div>
@@ -78,278 +295,6 @@ const Admin = () => {
       );
     }
   };
-
-  // ... (rest of the component)
-};
-
-
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    const from = (currentPage - 1) * itemsPerPage;
-    const to = from + itemsPerPage - 1;
-
-    let query = supabase
-      .from("profiles")
-      .select("*", { count: "exact" })
-      .range(from, to);
-
-    if (searchTerm) {
-      query = query.or(
-        `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`,
-      );
-    }
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      console.error("Error fetching users:", error);
-    } else {
-      setUsers(data || []);
-      setTotalUsers(count || 0);
-    }
-    setLoading(false);
-  }, [currentPage, itemsPerPage, searchTerm]);
-
-
-  useEffect(() => {
-    const fetchCryptos = async () => {
-      const { data, error } = await supabase
-        .from("cryptocurrencies")
-        .select("*");
-      if (error) {
-        console.error("Error fetching cryptocurrencies:", error);
-      } else {
-        setCryptos(data || []);
-      }
-    };
-    fetchCryptos();
-  }, []);
-
-  useEffect(() => {
-    const debounceFetch = setTimeout(() => {
-      fetchUsers();
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(debounceFetch);
-  }, [fetchUsers]);
-
-  const handleVerify = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ status: "verified" })
-      .eq("id", userId);
-
-    if (error) {
-      console.error("Error verifying user:", error);
-    } else {
-      setUsers(
-        users.map((user) =>
-          user.id === userId ? { ...user, status: "verified" } : user,
-        ),
-      );
-    }
-  };
-
-  const handleSuspend = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ status: "suspended" })
-      .eq("id", userId);
-
-    if (error) {
-      console.error("Error suspending user:", error);
-    } else {
-      setUsers(
-        users.map((user) =>
-          user.id === userId ? { ...user, status: "suspended" } : user,
-        ),
-      );
-    }
-  };
-
-  const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
-
-  useEffect(() => {
-    const fetchAdminStats = async () => {
-      const {
-        data: users,
-        error: usersError,
-        count: usersCount,
-      } = await supabase.from("profiles").select("id", { count: "exact" });
-      const { data: investments, error: investmentsError } = await supabase
-        .from("investments")
-        .select("amount");
-      const {
-        data: activePlans,
-        error: activePlansError,
-        count: activePlansCount,
-      } = await supabase
-        .from("investments")
-        .select("plan_name", { count: "exact" })
-        .eq("status", "active");
-      const {
-        data: pendingWithdrawals,
-        error: pendingWithdrawalsError,
-        count: pendingWithdrawalsCount,
-      } = await supabase
-        .from("withdrawals")
-        .select("id", { count: "exact" })
-        .eq("status", "pending");
-
-      if (
-        usersError ||
-        investmentsError ||
-        activePlansError ||
-        pendingWithdrawalsError
-      ) {
-        console.error(
-          "Error fetching admin stats:",
-          usersError,
-          investmentsError,
-          activePlansError,
-          pendingWithdrawalsError,
-        );
-      } else {
-        const totalUsers = usersCount || 0;
-        const totalInvestments =
-          investments?.reduce(
-            (acc, investment: { amount: number }) => acc + investment.amount,
-            0,
-          ) || 0;
-        const activePlans = activePlansCount || 0;
-        const pendingWithdrawals = pendingWithdrawalsCount || 0;
-
-        const newAdminStats = [
-          {
-            title: "Total Users",
-            value: totalUsers.toLocaleString(),
-            icon: Users,
-            color: "text-blue-500",
-          },
-          {
-            title: "Total Investments",
-            value: `${totalInvestments.toLocaleString()}`,
-            icon: DollarSign,
-            color: "text-green-500",
-          },
-          {
-            title: "Active Plans",
-            value: activePlans.toLocaleString(),
-            icon: TrendingUp,
-            color: "text-yellow-500",
-          },
-          {
-            title: "Pending Withdrawals",
-            value: pendingWithdrawals.toLocaleString(),
-            icon: AlertTriangle,
-            color: "text-red-500",
-          },
-        ];
-        setAdminStats(newAdminStats);
-      }
-    };
-
-    fetchAdminStats();
-  }, []);
-
-  useEffect(() => {
-    const profilesSubscription = supabase
-      .channel("profiles-channel")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "profiles" },
-        (payload) => {
-          console.log("Change received!", payload);
-          fetchAdminStats();
-        },
-      )
-      .subscribe();
-
-    const investmentsSubscription = supabase
-      .channel("investments-channel")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "investments" },
-        (payload) => {
-          console.log("Change received!", payload);
-          fetchAdminStats();
-        },
-      )
-      .subscribe();
-
-    const withdrawalsSubscription = supabase
-      .channel("withdrawals-channel")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "withdrawals" },
-        (payload) => {
-          console.log("Change received!", payload);
-          fetchAdminStats();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(profilesSubscription);
-      supabase.removeChannel(investmentsSubscription);
-      supabase.removeChannel(withdrawalsSubscription);
-    };
-  }, []);
-
-  const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchWithdrawalRequests = async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*, profiles(*)")
-        .eq("type", "withdrawal")
-        .eq("status", "pending");
-
-      if (error) {
-        console.error("Error fetching withdrawal requests:", error);
-      } else {
-        setWithdrawalRequests(data || []);
-      }
-    };
-
-    fetchWithdrawalRequests();
-  }, []);
-
-  const investmentPlans = [
-    {
-      name: "Starter Plan",
-      minAmount: "$100",
-      maxAmount: "$999",
-      dailyReturn: "0.5%",
-      duration: "30 days",
-      status: "Active",
-    },
-    {
-      name: "Silver Plan",
-      minAmount: "$1,000",
-      maxAmount: "$4,999",
-      dailyReturn: "0.8%",
-      duration: "60 days",
-      status: "Active",
-    },
-    {
-      name: "Gold Plan",
-      minAmount: "$5,000",
-      maxAmount: "$9,999",
-      dailyReturn: "1.2%",
-      duration: "90 days",
-      status: "Active",
-    },
-    {
-      name: "VIP Plan",
-      minAmount: "$10,000",
-      maxAmount: "Unlimited",
-      dailyReturn: "1.8%",
-      duration: "180 days",
-      status: "Active",
-    },
-  ];
 
   return (
     <div className="container mx-auto p-6 space-y-8">
