@@ -36,7 +36,7 @@ const ManageInvestment = () => {
       return;
     }
 
-    const totalReturn = investment.amount + investment.return;
+    const totalReturn = investment.amount + investment.return + investment.bonus;
     const amountToReinvest = reinvestAll ? totalReturn : Number(reinvestAmount);
 
     if (!amountToReinvest) {
@@ -126,7 +126,7 @@ const ManageInvestment = () => {
       return;
     }
 
-    const totalReturn = investment.amount + investment.return;
+    const totalReturn = investment.amount + investment.return + investment.bonus;
 
     const { error: profileError } = await supabase
       .from("profiles")

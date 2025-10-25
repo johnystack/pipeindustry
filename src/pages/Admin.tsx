@@ -1,51 +1,86 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  Settings,
-  UserCheck,
-  UserX,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Plus,
-  Minus,
-  Edit,
-  Loader2,
-} from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { Link } from "react-router-dom";
-import EditCryptoModal from "@/components/admin/EditCryptoModal";
-import GiveBonusModal from '@/components/admin/GiveBonusModal';
-import { DeductBalanceModal } from '@/components/admin/DeductBalanceModal';
-import { User, Crypto, AdminStat } from '@/lib/types';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+// ... (imports)
 
 const Admin = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [cryptos, setCryptos] = useState<Crypto[]>([]);
-  const [editingCrypto, setEditingCrypto] = useState<Crypto | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
-  const [isDeductBalanceModalOpen, setIsDeductBalanceModalOpen] = useState(false);
+  // ... (state variables)
+
+  const handleApprove = async (transaction: any) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ status: 'approved' })
+      .eq('id', transaction.id);
+
+    if (error) {
+      console.error('Error approving transaction:', error);
+    } else {
+      setWithdrawalRequests(
+        withdrawalRequests.map((req) =>
+          req.id === transaction.id ? { ...req, status: 'approved' } : req,
+        ),
+      );
+
+      // Generate PDF
+      const receiptElement = document.createElement('div');
+      receiptElement.innerHTML = `
+        <div class="p-8 bg-white rounded-lg shadow-md">
+          <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold">Withdrawal Receipt</h1>
+            <p class="text-gray-500">Transaction ID: ${transaction.id}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mb-8">
+            <div>
+              <p class="font-bold">User Details</p>
+              <p>${transaction.profiles.first_name} ${transaction.profiles.last_name}</p>
+              <p>${transaction.profiles.email}</p>
+            </div>
+            <div>
+              <p class="font-bold">Transaction Details</p>
+              <p>Amount: ${transaction.amount}</p>
+              <p>Date: ${new Date(transaction.created_at).toLocaleDateString()}</p>
+              <p>Status: approved</p>
+            </div>
+          </div>
+          <div class="text-center">
+            <p class="text-gray-500">Thank you for your transaction.</p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(receiptElement);
+
+      html2canvas(receiptElement).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF();
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`withdrawal-receipt-${transaction.id}.pdf`);
+        document.body.removeChild(receiptElement);
+      });
+    }
+  };
+
+  const handleReject = async (transactionId: string) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ status: 'rejected' })
+      .eq('id', transactionId);
+
+    if (error) {
+      console.error('Error rejecting transaction:', error);
+    } else {
+      setWithdrawalRequests(
+        withdrawalRequests.map((req) =>
+          req.id === transactionId ? { ...req, status: 'rejected' } : req,
+        ),
+      );
+    }
+  };
+
+  // ... (rest of the component)
+};
 
 
   const fetchUsers = useCallback(async () => {
@@ -261,32 +296,25 @@ const Admin = () => {
     };
   }, []);
 
-  const withdrawalRequests = [
-    {
-      id: "WD001",
-      user: "John Smith",
-      amount: "$500",
-      wallet: "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
-      date: "2024-01-16",
-      status: "Pending",
-    },
-    {
-      id: "WD002",
-      user: "Emma Davis",
-      amount: "$1,200",
-      wallet: "0x742d35Cc6639C0532fF79e49Cd0891B5",
-      date: "2024-01-15",
-      status: "Pending",
-    },
-    {
-      id: "WD003",
-      user: "Mike Wilson",
-      amount: "$800",
-      wallet: "TQrZ4X5k2fV8yH3nNz7Gx9pK4mL8Qq1W",
-      date: "2024-01-14",
-      status: "Approved",
-    },
-  ];
+  const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchWithdrawalRequests = async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*, profiles(*)")
+        .eq("type", "withdrawal")
+        .eq("status", "pending");
+
+      if (error) {
+        console.error("Error fetching withdrawal requests:", error);
+      } else {
+        setWithdrawalRequests(data || []);
+      }
+    };
+
+    fetchWithdrawalRequests();
+  }, []);
 
   const investmentPlans = [
     {
@@ -585,59 +613,61 @@ const Admin = () => {
             <CardContent>
               <div className="space-y-4">
                 {withdrawalRequests.map((request, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-background/50"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{request.user}</h4>
-                        <Badge
-                          variant={
-                            request.status === "Pending"
-                              ? "secondary"
-                              : "default"
-                          }
-                        >
-                          {request.status}
-                        </Badge>
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-background/50"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{request.profiles.first_name} {request.profiles.last_name}</h4>
+                            <Badge
+                              variant={
+                                request.status === "pending"
+                                  ? "secondary"
+                                  : "default"
+                              }
+                            >
+                              {request.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Amount: ${request.amount} • Date: {new Date(request.created_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            Wallet: {request.address}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {request.status === "pending" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-success border-success"
+                                onClick={() => handleApprove(request)}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive border-destructive"
+                                onClick={() => handleReject(request.id)}
+                              >
+                                <UserX className="h-3 w-3 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {request.status === "approved" && (
+                            <Button variant="outline" size="sm" disabled>
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Processed
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Amount: {request.amount} • Date: {request.date}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        Wallet: {request.wallet}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {request.status === "Pending" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-success border-success"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive border-destructive"
-                          >
-                            <UserX className="h-3 w-3 mr-1" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                      {request.status === "Approved" && (
-                        <Button variant="outline" size="sm" disabled>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Processed
-                        </Button>
-                      )}
-                    </div>
-                  </div>
                 ))}
               </div>
             </CardContent>

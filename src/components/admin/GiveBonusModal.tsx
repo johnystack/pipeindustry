@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@/lib/types';
+import { User, Investment } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface GiveBonusModalProps {
   isOpen: boolean;
@@ -18,10 +19,36 @@ interface GiveBonusModalProps {
 const GiveBonusModal = ({ isOpen, onClose, user, onBonusAdded }: GiveBonusModalProps) => {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [selectedInvestment, setSelectedInvestment] = useState<string | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const fetchInvestments = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('investments')
+          .select('*')
+          .eq('user_id', user.id);
+        if (error) {
+          console.error('Error fetching investments:', error);
+        } else {
+          setInvestments(data);
+        }
+      }
+    };
+    fetchInvestments();
+  }, [user]);
+
   const handleGiveBonus = async () => {
-    
+    if (!selectedInvestment) {
+      toast({
+        title: 'No Investment Selected',
+        description: 'Please select an investment to add the bonus to.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const bonusAmount = parseFloat(amount);
     if (isNaN(bonusAmount) || bonusAmount <= 0) {
@@ -35,7 +62,7 @@ const GiveBonusModal = ({ isOpen, onClose, user, onBonusAdded }: GiveBonusModalP
 
     setLoading(true);
     const { error } = await supabase.rpc('add_bonus', {
-      user_id_input: user.id,
+      investment_id_input: selectedInvestment,
       bonus_amount_input: bonusAmount,
     });
     setLoading(false);
@@ -49,7 +76,7 @@ const GiveBonusModal = ({ isOpen, onClose, user, onBonusAdded }: GiveBonusModalP
     } else {
       toast({
         title: 'Bonus Added!',
-        description: `Successfully added a bonus of $${bonusAmount} to ${user.first_name || user.email}.`,
+        description: `Successfully added a bonus of $${bonusAmount} to the selected investment.`,
       });
       onBonusAdded();
       onClose();
@@ -63,6 +90,21 @@ const GiveBonusModal = ({ isOpen, onClose, user, onBonusAdded }: GiveBonusModalP
           <DialogTitle>Give Bonus to {user?.first_name || user?.email}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="investment">Select Investment</Label>
+            <Select onValueChange={setSelectedInvestment} value={selectedInvestment || ''}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an investment" />
+              </SelectTrigger>
+              <SelectContent>
+                {investments.map((investment) => (
+                  <SelectItem key={investment.id} value={investment.id}>
+                    {investment.plan_name} - ${investment.amount}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="bonus-amount">Bonus Amount ($)</Label>
             <Input
