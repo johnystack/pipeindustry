@@ -37,7 +37,7 @@ const ManageInvestment = () => {
     }
 
     const totalReturn = investment.amount + investment.return + investment.bonus;
-    const amountToReinvest = reinvestAll ? totalReturn : Number(reinvestAmount);
+    const amountToReinvest = reinvestAll ? (investment.amount + investment.return) : Number(reinvestAmount);
 
     if (!amountToReinvest) {
       toast({
@@ -48,10 +48,10 @@ const ManageInvestment = () => {
       return;
     }
 
-    if (amountToReinvest > totalReturn) {
+    if (amountToReinvest > (investment.amount + investment.return)) {
       toast({
         title: "Error",
-        description: "You cannot reinvest more than the total return.",
+        description: "You cannot reinvest more than the capital and profit.",
         variant: "destructive",
       });
       return;
@@ -79,7 +79,7 @@ const ManageInvestment = () => {
       // Update old investment
       const { error: updateError } = await supabase
         .from("investments")
-        .update({ status: "completed", reinvested: true })
+        .update({ status: "completed", reinvested: true, bonus: 0 })
         .eq("id", id);
 
       if (updateError) {
@@ -89,13 +89,15 @@ const ManageInvestment = () => {
           variant: "destructive",
         });
       } else {
-        // Update withdrawable balance if partial reinvestment
-        if (!reinvestAll) {
-          const remainingBalance = totalReturn - amountToReinvest;
+        // Update withdrawable balance if partial reinvestment or all bonus
+        const remainingCapitalAndProfit = (investment.amount + investment.return) - amountToReinvest;
+        const totalToAddToWithdrawable = remainingCapitalAndProfit + investment.bonus;
+
+        if (totalToAddToWithdrawable > 0) {
           const { error: profileError } = await supabase
             .from("profiles")
             .update({
-              withdrawable_balance: withdrawableBalance + remainingBalance,
+              withdrawable_balance: withdrawableBalance + totalToAddToWithdrawable,
             })
             .eq("user_id", user.id);
 
@@ -109,7 +111,7 @@ const ManageInvestment = () => {
         }
         toast({
           title: "Re-invested successfully",
-          description: `You have successfully reinvested ${amountToReinvest.toLocaleString()}. The remaining ${remainingBalance.toLocaleString()} has been added to your withdrawable balance. Your new withdrawable balance is ${(withdrawableBalance + remainingBalance).toLocaleString()}.`,
+          description: `You have successfully reinvested ${amountToReinvest.toLocaleString()}. The remaining ${totalToAddToWithdrawable.toLocaleString()} (including bonus) has been added to your withdrawable balance. Your new withdrawable balance is ${(withdrawableBalance + totalToAddToWithdrawable).toLocaleString()}.`,
         });
         navigate("/dashboard");
       }
@@ -220,6 +222,12 @@ const ManageInvestment = () => {
               {(
                 investment.amount + investment.expected_profit
               )?.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Bonus:</span>
+            <span className="text-green-500">
+              ${investment.bonus?.toLocaleString() || '0'}
             </span>
           </div>
           <div className="flex justify-between">

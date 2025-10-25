@@ -123,8 +123,8 @@ const UserInvestmentDetails = () => {
     const newInvestment = {
       user_id: investment.user_id,
       crypto: investment.crypto,
-      amount: investment.amount,
-      return: investment.return,
+      amount: investment.amount + investment.return + investment.bonus,
+      return: 0, // The return will be calculated on the new amount
       duration: 7,
       status: "pending",
     };
@@ -160,7 +160,7 @@ const UserInvestmentDetails = () => {
     if (!investment || !user) return;
 
     const newWithdrawableBalance =
-      (user.withdrawable_balance || 0) + investment.return;
+      (user.withdrawable_balance || 0) + investment.return + investment.bonus;
 
     const { error: profileError } = await supabase
       .from("profiles")
@@ -263,6 +263,9 @@ const UserInvestmentDetails = () => {
                     <p className="font-medium">{investment.crypto}</p>
                     <p className="text-sm text-muted-foreground">
                       Amount: {investment.amount}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Bonus: {investment.bonus || 0}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Return: {investment.return}

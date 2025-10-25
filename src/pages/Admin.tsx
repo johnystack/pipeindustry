@@ -51,6 +51,38 @@ const Admin = () => {
   const [withdrawalRequests, setWithdrawalRequests] = useState<Transaction[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
 
+  const [settings, setSettings] = useState<any>({});
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error fetching settings:', error);
+      } else {
+        setSettings(data || {});
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  const handleSaveSettings = async () => {
+    const { error } = await supabase
+      .from('settings')
+      .update(settings)
+      .eq('id', 1);
+
+    if (error) {
+      console.error('Error saving settings:', error);
+    } else {
+      // Optionally, show a success toast
+    }
+  };
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     const from = (currentPage - 1) * itemsPerPage;
@@ -676,17 +708,47 @@ const Admin = () => {
                     <Label htmlFor="minWithdrawal">
                       Minimum Withdrawal Amount
                     </Label>
-                    <Input id="minWithdrawal" defaultValue="$50" />
+                    <Input
+                      id="minWithdrawal"
+                      type="number"
+                      value={settings.min_withdrawal_amount || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          min_withdrawal_amount: parseFloat(e.target.value),
+                        })
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maxWithdrawal">
                       Maximum Withdrawal Amount
                     </Label>
-                    <Input id="maxWithdrawal" defaultValue="$10,000" />
+                    <Input
+                      id="maxWithdrawal"
+                      type="number"
+                      value={settings.max_withdrawal_amount || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          max_withdrawal_amount: parseFloat(e.target.value),
+                        })
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="withdrawalFee">Withdrawal Fee (%)</Label>
-                    <Input id="withdrawalFee" defaultValue="2%" />
+                    <Input
+                      id="withdrawalFee"
+                      type="number"
+                      value={settings.withdrawal_fee_percent || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          withdrawal_fee_percent: parseFloat(e.target.value),
+                        })
+                      }
+                    />
                   </div>
                 </div>
 
@@ -696,24 +758,57 @@ const Admin = () => {
                     <Label htmlFor="level1Commission">
                       Level 1 Commission (%)
                     </Label>
-                    <Input id="level1Commission" defaultValue="10%" />
+                    <Input
+                      id="level1Commission"
+                      type="number"
+                      value={settings.level1_commission_percent || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          level1_commission_percent: parseFloat(e.target.value),
+                        })
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="level2Commission">
                       Level 2 Commission (%)
                     </Label>
-                    <Input id="level2Commission" defaultValue="5%" />
+                    <Input
+                      id="level2Commission"
+                      type="number"
+                      value={settings.level2_commission_percent || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          level2_commission_percent: parseFloat(e.target.value),
+                        })
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="level3Commission">
                       Level 3 Commission (%)
                     </Label>
-                    <Input id="level3Commission" defaultValue="2%" />
+                    <Input
+                      id="level3Commission"
+                      type="number"
+                      value={settings.level3_commission_percent || ''}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          level3_commission_percent: parseFloat(e.target.value),
+                        })
+                      }
+                    />
                   </div>
                 </div>
               </div>
 
-              <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
+              <Button
+                className="bg-gradient-primary text-primary-foreground shadow-glow"
+                onClick={handleSaveSettings}
+              >
                 Save Settings
               </Button>
             </CardContent>
