@@ -49,6 +49,7 @@ const Admin = () => {
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const [isDeductBalanceModalOpen, setIsDeductBalanceModalOpen] = useState(false);
   const [withdrawalRequests, setWithdrawalRequests] = useState<Transaction[]>([]);
+  const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
   const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
 
   const [settings, setSettings] = useState<any>({});
@@ -201,17 +202,48 @@ const Admin = () => {
   };
 
   const fetchWithdrawalRequests = async () => {
-    const { data, error } = await supabase
+    setLoadingWithdrawals(true);
+    console.log("Fetching withdrawal requests...");
+    const { data: transactions, error } = await supabase
       .from("transactions")
-      .select("*, profiles(first_name, last_name, email)")
+      .select("*")
       .eq("type", "withdrawal")
       .eq("status", "pending");
 
     if (error) {
       console.error("Error fetching withdrawal requests:", error);
-    } else {
-      setWithdrawalRequests(data || []);
+      console.log("Error details:", error);
+      setLoadingWithdrawals(false);
+      return;
     }
+
+    if (!transactions) {
+      setWithdrawalRequests([]);
+      setLoadingWithdrawals(false);
+      return;
+    }
+
+    const userIds = transactions.map((t) => t.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, email") // Select only necessary profile fields
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      setWithdrawalRequests(transactions); // Show transactions without profiles
+      setLoadingWithdrawals(false);
+      return;
+    }
+
+    const withdrawals = transactions.map((t) => {
+      const profile = profiles.find((p) => p.id === t.user_id);
+      return { ...t, profiles: profile };
+    });
+
+    console.log("Fetched withdrawal requests:", withdrawals);
+    setWithdrawalRequests(withdrawals);
+    setLoadingWithdrawals(false);
   };
 
   useEffect(() => {
@@ -256,58 +288,17 @@ const Admin = () => {
   };
 
   const handleApprove = async (transaction: any) => {
-    const { error } = await supabase
-      .from('transactions')
-      .update({ status: 'approved' })
-      .eq('id', transaction.id);
+    const { error } = await supabase.rpc('approve_withdrawal', {
+      withdrawal_id: transaction.id,
+    });
 
     if (error) {
       console.error('Error approving transaction:', error);
+      alert(`Error approving transaction: ${error.message}`);
     } else {
       setWithdrawalRequests(
-        withdrawalRequests.map((req) =>
-          req.id === transaction.id ? { ...req, status: 'approved' } : req,
-        ),
+        withdrawalRequests.filter((req) => req.id !== transaction.id),
       );
-
-      // Generate PDF
-      const receiptElement = document.createElement('div');
-      receiptElement.innerHTML = `
-        <div class="p-8 bg-white rounded-lg shadow-md">
-          <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold">Withdrawal Receipt</h1>
-            <p class="text-gray-500">Transaction ID: ${transaction.id}</p>
-          </div>
-          <div class="grid grid-cols-2 gap-4 mb-8">
-            <div>
-              <p class="font-bold">User Details</p>
-              <p>${transaction.profiles.first_name} ${transaction.profiles.last_name}</p>
-              <p>${transaction.profiles.email}</p>
-            </div>
-            <div>
-              <p class="font-bold">Transaction Details</p>
-              <p>Amount: $${transaction.amount}</p>
-              <p>Date: ${new Date(transaction.created_at).toLocaleDateString()}</p>
-              <p>Status: approved</p>
-            </div>
-          </div>
-          <div class="text-center">
-            <p class="text-gray-500">Thank you for your transaction.</p>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(receiptElement);
-
-      html2canvas(receiptElement).then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF();
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`withdrawal-receipt-${transaction.id}.pdf`);
-        document.body.removeChild(receiptElement);
-      });
     }
   };
 
@@ -582,7 +573,12 @@ const Admin = () => {
         <TabsContent value="withdrawals" className="space-y-6">
           <Card className="bg-gradient-card border-border shadow-card">
             <CardHeader>
-              <CardTitle>Withdrawal Requests</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Withdrawal Requests</CardTitle>
+                <Button variant="outline" size="sm" onClick={fetchWithdrawalRequests} disabled={loadingWithdrawals}>
+                  {loadingWithdrawals ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
+                </Button>
+              </div>
               <CardDescription>
                 Review and process user withdrawal requests
               </CardDescription>

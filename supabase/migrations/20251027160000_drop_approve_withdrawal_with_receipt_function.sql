@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS approve_withdrawal_with_receipt(uuid, text);

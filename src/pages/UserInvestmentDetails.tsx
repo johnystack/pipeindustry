@@ -63,7 +63,7 @@ const UserInvestmentDetails = () => {
   const handleApprove = async (investmentId: string) => {
     const { error } = await supabase
       .from("investments")
-      .update({ status: "active", approved_at: new Date().toISOString() })
+      .update({ status: "active" })
       .eq("id", investmentId);
 
     if (error) {
