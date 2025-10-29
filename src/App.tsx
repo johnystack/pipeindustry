@@ -29,6 +29,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Receipt from "./pages/Receipt";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const App = () => {
                     </AdminRoute>
                   }
                 />
+                <Route path="/receipt/:transactionId" element={<Receipt />} />
               </Route>
 
               {/* Catch-all Route */}

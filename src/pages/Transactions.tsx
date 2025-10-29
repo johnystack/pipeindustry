@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "react-router-dom";
 import {
   TrendingUp,
   ArrowDownToLine,
@@ -324,6 +325,13 @@ const Transactions = () => {
                     >
                       {transaction.status}
                     </Badge>
+                    {transaction.type === 'withdrawal' && transaction.status === 'completed' && (
+                      <Link to={`/receipt/${transaction.id}`}>
+                        <Button variant="outline" size="sm" className="mt-2">
+                          View Receipt
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

@@ -7,12 +7,13 @@ interface WithdrawalReceiptProps {
 
 const WithdrawalReceipt = ({ transaction, user }: WithdrawalReceiptProps) => {
   return (
-    <div className="p-8 bg-white rounded-lg shadow-md">
+    <div className="p-8 bg-white rounded-lg shadow-md text-black">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold">Withdrawal Receipt</h1>
+        <h1 className="text-2xl font-bold text-black">Pipe Industry</h1>
+        <h2 className="text-xl font-bold text-black">Withdrawal Receipt</h2>
         <p className="text-gray-500">Transaction ID: {transaction.id}</p>
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-4 mb-8 text-black">
         <div>
           <p className="font-bold">User Details</p>
           <p>{user.first_name} {user.last_name}</p>
@@ -25,8 +26,8 @@ const WithdrawalReceipt = ({ transaction, user }: WithdrawalReceiptProps) => {
           <p>Status: {transaction.status}</p>
         </div>
       </div>
-      <div className="text-center">
-        <p className="text-gray-500">Thank you for your transaction.</p>
+      <div className="text-center text-gray-500">
+        <p>Thank you for your transaction.</p>
       </div>
     </div>
   );

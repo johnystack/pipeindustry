@@ -45,18 +45,17 @@ import { useCryptos } from "@/hooks/useCryptos";
 import { useWithdrawableBalance } from "@/hooks/useWithdrawableBalance";
 import { useWithdrawalHistory } from "@/hooks/useWithdrawalHistory";
 import { getConversionRate } from "@/lib/utils";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { useNavigate, Link } from "react-router-dom";
+
 
 const Withdraw = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedCrypto, setSelectedCrypto] = useState("bitcoin");
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [receiptDataUrl, setReceiptDataUrl] = useState('');
 
   const { cryptos, loading: loadingCryptos } = useCryptos();
   const { balance: withdrawableBalance, loading: loadingBalance } = useWithdrawableBalance();
@@ -88,18 +87,21 @@ const Withdraw = () => {
     }
 
     setIsWithdrawing(true);
-    const { error } = await supabase.from("transactions").insert([
-      {
-        user_id: user.id,
-        type: "withdrawal",
-        amount: Number(amount),
-        status: "pending",
-        description: `Withdrawal to ${address}`,
-        withdrawal_type: "to_wallet",
-        crypto: selectedCrypto,
-        address: address,
-      },
-    ]);
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert([
+        {
+          user_id: user.id,
+          type: "withdrawal",
+          amount: Number(amount),
+          status: "pending",
+          description: `Withdrawal to ${address}`,
+          withdrawal_type: "to_wallet",
+          crypto: selectedCrypto,
+          address: address,
+        },
+      ])
+      .select();
 
     if (error) {
       console.error("Error inserting withdrawal:", error);
@@ -116,108 +118,11 @@ const Withdraw = () => {
       });
       setAmount("");
       setAddress("");
+      if (data && data.length > 0) {
+        navigate(`/receipt/${data[0].id}`);
+      }
     }
     setIsWithdrawing(false);
-  };
-
-  const handleGenerateReceipt = async (transaction: any) => {
-    console.log("Generating receipt for transaction:", transaction);
-    // Fetch user details for the receipt
-    const { data: userData, error: userError } = await supabase
-      .from('profiles')
-      .select('first_name, last_name, email')
-      .eq('id', user.id)
-      .single();
-
-    if (userError) {
-      console.error('Error fetching user details for receipt:', userError);
-      toast({ title: "Error generating receipt", description: "Could not fetch user details.", variant: "destructive" });
-      return;
-    }
-    console.log("User data for receipt:", userData);
-
-    const companyName = "Pipe Industry"; // Replace with actual company name
-
-    const receiptElement = document.createElement('div');
-    receiptElement.style.width = '300px';
-    receiptElement.style.fontFamily = 'Courier New, monospace';
-    receiptElement.style.fontSize = '12px';
-    receiptElement.style.padding = '10px';
-    receiptElement.style.backgroundColor = 'white';
-
-    receiptElement.innerHTML = `
-      <div style="text-align: center; margin-bottom: 10px;">
-        <h1 style="font-size: 16px; margin: 0;">${companyName}</h1>
-        <p style="font-size: 10px; margin: 0;">Official Withdrawal Receipt</p>
-      </div>
-
-      <div style="margin-bottom: 10px;">
-        <p><strong>Receipt No:</strong> ${transaction.id.substring(0, 8).toUpperCase()}</p>
-        <p><strong>Date:</strong> ${new Date(transaction.created_at).toLocaleString()}</p>
-      </div>
-
-      <div style="margin-bottom: 10px;">
-        <p><strong>Recipient:</strong> ${userData.first_name} ${userData.last_name}</p>
-        <p><strong>Email:</strong> ${userData.email}</p>
-      </div>
-
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
-        <thead>
-          <tr>
-            <th style="text-align: left; border-bottom: 1px solid #000;">Description</th>
-            <th style="text-align: right; border-bottom: 1px solid #000;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Withdrawal to ${transaction.crypto}</td>
-            <td style="text-align: right;">$${transaction.amount.toLocaleString()}</td>
-          </tr>
-          <tr>
-            <td>Wallet Address</td>
-            <td style="text-align: right;">${transaction.address}</td>
-          </tr>
-          <tr>
-            <td>Status</td>
-            <td style="text-align: right;">${transaction.status}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div style="text-align: center; margin-top: 10px;">
-        <p style="font-size: 14px; font-weight: bold;">TOTAL: $${transaction.amount.toLocaleString()}</p>
-        <p style="font-size: 10px;">Thank you for your transaction!</p>
-      </div>
-    `;
-    document.body.appendChild(receiptElement); // Append to body
-
-    const canvas = await html2canvas(receiptElement, { scale: 2, width: 300, height: receiptElement.scrollHeight }); // Increase scale for better quality
-    const imgData = canvas.toDataURL('image/png');
-    document.body.removeChild(receiptElement); // Remove from body
-
-    setReceiptDataUrl(imgData);
-    setShowReceiptModal(true);
-  };
-
-    const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        const response = await fetch(receiptDataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'withdrawal-receipt.png', { type: 'image/png' });
-
-        await navigator.share({
-          title: 'Withdrawal Receipt',
-          text: 'Check out my withdrawal receipt!',
-          files: [file],
-        });
-      } catch (error) {
-        console.error('Error sharing receipt:', error);
-        toast({ title: "Error sharing receipt", description: "Could not share receipt.", variant: "destructive" });
-      }
-    } else {
-      toast({ title: "Share not supported", description: "Your browser does not support the Web Share API.", variant: "destructive" });
-    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -503,15 +408,12 @@ const Withdraw = () => {
                         <div className="text-lg font-semibold">
                           ${withdrawal.amount.toLocaleString()}
                         </div>
-                        {withdrawal.status === "approved" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => handleGenerateReceipt(withdrawal)}
-                          >
-                            View Receipt
-                          </Button>
+                        {withdrawal.status === 'approved' && (
+                          <Link to={`/receipt/${withdrawal.id}`}>
+                            <Button variant="outline" size="sm" className="mt-2">
+                              View Receipt
+                            </Button>
+                          </Link>
                         )}
                       </div>
                     </div>
@@ -522,28 +424,6 @@ const Withdraw = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Receipt Modal */}
-      <AlertDialog open={showReceiptModal} onOpenChange={setShowReceiptModal}>
-        <AlertDialogContent className="max-w-sm w-full">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Withdrawal Receipt</AlertDialogTitle>
-            <AlertDialogDescription>
-              <img src={receiptDataUrl} alt="Withdrawal Receipt" className="" />
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button onClick={() => setShowReceiptModal(false)}>Close</Button>
-            <Button onClick={handleShare}>Share</Button>
-            <Button asChild>
-              <a href={receiptDataUrl} download="withdrawal-receipt.png">
-                Download
-              </a>
-            </Button>
-            {/* Share button can be added here, but requires more complex implementation */}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
