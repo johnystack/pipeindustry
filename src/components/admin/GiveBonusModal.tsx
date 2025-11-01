@@ -61,7 +61,7 @@ const GiveBonusModal = ({ isOpen, onClose, user, onBonusAdded }: GiveBonusModalP
     }
 
     setLoading(true);
-    const { error } = await supabase.rpc('add_bonus', {
+    const { error } = await supabase.rpc('add_bonus_to_investment', {
       investment_id_input: selectedInvestment,
       bonus_amount_input: bonusAmount,
     });
