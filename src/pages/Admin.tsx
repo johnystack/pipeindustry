@@ -51,6 +51,8 @@ const Admin = () => {
   const [withdrawalRequests, setWithdrawalRequests] = useState<Transaction[]>([]);
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
   const [adminStats, setAdminStats] = useState<AdminStat[]>([]);
+  const [pendingPlans, setPendingPlans] = useState<VendorPlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
   const [settings, setSettings] = useState<any>({});
 
@@ -246,12 +248,54 @@ const Admin = () => {
     setLoadingWithdrawals(false);
   };
 
+  const fetchPendingPlans = async () => {
+    setLoadingPlans(true);
+    const { data, error } = await supabase
+      .from("vendor_plans")
+      .select("*")
+      .eq("eligibility_status", "pending");
+
+    if (error) {
+      console.error("Error fetching pending plans:", error);
+    } else {
+      setPendingPlans(data || []);
+    }
+    setLoadingPlans(false);
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchCryptos();
     fetchAdminStats();
     fetchWithdrawalRequests();
+    fetchPendingPlans();
   }, [fetchUsers]);
+
+  const handleApprovePlan = async (planId: string) => {
+    const { error } = await supabase
+      .from("vendor_plans")
+      .update({ eligibility_status: "approved", status: "active" })
+      .eq("id", planId);
+
+    if (error) {
+      console.error("Error approving plan:", error);
+    } else {
+      setPendingPlans(pendingPlans.filter((p) => p.id !== planId));
+    }
+  };
+
+  const handleRejectPlan = async (planId: string) => {
+    const { error } = await supabase
+      .from("vendor_plans")
+      .update({ eligibility_status: "rejected" })
+      .eq("id", planId);
+
+    if (error) {
+      console.error("Error rejecting plan:", error);
+    } else {
+      setPendingPlans(pendingPlans.filter((p) => p.id !== planId));
+    }
+  };
 
   const handleVerify = async (userId: string) => {
     const { error } = await supabase
@@ -389,10 +433,11 @@ const Admin = () => {
 
       {/* Admin Tabs */}
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="users">User Management</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="plans">Asset Plans</TabsTrigger>
           <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-          <TabsTrigger value="cryptocurrencies">Cryptocurrencies</TabsTrigger>
+          <TabsTrigger value="cryptocurrencies">Wallets</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -451,13 +496,16 @@ const Admin = () => {
                             >
                               {user.status}
                             </Badge>
+                            <Badge variant="outline" className="text-[10px] uppercase">
+                                {user.role || 'trader'}
+                            </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {user.email} - Balance: ${user.withdrawable_balance?.toLocaleString() || 0}
+                            {user.email} - Balance: ₦{user.withdrawable_balance?.toLocaleString() || 0}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             ID: {user.id} • Joined:{" "}
-                            {new Date(user.created_at).toLocaleDateString(
+                            {new Date(user.created_at || "").toLocaleDateString(
                               "en-US",
                               {
                                 year: "numeric",
@@ -477,7 +525,7 @@ const Admin = () => {
                             }}
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            Give Bonus
+                            Bonus
                           </Button>
                           <Button
                             variant="destructive"
@@ -488,7 +536,7 @@ const Admin = () => {
                             }}
                           >
                             <Minus className="h-3 w-3 mr-1" />
-                            Deduct Balance
+                            Deduct
                           </Button>
                           <Link to={`/admin/users/${user.id}/investments`}>
                             <Button variant="outline" size="sm">
@@ -565,6 +613,72 @@ const Admin = () => {
                     </Button>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="plans" className="space-y-6">
+          <Card className="bg-gradient-card border-border shadow-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Asset Plan Approvals</CardTitle>
+                <Button variant="outline" size="sm" onClick={fetchPendingPlans} disabled={loadingPlans}>
+                  {loadingPlans ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
+                </Button>
+              </div>
+              <CardDescription>
+                Review commodity listing requests from vendors
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {pendingPlans.map((plan) => (
+                      <div
+                        key={plan.id}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-background/50"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{plan.name}</h4>
+                            <Badge variant="secondary" className="bg-primary/20 text-primary">
+                              {plan.asset_type}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Vendor ID: {plan.vendor_id.slice(0, 8)}... • Price: ₦{plan.min_investment.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground font-mono bg-slate-900 p-2 rounded mt-2 overflow-x-auto">
+                            TX Proof: {plan.eligibility_tx}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-success border-success"
+                                onClick={() => handleApprovePlan(plan.id)}
+                            >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Approve
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive border-destructive"
+                                onClick={() => handleRejectPlan(plan.id)}
+                            >
+                                <UserX className="h-3 w-3 mr-1" />
+                                Reject
+                            </Button>
+                        </div>
+                      </div>
+                ))}
+                {pendingPlans.length === 0 && !loadingPlans && (
+                    <div className="text-center py-12 text-muted-foreground italic">
+                        No pending asset plans to approve.
+                    </div>
+                )}
               </div>
             </CardContent>
           </Card>

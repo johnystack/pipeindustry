@@ -61,6 +61,13 @@ const VendorDashboard = () => {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const stats = {
+    totalVolume: investments.reduce((acc, inv) => acc + inv.amount, 0),
+    activeTraders: new Set(investments.map(inv => inv.user_id)).size,
+    pendingEligibility: plans.filter(p => p.eligibility_status === 'pending').length,
+    monthlyCommission: investments.reduce((acc, inv) => acc + (inv.amount * 0.1), 0), // Assuming 10% commission for example
+  };
+
   // Form state for new plan
   const [newPlan, setNewPlan] = useState({
     name: "",
@@ -184,6 +191,43 @@ const VendorDashboard = () => {
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-black tracking-tight">Vendor Management</h1>
         <p className="text-muted-foreground">Manage your assets, plans, and track your investors.</p>
+      </div>
+
+      {/* Vendor Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-slate-900/50 border-2 border-white/5 shadow-xl">
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Assets Managed</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                <div className="text-2xl font-black">₦{stats.totalVolume.toLocaleString()}</div>
+            </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-2 border-white/5 shadow-xl">
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Active Traders</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                <div className="text-2xl font-black">{stats.activeTraders}</div>
+            </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-2 border-white/5 shadow-xl">
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Estimated Commission</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                <div className="text-2xl font-black text-emerald-500">₦{stats.monthlyCommission.toLocaleString()}</div>
+                <p className="text-[8px] text-muted-foreground font-bold mt-1">ESTIMATED MONTHLY</p>
+            </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-2 border-white/5 shadow-xl">
+            <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Pending Verification</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                <div className="text-2xl font-black text-yellow-500">{stats.pendingEligibility}</div>
+            </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="plans" className="space-y-6">

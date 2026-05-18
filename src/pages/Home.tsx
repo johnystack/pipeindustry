@@ -130,7 +130,7 @@ const Home = () => {
       {/* Enhanced Hero Section */}
       <section
         id="home"
-        className="relative min-h-[50vh] md:min-h-screen flex items-center pt-16 md:pt-32 pb-8 md:pb-20 overflow-hidden"
+        className="relative min-h-fit md:min-h-screen flex items-start md:items-center pt-10 md:pt-32 pb-8 md:pb-20 overflow-hidden"
       >
         {/* Animated Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">

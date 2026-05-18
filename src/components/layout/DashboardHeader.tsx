@@ -31,34 +31,34 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
         </SheetTrigger>
 
         {isAdmin && (
-          <div className="hidden sm:flex bg-slate-900/50 p-1 rounded-xl border border-slate-800">
+          <div className="hidden sm:flex bg-slate-900/50 p-1 rounded-xl border border-slate-800 shadow-inner">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/dashboard")}
               className={cn(
-                "h-8 px-4 rounded-lg text-xs font-black uppercase transition-all gap-2",
+                "h-8 px-4 rounded-lg text-[10px] font-black uppercase transition-all gap-2",
                 !isVendorView 
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
                   : "text-slate-400 hover:text-white"
               )}
             >
-              <TrendingUp className="h-3.5 w-3.5" />
-              Investor View
+              <TrendingUp className="h-3 w-3" />
+              Trader Mode
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/vendor-dashboard")}
               className={cn(
-                "h-8 px-4 rounded-lg text-xs font-black uppercase transition-all gap-2",
+                "h-8 px-4 rounded-lg text-[10px] font-black uppercase transition-all gap-2",
                 isVendorView 
                   ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
                   : "text-slate-400 hover:text-white"
               )}
             >
-              <Briefcase className="h-3.5 w-3.5" />
-              Vendor View
+              <Briefcase className="h-3 w-3" />
+              Vendor Mode
             </Button>
           </div>
         )}
