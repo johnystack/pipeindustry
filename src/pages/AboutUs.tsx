@@ -19,7 +19,7 @@ const AboutUs: React.FC = () => {
         <section className="text-center mb-16">
           <h1 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight">
             Invest with Confidence, Grow with{" "}
-            <span className="text-primary">PipIndustry</span>
+            <span className="text-primary">TerrasInvestment</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Your trusted partner in navigating the financial markets, offering
@@ -46,7 +46,7 @@ const AboutUs: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-8 text-lg leading-relaxed">
               <p>
-                At PipIndustry, our mission is to democratize access to robust
+                At TerrasInvestment, our mission is to democratize access to robust
                 investment portfolios, ensuring every individual and business
                 has the opportunity to achieve their financial aspirations. We
                 are committed to providing a platform where transparency,
@@ -67,7 +67,7 @@ const AboutUs: React.FC = () => {
         {/* Why Choose Us Section */}
         <section className="mb-16">
           <h2 className="text-4xl font-bold text-center mb-12">
-            Why Choose PipIndustry?
+            Why Choose TerrasInvestment?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Card className="text-center p-6 shadow-md">

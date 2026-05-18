@@ -6,10 +6,10 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 serve(async (req) => {
   const { email, token } = await req.json();
 
-  const verificationUrl = `https://pipindustry.org/verify-email?token=${token}`;
+  const verificationUrl = `https://terrasinvestment.org/verify-email?token=${token}`;
 
   const { data, error } = await resend.emails.send({
-    from: "noreply@pipindustry.org",
+    from: "noreply@terrasinvestment.org",
     to: [email],
     subject: "Verify your email address",
     html: `Please click the following link to verify your email address: <a href="${verificationUrl}">${verificationUrl}</a>`,

@@ -24,130 +24,72 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Star,
-  Crown,
-  Diamond,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
-
-const plans = [
-  {
-    name: "Starter Plan",
-    icon: "Star", // Using string for icon for now, will import later
-    popular: false,
-    minInvestment: "300",
-    maxInvestment: "999",
-    duration: "7 days",
-    dailyReturn: "4%",
-    sevenDayReturn: "120%",
-    totalReturn: "128%",
-    profitPercentage: "28%",
-    features: [
-      "Daily profit withdrawal",
-      "24/7 customer support",
-      "Secure investment",
-      "Instant deposits",
-    ],
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-  },
-  {
-    name: "Silver Plan",
-    icon: "Crown",
-    popular: true,
-    minInvestment: "1000",
-    maxInvestment: "4,999",
-    duration: "7 days",
-    dailyReturn: "6%",
-    sevenDayReturn: "180%",
-    totalReturn: "142%",
-    profitPercentage: "42%",
-    features: [
-      "Higher daily returns",
-      "Priority customer support",
-      "Advanced analytics",
-      "Instant deposits",
-      "Referral bonuses",
-    ],
-    color: "text-gray-400",
-    bgColor: "bg-gray-400/10",
-  },
-  {
-    name: "Gold Plan",
-    icon: "Crown",
-    popular: false,
-    minInvestment: "5,000",
-    maxInvestment: "9,999",
-    duration: "7 days",
-    dailyReturn: "8%",
-    sevenDayReturn: "240%",
-    totalReturn: "156%",
-    profitPercentage: "56%",
-    features: [
-      "Premium daily returns",
-      "Dedicated account manager",
-      "Advanced portfolio tools",
-      "Instant deposits",
-      "Enhanced referral bonuses",
-      "Market insights",
-    ],
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-500/10",
-  },
-  {
-    name: "VIP Plan",
-    icon: "Diamond",
-    popular: false,
-    minInvestment: "10,000",
-    maxInvestment: "Unlimited",
-    duration: "7 days",
-    dailyReturn: "10%",
-    sevenDayReturn: "300%",
-    totalReturn: "170%",
-    profitPercentage: "70%",
-    features: [
-      "Maximum daily returns",
-      "Personal investment advisor",
-      "Exclusive market access",
-      "Instant deposits",
-      "VIP referral program",
-      "Private telegram group",
-      "Monthly strategy calls",
-    ],
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
-  },
-];
-
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { Crypto, Deposit } from "@/lib/types";
+import { Crypto, Deposit, VendorPlan } from "@/lib/types";
 
 const InvestNow = () => {
   const { user } = useAuth();
-  const [selectedCrypto, setSelectedCrypto] = useState("bitcoin");
+  const [selectedCrypto, setSelectedCrypto] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState(plans[0].name);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const { toast } = useToast();
 
   const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [vendorPlans, setVendorPlans] = useState<VendorPlan[]>([]);
   const [recentDeposits, setRecentDeposits] = useState<Deposit[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCryptos = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Fetch Cryptos
+      const { data: cryptoData, error: cryptoError } = await supabase
         .from("cryptocurrencies")
-        .select("*, address"); // Explicitly select address
+        .select("*");
 
-      if (error) {
-        console.error("Error fetching cryptocurrencies:", error);
+      if (cryptoError) {
+        console.error("Error fetching cryptocurrencies:", cryptoError);
       } else {
-        setCryptos(data);
+        setCryptos(cryptoData || []);
+        if (cryptoData && cryptoData.length > 0) {
+          setSelectedCrypto(cryptoData[0].id);
+        }
       }
+
+      // Fetch Vendor Plans
+      const { data: planData, error: planError } = await supabase
+        .from("vendor_plans")
+        .select(`
+          *,
+          profiles(username, first_name, last_name)
+        `)
+        .eq("status", "active")
+        .eq("eligibility_status", "approved")
+        .order("created_at", { ascending: false });
+
+      if (planError) {
+        console.error("Error fetching vendor plans:", planError);
+      } else {
+        const mappedPlans = planData?.map((plan: any) => ({
+          ...plan,
+          vendor_name: plan.profiles?.username || `${plan.profiles?.first_name} ${plan.profiles?.last_name}`.trim() || "Unknown Vendor"
+        })) || [];
+        setVendorPlans(mappedPlans);
+        if (mappedPlans.length > 0) {
+          setSelectedPlanId(mappedPlans[0].id);
+        }
+      }
+      setLoading(false);
     };
 
-    fetchCryptos();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -157,14 +99,14 @@ const InvestNow = () => {
           .from("transactions")
           .select("*")
           .eq("user_id", user.id)
-          .eq("type", "Deposit")
+          .eq("type", "deposit")
           .order("created_at", { ascending: false })
           .limit(5);
 
         if (error) {
           console.error("Error fetching recent deposits:", error);
         } else {
-          setRecentDeposits(data);
+          setRecentDeposits(data as any || []);
         }
       }
     };
@@ -191,7 +133,7 @@ const InvestNow = () => {
       return;
     }
 
-    const plan = plans.find((p) => p.name === selectedPlan);
+    const plan = vendorPlans.find((p) => p.id === selectedPlanId);
     if (!plan) {
       toast({
         title: "Error",
@@ -201,16 +143,21 @@ const InvestNow = () => {
       return;
     }
 
-    const dailyReturn = parseFloat(plan.dailyReturn) / 100;
-    const duration = parseInt(plan.duration);
-    const expectedProfit = Number(amount) * dailyReturn * duration;
+    const fixedAmount = plan.min_investment;
 
-    const { data, error } = await supabase.from("investments").insert([
+    const dailyReturn = plan.daily_return_percent / 100;
+    const duration = plan.duration_days;
+    const expectedProfit = fixedAmount * dailyReturn * duration;
+
+    const selectedCryptoData = cryptos.find((c) => c.id === selectedCrypto);
+
+    const { error } = await supabase.from("investments").insert([
       {
         user_id: user.id,
-        plan_name: selectedPlan,
-        amount: Number(amount),
-        crypto: selectedCrypto,
+        plan_id: selectedPlanId,
+        plan_name: plan.name,
+        amount: fixedAmount,
+        crypto: selectedCryptoData?.symbol || selectedCrypto,
         status: "pending",
         address: selectedCryptoData?.address,
         expected_profit: expectedProfit,
@@ -230,199 +177,127 @@ const InvestNow = () => {
       });
     } else {
       // Insert into transactions table for deposit
-      const { data: transactionData, error: transactionError } = await supabase
+      const { error: transactionError } = await supabase
         .from("transactions")
         .insert([
           {
             user_id: user.id,
             type: "deposit",
-            amount: Number(amount),
-            status: "pending", // Or "processing"
-            description: `Deposit for ${selectedCryptoData?.name}`,
-            reference: `DEP-${Date.now()}`,
-            // Add other relevant fields like crypto, fee, etc. if available
+            amount: fixedAmount,
+            status: "pending",
+            description: `Investment in ${plan.name} (${plan.asset_type})`,
+            reference: `INV-${Date.now()}`,
+            crypto: selectedCryptoData?.symbol || selectedCrypto,
+            address: selectedCryptoData?.address,
           },
         ]);
 
       if (transactionError) {
-        console.error("Error creating deposit transaction:", transactionError);
-        toast({
-          title: "Error recording deposit",
-          description: transactionError.message,
-          variant: "destructive",
-        });
-        return; // Stop if transaction recording fails
-      }
-
-      // Check if user has invested before
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("has_invested")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      } else if (!profileData.has_invested) {
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ has_invested: true })
-          .eq("id", user.id);
-
-        if (updateError) {
-          console.error("Error updating has_invested:", updateError);
-        }
-
-        // Award referral commission
-        const { data: referrerProfile, error: referrerProfileError } =
-          await supabase
-            .from("profiles")
-            .select("referred_by, referral_earnings")
-            .eq("id", user.id)
-            .single();
-
-        if (referrerProfileError) {
-          console.error(
-            "Error fetching referrer profile:",
-            referrerProfileError,
-          );
-        } else if (referrerProfile.referred_by) {
-          const commissionAmount = Number(amount) * 0.1; // 10% commission
-
-          const { error: commissionError } = await supabase
-            .from("transactions")
-            .insert([
-              {
-                user_id: referrerProfile.referred_by,
-                type: "Referral",
-                amount: commissionAmount,
-                status: "completed",
-                description: `Referral commission from ${user.email}`,
-                referred_user_id: user.id,
-              },
-            ]);
-
-          if (commissionError) {
-            console.error(
-              "Error creating referral transaction:",
-              commissionError,
-            );
-          } else {
-            const { error: updateReferrerError } = await supabase
-              .from("profiles")
-              .update({
-                referral_earnings:
-                  referrerProfile.referral_earnings + commissionAmount,
-              })
-              .eq("id", referrerProfile.referred_by);
-
-            if (updateReferrerError) {
-              console.error(
-                "Error updating referrer earnings:",
-                updateReferrerError,
-              );
-            }
-          }
-        }
+        console.error("Error creating transaction:", transactionError);
       }
 
       toast({
-        title: "Investment created successfully",
+        title: "Success",
+        description: "Your investment request has been submitted. Please complete the payment using the vendor's details.",
       });
+      setAmount("");
     }
   };
 
   const selectedCryptoData = cryptos.find((c) => c.id === selectedCrypto);
-  const selectedPlanData = plans.find((p) => p.name === selectedPlan);
+  const selectedPlanData = vendorPlans.find((p) => p.id === selectedPlanId);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
-      description: "Address copied to clipboard",
+      description: "Copied to clipboard",
     });
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-success" />;
+        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
       case "pending":
-        return <Clock className="h-4 w-4 text-warning" />;
+        return <Clock className="h-4 w-4 text-yellow-500" />;
       default:
         return <AlertCircle className="h-4 w-4 text-destructive" />;
     }
   };
 
+  if (loading) {
+    return <div className="p-8 text-center">Loading plans and cryptos...</div>;
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-8 flex flex-col items-center">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Invest Now
+        <h1 className="text-4xl font-black bg-gradient-primary bg-clip-text text-transparent">
+          Secure Investment Portal
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Choose an investment plan and fund your account to start earning.
+          Fund your chosen asset plan. Please use the vendor's payment details provided below.
         </p>
       </div>
 
-      <Tabs defaultValue="deposit" className="space-y-6">
+      <Tabs defaultValue="deposit" className="space-y-6 w-full max-w-5xl">
         <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
-          <TabsTrigger value="deposit">Make Deposit</TabsTrigger>
-          <TabsTrigger value="history">Deposit History</TabsTrigger>
+          <TabsTrigger value="deposit">Deposit Funds</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="deposit" className="space-y-6">
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Deposit Form */}
-            <Card className="crypto-card">
+            {/* Left: Investment Selection */}
+            <Card className="bg-gradient-card border-border shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <QrCode className="h-5 w-5 text-primary" />
-                  Invest in a Plan
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Select Your Plan
                 </CardTitle>
                 <CardDescription>
-                  Select an investment plan and cryptocurrency to fund it.
+                  Choose an asset and the crypto you want to use.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="plan">Select Investment Plan</Label>
-                  <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                    <SelectTrigger>
+                  <Label htmlFor="plan">Asset Investment Plan</Label>
+                  <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                    <SelectTrigger className="h-12">
                       <SelectValue placeholder="Choose investment plan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {plans.map((plan) => (
-                        <SelectItem key={plan.name} value={plan.name}>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-semibold ${plan.color}`}>
-                              {plan.name}
-                            </span>
-                          </div>
+                      {vendorPlans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name} ({plan.asset_type})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedPlanData && (
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 mt-2">
+                        <p className="text-xs font-bold text-primary uppercase">Plan Details</p>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                            <span className="text-xs text-muted-foreground">Min: ${selectedPlanData.min_investment}</span>
+                            <span className="text-xs text-muted-foreground text-right">
+                                {selectedPlanData.fixed_limit ? `Limit: $${selectedPlanData.fixed_limit}` : `Max: ${selectedPlanData.max_investment ? `$${selectedPlanData.max_investment}` : "∞"}`}
+                            </span>
+                        </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="crypto">Select Cryptocurrency</Label>
-                  <Select
-                    value={selectedCrypto}
-                    onValueChange={setSelectedCrypto}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose cryptocurrency" />
+                  <Label htmlFor="crypto">Payment Currency</Label>
+                  <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Select crypto" />
                     </SelectTrigger>
                     <SelectContent>
                       {cryptos.map((crypto) => (
                         <SelectItem key={crypto.id} value={crypto.id}>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-semibold ${crypto.color}`}>
-                              {crypto.symbol}
-                            </span>
-                            <span>{crypto.name}</span>
-                          </div>
+                          {crypto.name} ({crypto.symbol})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -430,144 +305,127 @@ const InvestNow = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (Optional)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder={`Min: ${selectedPlanData?.minInvestment} (for selected plan)`}
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="bg-background/50"
-                  />
+                  <Label>Investment Amount (Fixed)</Label>
+                  <div className="h-12 flex items-center px-4 bg-muted rounded-md font-black text-xl text-primary border-2 border-primary/20">
+                    ₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0"}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    The investment amount is fixed by the platform for this commodity.
+                  </p>
                 </div>
 
-                <Button onClick={handleInvest} className="w-full">
-                  Invest
+                <Button className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20" onClick={handleInvest}>
+                  Confirm Investment
                 </Button>
+              </CardContent>
+            </Card>
 
-                {selectedPlanData && selectedCryptoData && (
-                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Network:</span>
-                      <Badge variant="outline">
-                        {selectedCryptoData?.network}
-                      </Badge>
+            {/* Right: Vendor Payment Info */}
+            <Card className="bg-gradient-card border-border shadow-xl overflow-hidden">
+              <div className="h-2 bg-emerald-500" />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-emerald-500" />
+                    Vendor Payment Details
+                </CardTitle>
+                <CardDescription>
+                  Send your funds directly to the vendor's account below.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {selectedPlanData ? (
+                  <>
+                    <div className="p-6 bg-emerald-500/5 rounded-2xl border-2 border-emerald-500/10 space-y-4">
+                        <div className="space-y-1">
+                            <Label className="text-xs font-bold text-emerald-600 uppercase">Vendor Name</Label>
+                            <p className="font-bold text-lg">{selectedPlanData.vendor_name}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold text-emerald-600 uppercase">Account / Payment Details</Label>
+                            <div className="bg-background p-4 rounded-xl border-2 border-emerald-500/20 relative group">
+                                <p className="whitespace-pre-wrap font-mono text-sm break-all pr-10">
+                                    {selectedPlanData.payment_details || "No details provided by vendor."}
+                                </p>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="absolute top-2 right-2 hover:bg-emerald-500/10"
+                                    onClick={() => copyToClipboard(selectedPlanData.payment_details || "")}
+                                >
+                                    <Copy className="h-4 w-4 text-emerald-500" />
+                                </Button>
+                            </div>
+                        </div>
                     </div>
+
+                    {selectedCryptoData && (
+                        <div className="space-y-4">
+                            <div className="flex justify-center p-4 bg-white rounded-xl">
+                                <QrCode className="h-32 w-32 text-black" />
+                            </div>
+                            <div className="p-4 bg-muted rounded-xl space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Amount to send:</span>
+                                    <span className="font-bold text-primary">₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0.00"}</span>
+                                </div>
+                                <div className="flex justify-between text-sm border-t border-border pt-2 mt-2">
+                                    <span className="text-muted-foreground">Currency:</span>
+                                    <span className="font-bold">{selectedCryptoData.name} ({selectedCryptoData.symbol})</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Network:</span>
+                                    <span className="font-bold text-primary">{selectedCryptoData.network || "Default"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-20 text-muted-foreground italic">
+                    Select an investment plan to view vendor payment details.
                   </div>
                 )}
               </CardContent>
             </Card>
-
-            {/* Deposit Address */}
-            {selectedCryptoData && (
-              <Card className="crypto-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className={selectedCryptoData?.color}>
-                      {selectedCryptoData?.symbol}
-                    </span>
-                    Deposit Address
-                  </CardTitle>
-                  <CardDescription>
-                    Send {selectedCryptoData?.name} to this address
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="text-center space-y-4">
-                    <div className="p-4 bg-background border border-border rounded-lg">
-                      <div className="w-32 h-32 bg-muted mx-auto rounded-lg flex items-center justify-center">
-                        <QrCode className="h-16 w-16 text-muted-foreground" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm">Wallet Address</Label>
-                      <div className="flex items-center gap-2 p-3 bg-background border border-border rounded-lg">
-                        <code className="text-xs flex-1 break-all">
-                          {selectedCryptoData?.address}
-                        </code>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            copyToClipboard(selectedCryptoData.address)
-                          }
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 p-4 bg-warning/10 border border-warning/20 rounded-lg">
-                    <div className="flex items-center gap-2 text-warning">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="font-medium">Important Notes</span>
-                    </div>
-                    <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>
-                        • Only send {selectedCryptoData?.name} to this address
-                      </li>
-                      <li>
-                        • Funds will be credited automatically after
-                        confirmation
-                      </li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-6">
-          <Card className="crypto-card">
-            <CardHeader>
-              <CardTitle>Recent Deposits</CardTitle>
-              <CardDescription>
-                Track your cryptocurrency deposits and their status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentDeposits.map((deposit) => (
-                  <div
-                    key={deposit.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg bg-background/50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(deposit.status)}
-                        <div>
-                          <div className="font-medium">
-                            {deposit.amount} {deposit.crypto}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {deposit.usdValue}
-                          </div>
-                        </div>
-                      </div>
+        <TabsContent value="history">
+            <Card className="bg-gradient-card border-border shadow-xl">
+                <CardHeader>
+                    <CardTitle>Investment History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {recentDeposits.map((deposit) => (
+                            <div key={deposit.id} className="flex items-center justify-between p-5 border-2 rounded-2xl hover:bg-muted/30 transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-primary/10 rounded-xl">
+                                        <TrendingUp className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-lg">₦{deposit.amount.toLocaleString()}</p>
+                                        <p className="text-xs text-muted-foreground font-medium">{deposit.description}</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-2">
+                                        {getStatusIcon(deposit.status)}
+                                        <span className="text-sm font-bold capitalize">{deposit.status}</span>
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground">{new Date(deposit.created_at || "").toLocaleString()}</span>
+                                </div>
+                            </div>
+                        ))}
+                        {recentDeposits.length === 0 && (
+                            <div className="text-center py-16 text-muted-foreground">
+                                <Clock className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                                <p>No investment history found.</p>
+                            </div>
+                        )}
                     </div>
-                    <div className="text-right">
-                      <Badge
-                        variant="outline"
-                        className={
-                          deposit.status === "completed"
-                            ? "status-completed"
-                            : "status-pending"
-                        }
-                      >
-                        {deposit.status}
-                      </Badge>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {deposit.date}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+            </Card>
         </TabsContent>
       </Tabs>
     </div>

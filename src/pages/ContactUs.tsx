@@ -19,7 +19,7 @@ const ContactUs: React.FC = () => {
         {/* Hero Section */}
         <section className="text-center mb-16">
           <h1 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight">
-            Get in Touch with <span className="text-primary">PipIndustry</span>
+            Get in Touch with <span className="text-primary">TerrasInvestment</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             We're here to answer your questions, provide support, and help you
@@ -42,10 +42,10 @@ const ContactUs: React.FC = () => {
                   For general inquiries and support.
                 </p>
                 <a
-                  href="mailto:pipindystry@gmail.com"
+                  href="mailto:terrasinvestment@gmail.com"
                   className="text-lg font-medium text-blue-600 hover:underline"
                 >
-                  pipindystry@gmail.com
+                  terrasinvestment@gmail.com
                 </a>
               </CardContent>
             </Card>

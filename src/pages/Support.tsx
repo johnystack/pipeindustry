@@ -53,7 +53,7 @@ const Support = () => {
       icon: HelpCircle,
       questions: [
         {
-          question: "How do I get started with PipIndustry?",
+          question: "How do I get started with TerrasInvestment?",
           answer:
             "To get started, simply create an account, verify your email, deposit cryptocurrency, and choose an investment plan that suits your goals. Our team will guide you through the process.",
         },
@@ -63,7 +63,7 @@ const Support = () => {
             "We accept Bitcoin (BTC), Ethereum (ETH), Tether (USDT), and TRON (TRX). All deposits are processed automatically and credited to your account upon confirmation.",
         },
         {
-          question: "Is my investment safe with PipIndustry?",
+          question: "Is my investment safe with TerrasInvestment?",
           answer:
             "Yes, we use bank-level security measures including SSL encryption, cold storage for funds, and multi-signature wallets. Your investments are protected by our comprehensive security protocols.",
         },

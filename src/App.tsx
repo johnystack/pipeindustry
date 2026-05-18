@@ -19,7 +19,10 @@ import Transactions from "./pages/Transactions";
 import Referrals from "./pages/Referrals";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import VendorDashboard from "./pages/VendorDashboard";
+import VendorVerification from "./pages/VendorVerification";
 import AdminRoute from "./components/auth/AdminRoute";
+import VendorRoute from "./components/auth/VendorRoute";
 import UserInvestmentDetails from "./pages/UserInvestmentDetails";
 import ManageInvestment from "./pages/ManageInvestment";
 import NotFound from "./pages/NotFound";
@@ -79,6 +82,15 @@ const App = () => {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/referrals" element={<Referrals />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route
+                  path="/vendor-dashboard"
+                  element={
+                    <VendorRoute>
+                      <VendorDashboard />
+                    </VendorRoute>
+                  }
+                />
+                <Route path="/vendor-verification" element={<VendorVerification />} />
                 <Route
                   path="/admin"
                   element={

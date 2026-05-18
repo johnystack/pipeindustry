@@ -12,24 +12,24 @@ const Terms = () => {
           </CardHeader>
           <CardContent className="prose prose-invert max-w-none">
             <p>
-              Welcome to PipIndustry! These terms and conditions outline the rules
-              and regulations for the use of PipIndustry's Website, located at
-              pipindustry.com.
+              Welcome to TerrasInvestment! These terms and conditions outline the rules
+              and regulations for the use of TerrasInvestment's Website, located at
+              terrasinvestment.com.
             </p>
 
             <h2>1. Acceptance of Terms</h2>
             <p>
               By accessing this website, we assume you accept these terms and
-              conditions. Do not continue to use PipIndustry if you do not agree
+              conditions. Do not continue to use TerrasInvestment if you do not agree
               to take all of the terms and conditions stated on this page.
             </p>
 
             <h2>2. License</h2>
             <p>
-              Unless otherwise stated, PipIndustry and/or its licensors own the
-              intellectual property rights for all material on PipIndustry. All
+              Unless otherwise stated, TerrasInvestment and/or its licensors own the
+              intellectual property rights for all material on TerrasInvestment. All
               intellectual property rights are reserved. You may access this
-              from PipIndustry for your own personal use subjected to
+              from TerrasInvestment for your own personal use subjected to
               restrictions set in these terms and conditions.
             </p>
 
@@ -38,9 +38,9 @@ const Terms = () => {
               This Agreement shall begin on the date hereof. Certain parts of
               this website offer an opportunity for users to post and exchange
               opinions and information in certain areas of the website.
-              PipIndustry does not filter, edit, publish or review Comments
+              TerrasInvestment does not filter, edit, publish or review Comments
               prior to their presence on the website. Comments do not reflect
-              the views and opinions of PipIndustry,its agents and/or
+              the views and opinions of TerrasInvestment,its agents and/or
               affiliates. Comments reflect the views and opinions of the person
               who post their views and opinions.
             </p>

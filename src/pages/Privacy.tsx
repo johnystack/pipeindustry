@@ -12,9 +12,9 @@ const Privacy = () => {
           </CardHeader>
           <CardContent className="prose prose-invert max-w-none">
             <p>
-              Your privacy is important to us. It is PipIndustry's policy to
+              Your privacy is important to us. It is TerrasInvestment's policy to
               respect your privacy regarding any information we may collect from
-              you across our website, https://pipindustry.com, and other sites
+              you across our website, https://terrasinvestment.com, and other sites
               we own and operate.
             </p>
 
@@ -41,7 +41,7 @@ const Privacy = () => {
 
             <h2>3. Log Files</h2>
             <p>
-              PipIndustry follows a standard procedure of using log files. These
+              TerrasInvestment follows a standard procedure of using log files. These
               files log visitors when they visit websites. All hosting
               companies do this and a part of hosting services' analytics. The
               information collected by log files include internet protocol (IP)
@@ -55,7 +55,7 @@ const Privacy = () => {
 
             <h2>4. Cookies and Web Beacons</h2>
             <p>
-              Like any other website, PipIndustry uses 'cookies'. These cookies
+              Like any other website, TerrasInvestment uses 'cookies'. These cookies
               are used to store information including visitors' preferences,
               and the pages on the website that the visitor accessed or
               visited. The information is used to optimize the users'

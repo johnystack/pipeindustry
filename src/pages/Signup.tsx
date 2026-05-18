@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Wallet, Loader2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
     referralCode: "",
+    role: "trader",
     terms: false,
   });
   const [loading, setLoading] = useState(false);
@@ -82,7 +84,7 @@ const Signup = () => {
           last_name: formData.lastName,
           username: formData.username,
           referral_code: formData.referralCode,
-          role: "user",
+          role: formData.role,
           status: "pending",
         },
       },
@@ -114,7 +116,7 @@ const Signup = () => {
           <div className="flex justify-center mb-4">
             <Wallet className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Join PipIndustry</CardTitle>
+          <CardTitle className="text-2xl">Join TerrasInvestment</CardTitle>
           <CardDescription>
             Create your account and start investing
           </CardDescription>
@@ -188,6 +190,28 @@ const Signup = () => {
               onChange={handleChange}
             />
           </div>
+
+          <div className="space-y-3">
+            <Label>Select Your Role</Label>
+            <RadioGroup
+              defaultValue="trader"
+              value={formData.role}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, role: value }))
+              }
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="trader" id="trader" />
+                <Label htmlFor="trader" className="font-normal cursor-pointer">Trader</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="vendor" id="vendor" />
+                <Label htmlFor="vendor" className="font-normal cursor-pointer">Vendor</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           <div className="flex items-center space-x-2">
             <Checkbox
               id="terms"

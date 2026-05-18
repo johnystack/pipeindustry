@@ -146,7 +146,7 @@ const Referrals = () => {
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold">Referral Program</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Earn generous commissions by inviting friends to join PipIndustry.
+          Earn generous commissions by inviting friends to join TerrasInvestment.
           Build your network and increase your passive income.
         </p>
       </div>
@@ -234,13 +234,13 @@ const Referrals = () => {
             <>
               <div className="flex gap-2">
                 <Input
-                  value={`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`}
+                  value={`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://terrasinvestment.org'}/ref/${profile?.username}`}
                   readOnly
                   className="bg-background/50"
                 />
                 <Button 
                   className="bg-gradient-primary text-primary-foreground shadow-glow"
-                  onClick={() => copyToClipboard(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://pipindustry.org'}/ref/${profile?.username}`)}
+                  onClick={() => copyToClipboard(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://terrasinvestment.org'}/ref/${profile?.username}`)}
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copy

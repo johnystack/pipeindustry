@@ -23,10 +23,12 @@ import {
   ArrowDownRight,
   Clock,
   CheckCircle,
+  Briefcase,
+  Gem,
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [profile, setProfile] = useState<User | null>(null);
   const [statsData, setStatsData] = useState<StatsData>({});
   const [investments, setInvestments] = useState<Investment[]>([]);
@@ -81,24 +83,9 @@ const Dashboard = () => {
     fetchData();
   }, [user]);
 
-  const getDailyPercentage = (planName: string) => {
-    switch (planName) {
-      case "Starter Plan":
-        return 0.04;
-      case "Silver Plan":
-        return 0.06;
-      case "Gold Plan":
-        return 0.08;
-      case "VIP Plan":
-        return 0.1;
-      default:
-        return 0;
-    }
-  };
-
   const calculateProgress = (investment: Investment) => {
     if (investment.status !== "active" || !investment.approved_at) {
-      return { progress: 0, days_left: 7 };
+      return { progress: 0, days_left: investment.duration || 7 };
     }
 
     const approvedAt = new Date(investment.approved_at);
@@ -106,253 +93,212 @@ const Dashboard = () => {
     const daysPassed = Math.floor(
       (now.getTime() - approvedAt.getTime()) / (1000 * 60 * 60 * 24),
     );
-    const progress = Math.min(Math.floor((daysPassed / 7) * 100), 100);
-    const daysLeft = Math.max(7 - daysPassed, 0);
+    const duration = investment.duration || 7;
+    const progress = Math.min(Math.floor((daysPassed / duration) * 100), 100);
+    const daysLeft = Math.max(duration - daysPassed, 0);
 
     return { progress, days_left: daysLeft };
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8 flex flex-col items-center">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">
-            Welcome back, {profile?.first_name || "User"}!
+    <div className="container mx-auto p-6 space-y-10">
+      {/* Premium Welcome Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-primary/20 via-background to-background p-8 rounded-3xl border-2 border-primary/10 shadow-2xl">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight">
+            Greetings, {profile?.first_name || "Investor"}!
           </h1>
-          <p className="text-muted-foreground">
-            Here's what's happening with your investments today.
+          <p className="text-muted-foreground text-lg">
+            Your portfolio is currently looking <span className="text-emerald-500 font-bold">sharp</span>.
           </p>
         </div>
-        <Link to="/invest-now">
-          <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
-            New Investment
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+            {role === 'vendor' && (
+                <Link to="/vendor-dashboard">
+                    <Button variant="outline" className="h-12 px-6 rounded-xl border-2 gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        Vendor Hub
+                    </Button>
+                </Link>
+            )}
+            <Link to="/invest-now">
+                <Button className="h-12 px-8 rounded-xl bg-gradient-primary text-primary-foreground shadow-xl shadow-primary/20 font-bold gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    New Investment
+                </Button>
+            </Link>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          {
-            title: "Total Balance",
-            value: `${statsData.totalBalance?.toLocaleString() || "0.00"}`,
-            icon: Wallet,
-            positive: true,
-          },
-          {
-            title: "Active Investments",
-            value: statsData.activeInvestments?.toLocaleString() || "0",
-            icon: TrendingUp,
-            positive: true,
-          },
-          {
-            title: "Total Earnings",
-            value: `${statsData.totalEarnings?.toLocaleString() || "0.00"}`,
-            icon: DollarSign,
-            positive: true,
-          },
-          {
-            title: "Referral Earnings",
-            value: `${statsData.referralEarnings?.toLocaleString() || "0.00"}`,
-            icon: Users,
-            positive: true,
-          },
-          {
-            title: "Withdrawable Balance",
-            value: `${statsData.withdrawableBalance?.toLocaleString() || "0.00"}`,
-            icon: Wallet,
-            positive: true,
-          },
-        ].map((stat, index) => (
-          <Card
-            key={index}
-            className="bg-gradient-card border-border shadow-card"
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Main Content */}
-      <Tabs defaultValue="investments" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="investments">Active Investments</TabsTrigger>
-          <TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="investments" className="space-y-6">
-          <Card className="bg-gradient-card border-border shadow-card">
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Wallet Balance Card */}
+        <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none shadow-2xl overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
+                <Wallet className="h-24 w-24" />
+            </div>
             <CardHeader>
-              <CardTitle>Active Investment Plans</CardTitle>
-              <CardDescription>
-                Monitor your current investments and their progress
-              </CardDescription>
+                <CardTitle className="text-slate-400 uppercase text-xs font-black tracking-widest">Total Assets</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {investments.map((investment, index) => {
-                  const { progress, days_left } = calculateProgress(investment);
-                  const dailyPercentage = getDailyPercentage(
-                    investment.plan_name,
-                  );
-                  const dailyProfit = investment.amount * dailyPercentage;
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-background/50"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">
-                            {investment.plan_name}
-                          </h3>
-                          <Badge
-                            variant="outline"
-                            className="text-success border-success"
-                          >
-                            {investment.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Amount: {investment.amount} •{" "}
-                          <span className="text-green-500">
-                            Profit Earned (
-                            {(() => {
-                              const daysPassed = Math.floor(
-                                (new Date().getTime() -
-                                  new Date(investment.approved_at).getTime()) /
-                                  (1000 * 60 * 60 * 24),
-                              );
-                              return Math.min(daysPassed, 7);
-                            })()}{" "}
-                            days):{" "}
-                            {(() => {
-                              const daysPassed = Math.floor(
-                                (new Date().getTime() -
-                                  new Date(investment.approved_at).getTime()) /
-                                  (1000 * 60 * 60 * 24),
-                              );
-                              const dailyPercentage = getDailyPercentage(
-                                investment.plan_name,
-                              );
-                              const dailyEarning =
-                                investment.amount * dailyPercentage;
-                              const accumulatedProfit =
-                                dailyEarning * Math.min(daysPassed, 7);
-                              return accumulatedProfit.toFixed(2);
-                            })()}
-                          </span>
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Progress value={progress} className="w-32" />
-                          <span className="text-xs text-muted-foreground">
-                            {progress}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center text-sm text-muted-foreground mb-1">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {days_left} days left
-                        </div>
-                        <Link
-                          to={`/manage-investment/${investment.id}`}
-                          state={{
-                            investment,
-                            withdrawableBalance: statsData.withdrawableBalance,
-                          }}
-                        >
-                          <Button variant="outline" size="sm">
-                            Manage
-                          </Button>
+            <CardContent className="space-y-6">
+                <div className="text-5xl font-black tracking-tighter">
+                    ₦{statsData.totalBalance?.toLocaleString() || "0.00"}
+                </div>
+                <div className="flex items-center gap-2 text-emerald-400 text-sm font-bold bg-emerald-400/10 w-fit px-3 py-1 rounded-full">
+                    <ArrowUpRight className="h-4 w-4" />
+                    +12.5% this month
+                </div>
+            </CardContent>
+        </Card>
+
+        {/* Withdrawable Card */}
+        <Card className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white border-none shadow-2xl overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
+                <DollarSign className="h-24 w-24" />
+            </div>
+            <CardHeader>
+                <CardTitle className="text-emerald-100 uppercase text-xs font-black tracking-widest">Withdrawable Funds</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="text-5xl font-black tracking-tighter">
+                    ₦{statsData.withdrawableBalance?.toLocaleString() || "0.00"}
+                </div>
+                <Link to="/withdraw">
+                    <Button variant="secondary" className="w-full font-bold bg-white text-emerald-700 hover:bg-emerald-50">
+                        Withdraw Now
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+
+        {/* Secondary Stats Column */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
+            <Card className="bg-muted/30 border-2 shadow-sm">
+                <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Active Trades</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <div className="text-2xl font-black">{statsData.activeInvestments || 0}</div>
+                </CardContent>
+            </Card>
+            <Card className="bg-muted/30 border-2 shadow-sm">
+                <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Referral Bonus</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <div className="text-2xl font-black text-primary">₦{statsData.referralEarnings?.toLocaleString() || "0.00"}</div>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
+
+      {/* Main Interactive Section */}
+      <div className="grid lg:grid-cols-3 gap-10">
+        {/* Left: Active Investments */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black flex items-center gap-2">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                    Portfolio Progress
+                </h2>
+                <Link to="/invest" className="text-primary font-bold text-sm hover:underline">View all plans</Link>
+            </div>
+
+            <div className="space-y-4">
+                {investments.length > 0 ? (
+                    investments.map((investment, index) => {
+                        const { progress, days_left } = calculateProgress(investment);
+                        return (
+                            <Card key={index} className="border-2 hover:shadow-xl transition-all group overflow-hidden">
+                                <CardContent className="p-6">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                        <div className="space-y-3 flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-primary/10 rounded-lg group-hover:rotate-12 transition-transform">
+                                                    <Gem className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-lg">{investment.plan_name}</h3>
+                                                    <Badge variant="secondary" className="text-[10px] uppercase font-black">{investment.status}</Badge>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-xs font-bold uppercase text-muted-foreground">
+                                                    <span>Growth Progress</span>
+                                                    <span>{progress}%</span>
+                                                </div>
+                                                <Progress value={progress} className="h-2 bg-muted" />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-10">
+                                            <div className="text-center">
+                                                <p className="text-[10px] uppercase font-black text-muted-foreground">Invested</p>
+                                                <p className="text-xl font-black">₦{investment.amount.toLocaleString()}</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-[10px] uppercase font-black text-muted-foreground">Days Left</p>
+                                                <p className="text-xl font-black text-primary">{days_left}</p>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
+                                                <ArrowUpRight className="h-5 w-5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })
+                ) : (
+                    <div className="py-20 text-center bg-muted/20 rounded-3xl border-2 border-dashed">
+                        <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                        <p className="text-muted-foreground font-bold">No active investments found.</p>
+                        <Link to="/invest-now">
+                            <Button variant="link" className="mt-2">Start your first trade</Button>
                         </Link>
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                )}
+            </div>
+        </div>
 
-        <TabsContent value="transactions" className="space-y-6">
-          <Card className="bg-gradient-card border-border shadow-card">
-            <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>
-                Your latest investment activities and earnings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentTransactions &&
-                  recentTransactions.map((transaction, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-background/50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded-full ${
-                            transaction.type === "Investment"
-                              ? "bg-primary/10"
-                              : transaction.type === "Withdrawal"
-                                ? "bg-warning/10"
-                                : "bg-success/10"
-                          }`}
-                        >
-                          {transaction.type === "Investment" && (
-                            <TrendingUp className="h-4 w-4 text-primary" />
-                          )}
-                          {transaction.type === "Withdrawal" && (
-                            <ArrowDownRight className="h-4 w-4 text-warning" />
-                          )}
-                          {transaction.type === "Referral" && (
-                            <Users className="h-4 w-4 text-success" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{transaction.type}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {transaction.plan}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div
-                          className={`font-semibold ${
-                            transaction.amount.toString().startsWith("+")
-                              ? "text-success"
-                              : "text-warning"
-                          }`}
-                        >
-                          {transaction.amount}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          {transaction.status === "Completed" ? (
-                            <CheckCircle className="h-3 w-3 text-success" />
-                          ) : (
-                            <Clock className="h-3 w-3 text-warning" />
-                          )}
-                          {transaction.status}
-                        </div>
-                      </div>
+        {/* Right: Activity Feed */}
+        <div className="space-y-6">
+            <h2 className="text-2xl font-black flex items-center gap-2">
+                <Clock className="h-6 w-6 text-primary" />
+                Live Feed
+            </h2>
+            <Card className="border-2 shadow-xl h-[500px] overflow-hidden">
+                <CardContent className="p-0">
+                    <div className="divide-y overflow-y-auto h-full scrollbar-hide">
+                        {recentTransactions.map((tx, i) => (
+                            <div key={i} className="p-4 hover:bg-muted/30 transition-colors flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'}`}>
+                                        {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black capitalize">{tx.type}</p>
+                                        <p className="text-[10px] text-muted-foreground font-medium">{new Date(tx.created_at || "").toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className={`text-sm font-black ${tx.type === 'deposit' ? 'text-emerald-500' : 'text-orange-500'}`}>
+                                        {tx.type === 'deposit' ? '+' : '-'}₦{tx.amount.toLocaleString()}
+                                    </p>
+                                    <Badge variant="outline" className="text-[8px] h-4 uppercase font-bold">{tx.status}</Badge>
+                                </div>
+                            </div>
+                        ))}
+                        {recentTransactions.length === 0 && (
+                            <div className="py-20 text-center italic text-muted-foreground text-sm">
+                                No recent activity.
+                            </div>
+                        )}
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
     </div>
   );
 };

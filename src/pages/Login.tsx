@@ -57,7 +57,7 @@ const Login = () => {
             <Wallet className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to your PipIndustry account</CardDescription>
+          <CardDescription>Sign in to your TerrasInvestment account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

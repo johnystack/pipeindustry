@@ -43,6 +43,30 @@ export interface Investment {
   user_id: string;
   crypto: string;
   duration: number;
+  plan_id?: string;
+}
+
+export interface VendorPlan {
+  id: string;
+  vendor_id: string;
+  name: string;
+  min_investment: number;
+  max_investment?: number;
+  duration_days: number;
+  daily_return_percent: number;
+  features: string[];
+  status: 'active' | 'inactive';
+  created_at: string;
+  vendor_name?: string;
+  asset_type?: 
+    | 'Gold' | 'Lithium' | 'Crude Oil' | 'Nickel' | 'Silver' 
+    | 'Bitcoin' | 'Natural Gas' | 'Copper' | 'Platinum' 
+    | 'Palladium' | 'Iron Ore' | 'Aluminum' 
+    | 'Corn' | 'Soybeans';
+  payment_details?: string;
+  fixed_limit?: number;
+  eligibility_status?: 'pending' | 'approved' | 'rejected';
+  eligibility_tx?: string;
 }
 
 export interface StatsData {

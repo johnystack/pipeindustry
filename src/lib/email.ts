@@ -11,7 +11,7 @@ interface SendEmailProps {
 export async function sendEmail({ to, subject, html }: SendEmailProps) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'noreply@pipindustry.org',
+      from: 'noreply@terrasinvestment.org',
       to: [to],
       subject: subject,
       html: html,
