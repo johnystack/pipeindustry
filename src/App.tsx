@@ -22,6 +22,7 @@ import Admin from "./pages/Admin";
 import VendorDashboard from "./pages/VendorDashboard";
 import VendorVerification from "./pages/VendorVerification";
 import AdminRoute from "./components/auth/AdminRoute";
+import AdminInvestments from "./pages/AdminInvestments";
 import VendorRoute from "./components/auth/VendorRoute";
 import UserInvestmentDetails from "./pages/UserInvestmentDetails";
 import ManageInvestment from "./pages/ManageInvestment";
@@ -104,6 +105,14 @@ const App = () => {
                   element={
                     <AdminRoute>
                       <UserInvestmentDetails />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/investments"
+                  element={
+                    <AdminRoute>
+                      <AdminInvestments />
                     </AdminRoute>
                   }
                 />

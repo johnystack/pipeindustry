@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { VendorPlan, Investment } from "@/lib/types";
+import { VendorPlan, Investment, Crypto, VendorPaymentWallet } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -17,7 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, List, Users, Gem, Zap, Droplets, Flame, Award, Wallet, Coins, Factory, Sprout, Landmark, Anchor, Mountain, ThermometerSnowflake, Shovel } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Plus, List, Users, Gem, Zap, Droplets, Flame, Award, Wallet, Coins, Factory, Sprout, Landmark, Anchor, Mountain, ThermometerSnowflake, Shovel, Copy } from "lucide-react";
 
 const assetIcons: Record<string, any> = {
     Gold: Gem,
@@ -33,8 +34,6 @@ const assetIcons: Record<string, any> = {
     "Iron Ore": Mountain,
     Aluminum: Factory,
     Wheat: Sprout,
-    Corn: Sprout,
-    Soybeans: Sprout,
 };
 
 const assetPrices: Record<string, number> = {
@@ -50,8 +49,6 @@ const assetPrices: Record<string, number> = {
     "Iron Ore": 50000,
     Lithium: 250000, // Default for those not specified
     "Natural Gas": 100000,
-    Corn: 50000,
-    Soybeans: 50000,
 };
 
 const VendorDashboard = () => {
@@ -59,31 +56,56 @@ const VendorDashboard = () => {
   const { toast } = useToast();
   const [plans, setPlans] = useState<VendorPlan[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [vendorWallets, setVendorWallets] = useState<VendorPaymentWallet[]>([]);
   const [loading, setLoading] = useState(true);
 
   const stats = {
     totalVolume: investments.reduce((acc, inv) => acc + inv.amount, 0),
     activeTraders: new Set(investments.map(inv => inv.user_id)).size,
     pendingEligibility: plans.filter(p => p.eligibility_status === 'pending').length,
-    monthlyCommission: investments.reduce((acc, inv) => acc + (inv.amount * 0.1), 0), // Assuming 10% commission for example
+    monthlyCommission: investments.reduce((acc, inv) => acc + (inv.amount * 0.5), 0), // 50% commission
   };
 
   // Form state for new plan
   const [newPlan, setNewPlan] = useState({
     name: "",
-    duration_days: "",
-    daily_return_percent: "",
-    features: "",
     asset_type: "Gold",
     payment_details: "",
+    max_traders: 10,
+    selected_wallet_id: "",
   });
 
   useEffect(() => {
     if (user) {
       fetchPlans();
       fetchInvestments();
+      fetchCryptos();
+      fetchVendorWallets();
     }
   }, [user]);
+
+  const fetchCryptos = async () => {
+    const { data, error } = await supabase.from("cryptocurrencies").select("*");
+    if (error) {
+      console.error("Error fetching cryptos:", error);
+    } else {
+      setCryptos(data || []);
+    }
+  };
+
+  const fetchVendorWallets = async () => {
+    const { data, error } = await supabase
+      .from("vendor_payment_wallets")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+    if (error) {
+      console.error("Error fetching vendor wallets:", error);
+    } else {
+      setVendorWallets(data || []);
+    }
+  };
 
   const fetchPlans = async () => {
     if (!user) return;
@@ -105,8 +127,9 @@ const VendorDashboard = () => {
     if (!user) return;
     const { data, error } = await supabase
       .from("investments")
-      .select("*, vendor_plans!inner(*)")
-      .eq("vendor_plans.vendor_id", user.id);
+      .select("*, vendor_plans!inner(*), profiles(*)")
+      .eq("vendor_plans.vendor_id", user.id)
+      .eq("status", "approved");
 
     if (error) {
       console.error("Error fetching investments:", error);
@@ -119,12 +142,10 @@ const VendorDashboard = () => {
     e.preventDefault();
     if (!user) return;
 
-    const featuresArray = newPlan.features
-      .split(",")
-      .map((f) => f.trim())
-      .filter((f) => f !== "");
-
-    const fixedPrice = assetPrices[newPlan.asset_type] || 0;
+    const fixedPrice = assetPrices[newPlan.asset_type] || 250000;
+    const fixedDuration = 24;
+    const fixedTotalReturn = 50; // 50%
+    const dailyReturn = fixedTotalReturn / fixedDuration;
 
     const { error } = await supabase.from("vendor_plans").insert([
       {
@@ -133,12 +154,15 @@ const VendorDashboard = () => {
         min_investment: fixedPrice,
         max_investment: fixedPrice,
         fixed_limit: fixedPrice,
-        duration_days: parseInt(newPlan.duration_days),
-        daily_return_percent: parseFloat(newPlan.daily_return_percent),
-        features: featuresArray,
+        duration_days: fixedDuration,
+        daily_return_percent: dailyReturn,
         asset_type: newPlan.asset_type,
         payment_details: newPlan.payment_details,
         status: "active",
+        eligibility_status: "pending",
+        max_traders: newPlan.max_traders,
+        current_traders: 0,
+        selected_wallet_id: newPlan.selected_wallet_id,
       },
     ]);
 
@@ -151,19 +175,15 @@ const VendorDashboard = () => {
     } else {
       toast({
         title: "Success",
-        description: "Asset investment plan created. Please complete the eligibility payment to make it live.",
+        description: "Asset investment plan created. Please pay the ₦5,000,000 eligibility fee to make it live.",
       });
       setNewPlan({
         name: "",
-        duration_days: "",
-        daily_return_percent: "",
-        features: "",
         asset_type: "Gold",
         payment_details: "",
+        max_traders: 10,
+        selected_wallet_id: "",
       });
-      // Switch to plans tab to show the new plan needing payment
-      const plansTab = document.querySelector('[value="plans"]') as HTMLElement;
-      if (plansTab) plansTab.click();
       fetchPlans();
     }
   };
@@ -181,7 +201,7 @@ const VendorDashboard = () => {
     if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-        toast({ title: "Success", description: "Eligibility proof submitted for review." });
+        toast({ title: "Success", description: "Eligibility proof (₦5M) submitted for review." });
         fetchPlans();
     }
   };
@@ -278,35 +298,105 @@ const VendorDashboard = () => {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground text-xs uppercase font-bold">Daily Return</p>
-                            <p className="font-bold text-lg">{plan.daily_return_percent}%</p>
+                            <p className="text-muted-foreground text-xs uppercase font-bold">Plan Duration</p>
+                            <p className="font-bold text-lg">24 Days</p>
                         </div>
                         <div className="p-3 bg-muted rounded-lg">
                             <p className="text-muted-foreground text-xs uppercase font-bold">Total ROI</p>
-                            <p className="font-bold text-lg">{plan.daily_return_percent * plan.duration_days}%</p>
+                            <p className="font-bold text-lg text-emerald-500">50%</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-muted-foreground text-xs uppercase font-bold">Trader Slots</p>
+                            <p className="font-bold text-lg">
+                              {plan.current_traders || 0} / {plan.max_traders || 10}
+                            </p>
+                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all" 
+                                style={{ width: `${((plan.current_traders || 0) / (plan.max_traders || 10)) * 100}%` }}
+                              ></div>
+                            </div>
+                        </div>
+                        <div className="p-3 bg-muted rounded-lg">
+                            <p className="text-muted-foreground text-xs uppercase font-bold">Status</p>
+                            <p className="font-bold text-lg">
+                              {(plan.current_traders || 0) >= (plan.max_traders || 10) ? (
+                                <span className="text-red-500">Full</span>
+                              ) : (
+                                <span className="text-emerald-500">Open</span>
+                              )}
+                            </p>
                         </div>
                     </div>
 
                     {plan.eligibility_status !== "approved" && (
-                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl space-y-3">
-                            <p className="text-xs font-bold text-yellow-600 uppercase">Action Required: Eligibility Payment</p>
-                            <p className="text-[10px] text-muted-foreground">Please pay the commodity listing fee to make this plan live for investors.</p>
-                            <div className="flex gap-2">
-                                <Input 
-                                    placeholder="TX Hash" 
-                                    className="h-8 text-xs" 
-                                    id={`tx-${plan.id}`}
-                                />
-                                <Button 
-                                    size="sm" 
-                                    className="h-8 text-xs bg-yellow-600 hover:bg-yellow-700"
-                                    onClick={() => {
-                                        const tx = (document.getElementById(`tx-${plan.id}`) as HTMLInputElement).value;
-                                        handlePayEligibility(plan.id, tx);
-                                    }}
-                                >
-                                    Submit
-                                </Button>
+                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs font-bold text-yellow-600 uppercase">Action Required: ₦5,000,000 Eligibility Fee</p>
+                                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">PENDING</Badge>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">Please pay the listing fee of ₦5,000,000 to your selected company wallet below.</p>
+                            
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase">Selected Company Wallet</Label>
+                                <div className="grid gap-2">
+                                    {vendorWallets
+                                      .filter(wallet => wallet.id === plan.selected_wallet_id)
+                                      .map((wallet) => (
+                                        <div key={wallet.id} className="flex items-center justify-between p-3 bg-background rounded-lg border border-yellow-500/20 group">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1.5 bg-yellow-500/10 rounded-md">
+                                                    <Coins className="h-4 w-4 text-yellow-600" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-white">{wallet.name}</span>
+                                                    <span className="text-xs text-muted-foreground">{wallet.network}</span>
+                                                    <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">{wallet.address}</span>
+                                                </div>
+                                            </div>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-8 w-8 hover:bg-yellow-500/10"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(wallet.address);
+                                                    toast({ title: "Copied!", description: `${wallet.name} address copied.` });
+                                                }}
+                                            >
+                                                <Copy className="h-4 w-4 text-yellow-600" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    {!plan.selected_wallet_id && (
+                                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                            <p className="text-xs text-red-600 font-bold">No wallet selected for this plan</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t border-yellow-500/10">
+                                <Label htmlFor={`tx-${plan.id}`} className="text-[10px] font-bold uppercase text-muted-foreground">Upload Payment Proof (TX Hash)</Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Paste transaction hash here..." 
+                                        className="h-9 text-xs bg-background border-yellow-500/20" 
+                                        id={`tx-${plan.id}`}
+                                    />
+                                    <Button 
+                                        size="sm" 
+                                        className="h-9 text-xs bg-yellow-600 hover:bg-yellow-700 shadow-lg shadow-yellow-600/20"
+                                        onClick={() => {
+                                            const tx = (document.getElementById(`tx-${plan.id}`) as HTMLInputElement).value;
+                                            handlePayEligibility(plan.id, tx);
+                                        }}
+                                    >
+                                        Pay Fee
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -369,8 +459,6 @@ const VendorDashboard = () => {
                                 <SelectItem value="Aluminum">Aluminum (₦100,000)</SelectItem>
                                 <SelectItem value="Crude Oil">Crude Oil (₦50,000)</SelectItem>
                                 <SelectItem value="Iron Ore">Iron Ore (₦50,000)</SelectItem>
-                                <SelectItem value="Corn">Corn (₦50,000)</SelectItem>
-                                <SelectItem value="Soybeans">Soybeans (₦50,000)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -396,51 +484,50 @@ const VendorDashboard = () => {
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="min">Min Investment ($)</Label>
-                    <Input
-                      id="min"
-                      type="number"
-                      className="h-12"
-                      value={newPlan.min_investment}
-                      onChange={(e) => setNewPlan({ ...newPlan, min_investment: e.target.value })}
-                      required
-                    />
+                    <Label>Plan Duration (Fixed)</Label>
+                    <div className="h-12 flex items-center px-4 bg-muted rounded-md font-bold text-primary">
+                        24 Days
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="max">Max Investment ($) (Optional)</Label>
-                    <Input
-                      id="max"
-                      type="number"
-                      className="h-12"
-                      value={newPlan.max_investment}
-                      onChange={(e) => setNewPlan({ ...newPlan, max_investment: e.target.value })}
-                    />
+                    <Label>Total Return (Fixed)</Label>
+                    <div className="h-12 flex items-center px-4 bg-muted rounded-md font-bold text-emerald-500">
+                        50% ROI
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="duration">Duration (Days)</Label>
+                    <Label htmlFor="max_traders">Maximum Traders</Label>
                     <Input
-                      id="duration"
+                      id="max_traders"
                       type="number"
+                      min="0"
+                      max="100"
                       className="h-12"
-                      value={newPlan.duration_days}
-                      onChange={(e) => setNewPlan({ ...newPlan, duration_days: e.target.value })}
+                      value={newPlan.max_traders}
+                      onChange={(e) => setNewPlan({ ...newPlan, max_traders: parseInt(e.target.value) || 10 })}
+                      placeholder="e.g., 10"
                       required
                     />
+                    <p className="text-xs text-muted-foreground">Maximum number of traders that can invest in this plan</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="return">Daily Return (%)</Label>
-                    <Input
-                      id="return"
-                      type="number"
-                      step="0.01"
-                      className="h-12"
-                      value={newPlan.daily_return_percent}
-                      onChange={(e) => setNewPlan({ ...newPlan, daily_return_percent: e.target.value })}
-                      required
-                    />
+                    <Label htmlFor="selected_wallet">Payment Wallet</Label>
+                    <Select value={newPlan.selected_wallet_id} onValueChange={(v) => setNewPlan({ ...newPlan, selected_wallet_id: v })}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select company wallet for payment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendorWallets.map((wallet) => (
+                          <SelectItem key={wallet.id} value={wallet.id}>
+                            {wallet.name} ({wallet.network}) - {wallet.address.slice(0, 10)}...
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Choose which company wallet to pay the ₦5M fee to</p>
                   </div>
                 </div>
 
@@ -459,16 +546,59 @@ const VendorDashboard = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="features">Plan Features (Comma separated)</Label>
-                  <Input
-                    id="features"
-                    className="h-12"
-                    value={newPlan.features}
-                    onChange={(e) => setNewPlan({ ...newPlan, features: e.target.value })}
-                    placeholder="e.g., Instant withdrawals, 24/7 support, Verified source"
-                  />
+                {/* Vendor Payment Wallets Section */}
+                <div className="space-y-4 p-6 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-yellow-600" />
+                    <h3 className="font-bold text-lg">₦5,000,000 Eligibility Fee Payment</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    To activate your asset plan, you must pay the ₦5,000,000 eligibility fee to one of the admin wallets below. 
+                    After payment, submit your transaction hash for verification.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold text-yellow-600 uppercase">Company Payment Wallets</Label>
+                    <div className="grid gap-3">
+                      {vendorWallets.map((wallet) => (
+                        <div key={wallet.id} className="flex items-center justify-between p-4 bg-background rounded-lg border border-yellow-500/20 group">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-yellow-500/10 rounded-lg">
+                              <Coins className="h-4 w-4 text-yellow-600" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-white">{wallet.symbol}</span>
+                              <span className="text-xs text-muted-foreground">{wallet.network}</span>
+                              <span className="text-xs text-muted-foreground font-mono break-all">{wallet.address}</span>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 hover:bg-yellow-500/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(wallet.address);
+                              toast({ title: "Copied!", description: `${wallet.symbol} address copied to clipboard.` });
+                            }}
+                          >
+                            <Copy className="h-4 w-4 text-yellow-600" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                    <p className="text-xs text-yellow-600 font-bold uppercase mb-2">Important Notice</p>
+                    <p className="text-xs text-muted-foreground">
+                      • Send exactly ₦5,000,000 equivalent in any supported cryptocurrency<br/>
+                      • Your plan will remain pending until payment is verified<br/>
+                      • Only approved plans will be visible to traders<br/>
+                      • Keep your transaction hash for verification
+                    </p>
+                  </div>
                 </div>
+
                 <Button type="submit" className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20">Post Investment Asset</Button>
               </form>
             </CardContent>

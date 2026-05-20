@@ -85,7 +85,7 @@ const Dashboard = () => {
 
   const calculateProgress = (investment: Investment) => {
     if (investment.status !== "active" || !investment.approved_at) {
-      return { progress: 0, days_left: investment.duration || 7 };
+      return { progress: 0, days_left: 24 };
     }
 
     const approvedAt = new Date(investment.approved_at);
@@ -93,7 +93,7 @@ const Dashboard = () => {
     const daysPassed = Math.floor(
       (now.getTime() - approvedAt.getTime()) / (1000 * 60 * 60 * 24),
     );
-    const duration = investment.duration || 7;
+    const duration = 24;
     const progress = Math.min(Math.floor((daysPassed / duration) * 100), 100);
     const daysLeft = Math.max(duration - daysPassed, 0);
 
@@ -103,7 +103,7 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto p-6 space-y-10">
       {/* Premium Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-primary/20 via-background to-background p-8 rounded-3xl border-2 border-primary/10 shadow-2xl">
+      <div className="flex items-center justify-between gap-6 bg-gradient-to-r from-primary/20 via-background to-background p-8 rounded-3xl border-2 border-primary/10 shadow-2xl">
         <div className="space-y-1">
           <h1 className="text-4xl font-black tracking-tight">
             Greetings, {profile?.first_name || "Investor"}!
@@ -131,7 +131,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-3 gap-8">
         {/* Wallet Balance Card */}
         <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none shadow-2xl overflow-hidden relative group">
             <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
@@ -172,7 +172,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Secondary Stats Column */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
+        <div className="grid grid-cols-1 gap-4">
             <Card className="bg-muted/30 border-2 shadow-sm">
                 <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Active Trades</CardTitle>
@@ -193,9 +193,9 @@ const Dashboard = () => {
       </div>
 
       {/* Main Interactive Section */}
-      <div className="grid lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-3 gap-10">
         {/* Left: Active Investments */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="col-span-2 space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-black flex items-center gap-2">
                     <TrendingUp className="h-6 w-6 text-primary" />
@@ -211,7 +211,7 @@ const Dashboard = () => {
                         return (
                             <Card key={index} className="border-2 hover:shadow-xl transition-all group overflow-hidden">
                                 <CardContent className="p-6">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div className="flex items-center justify-between gap-6">
                                         <div className="space-y-3 flex-1">
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2 bg-primary/10 rounded-lg group-hover:rotate-12 transition-transform">

@@ -29,8 +29,6 @@ const assetIcons: Record<string, any> = {
   "Iron Ore": Mountain,
   Aluminum: Factory,
   Wheat: Sprout,
-  Corn: Sprout,
-  Soybeans: Sprout,
 };
 
 const assetColors: Record<string, string> = {
@@ -47,8 +45,6 @@ const assetColors: Record<string, string> = {
   "Iron Ore": "text-red-800 bg-red-800/10",
   Aluminum: "text-zinc-300 bg-zinc-300/10",
   Wheat: "text-yellow-600 bg-yellow-600/10",
-  Corn: "text-yellow-400 bg-yellow-400/10",
-  Soybeans: "text-emerald-700 bg-emerald-700/10",
 };
 
 const assetPrices: Record<string, number> = {
@@ -64,8 +60,6 @@ const assetPrices: Record<string, number> = {
   "Iron Ore": 50000,
   Lithium: 250000,
   "Natural Gas": 100000,
-  Corn: 50000,
-  Soybeans: 50000,
 };
 
 const Invest = () => {
@@ -129,15 +123,11 @@ const Invest = () => {
   };
 
   const calculateReturns = (amount: number, planId: string | null) => {
-    const plan = vendorPlans.find((p) => p.id === planId);
-    if (!plan || amount <= 0) {
+    if (amount <= 0) {
       return { expectedProfit: 0, totalReturn: 0 };
     }
 
-    const dailyRate = plan.daily_return_percent / 100;
-    const durationDays = plan.duration_days;
-
-    const profit = amount * dailyRate * durationDays;
+    const profit = amount * 0.5; // Fixed 50%
     const total = amount + profit;
 
     return { expectedProfit: profit, totalReturn: total };
@@ -252,13 +242,13 @@ const Invest = () => {
                 <CardContent className="space-y-6 p-6">
                     <div className="text-center p-4 bg-muted/50 rounded-xl space-y-1">
                         <div className="text-4xl font-black text-primary">
-                            {plan.daily_return_percent * plan.duration_days}%
+                            50%
                         </div>
                         <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                             Expected ROI
                         </div>
                         <div className="text-xs text-muted-foreground">
-                            {plan.daily_return_percent}% Daily for {plan.duration_days} Days
+                            Fixed Return in 24 Days
                         </div>
                     </div>
 

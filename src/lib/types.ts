@@ -25,6 +25,17 @@ export interface Crypto {
   fee?: number;
 }
 
+export interface VendorPaymentWallet {
+  id: string;
+  name: string;
+  symbol: string;
+  address: string;
+  network?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AdminStat {
   title: string;
   value: string;
@@ -61,12 +72,14 @@ export interface VendorPlan {
   asset_type?: 
     | 'Gold' | 'Lithium' | 'Crude Oil' | 'Nickel' | 'Silver' 
     | 'Bitcoin' | 'Natural Gas' | 'Copper' | 'Platinum' 
-    | 'Palladium' | 'Iron Ore' | 'Aluminum' 
-    | 'Corn' | 'Soybeans';
+    | 'Palladium' | 'Iron Ore' | 'Aluminum';
   payment_details?: string;
   fixed_limit?: number;
   eligibility_status?: 'pending' | 'approved' | 'rejected';
   eligibility_tx?: string;
+  max_traders?: number;
+  current_traders?: number;
+  selected_wallet_id?: string;
 }
 
 export interface StatsData {

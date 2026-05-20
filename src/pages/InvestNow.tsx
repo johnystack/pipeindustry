@@ -36,14 +36,15 @@ import { Crypto, Deposit, VendorPlan } from "@/lib/types";
 const InvestNow = () => {
   const { user } = useAuth();
   const [selectedCrypto, setSelectedCrypto] = useState("");
-  const [amount, setAmount] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const { toast } = useToast();
 
   const [cryptos, setCryptos] = useState<Crypto[]>([]);
   const [vendorPlans, setVendorPlans] = useState<VendorPlan[]>([]);
   const [recentDeposits, setRecentDeposits] = useState<Deposit[]>([]);
+  const [userInvestments, setUserInvestments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingProof, setUploadingProof] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,11 +87,30 @@ const InvestNow = () => {
           setSelectedPlanId(mappedPlans[0].id);
         }
       }
+
+      // Fetch User Investments
+      if (user) {
+        const { data: investmentData, error: investmentError } = await supabase
+          .from("investments")
+          .select(`
+            *,
+            vendor_plans(name, asset_type)
+          `)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (investmentError) {
+          console.error("Error fetching user investments:", investmentError);
+        } else {
+          setUserInvestments(investmentData || []);
+        }
+      }
+
       setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchRecentDeposits = async () => {
@@ -124,15 +144,6 @@ const InvestNow = () => {
       return;
     }
 
-    if (!amount) {
-      toast({
-        title: "Error",
-        description: "Please enter an amount to invest.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const plan = vendorPlans.find((p) => p.id === selectedPlanId);
     if (!plan) {
       toast({
@@ -143,13 +154,20 @@ const InvestNow = () => {
       return;
     }
 
+    // Check if plan has available slots
+    if (plan.max_traders > 0 && (plan.current_traders || 0) >= plan.max_traders) {
+      toast({
+        title: "Plan Full",
+        description: "This investment plan has reached its maximum number of traders. Please select another plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const fixedAmount = plan.min_investment;
-
-    const dailyReturn = plan.daily_return_percent / 100;
-    const duration = plan.duration_days;
-    const expectedProfit = fixedAmount * dailyReturn * duration;
-
-    const selectedCryptoData = cryptos.find((c) => c.id === selectedCrypto);
+    const fixedDuration = 24;
+    const fixedTotalReturn = 0.5; // 50%
+    const expectedProfit = fixedAmount * fixedTotalReturn;
 
     const { error } = await supabase.from("investments").insert([
       {
@@ -157,14 +175,13 @@ const InvestNow = () => {
         plan_id: selectedPlanId,
         plan_name: plan.name,
         amount: fixedAmount,
-        crypto: selectedCryptoData?.symbol || selectedCrypto,
-        status: "pending",
-        address: selectedCryptoData?.address,
+        crypto: "NGN", // Traders pay in Naira
+        status: "awaiting_proof", // Changed from "pending" to "awaiting_proof"
         expected_profit: expectedProfit,
-        daily_return: dailyReturn,
-        duration: duration,
+        daily_return: fixedTotalReturn / fixedDuration,
+        duration: fixedDuration,
         due_date: new Date(
-          new Date().getTime() + duration * 24 * 60 * 60 * 1000,
+          new Date().getTime() + fixedDuration * 24 * 60 * 60 * 1000,
         ),
       },
     ]);
@@ -187,8 +204,7 @@ const InvestNow = () => {
             status: "pending",
             description: `Investment in ${plan.name} (${plan.asset_type})`,
             reference: `INV-${Date.now()}`,
-            crypto: selectedCryptoData?.symbol || selectedCrypto,
-            address: selectedCryptoData?.address,
+            crypto: "NGN", // Traders pay in Naira
           },
         ]);
 
@@ -198,10 +214,72 @@ const InvestNow = () => {
 
       toast({
         title: "Success",
-        description: "Your investment request has been submitted. Please complete the payment using the vendor's details.",
+        description: "Your investment request has been submitted. Please upload your payment proof to complete the process.",
       });
-      setAmount("");
+      
+      // Refresh user investments to show the new one
+      if (user) {
+        const { data: investmentData } = await supabase
+          .from("investments")
+          .select(`
+            *,
+            vendor_plans(name, asset_type)
+          `)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        setUserInvestments(investmentData || []);
+      }
     }
+  };
+
+  const handleUploadPaymentProof = async (investmentId: string, proofText: string) => {
+    if (!proofText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your payment proof/transaction hash.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingProof(investmentId);
+    
+    const { error } = await supabase
+      .from("investments")
+      .update({ 
+        payment_proof: proofText,
+        status: "pending" // Change from "awaiting_proof" to "pending" for admin review
+      })
+      .eq("id", investmentId);
+
+    if (error) {
+      console.error("Error uploading payment proof:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload payment proof. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Payment proof uploaded successfully! Your investment is now pending admin approval.",
+      });
+      
+      // Refresh user investments
+      if (user) {
+        const { data: investmentData } = await supabase
+          .from("investments")
+          .select(`
+            *,
+            vendor_plans(name, asset_type)
+          `)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        setUserInvestments(investmentData || []);
+      }
+    }
+    
+    setUploadingProof(null);
   };
 
   const selectedCryptoData = cryptos.find((c) => c.id === selectedCrypto);
@@ -242,8 +320,9 @@ const InvestNow = () => {
       </div>
 
       <Tabs defaultValue="deposit" className="space-y-6 w-full max-w-5xl">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
           <TabsTrigger value="deposit">Deposit Funds</TabsTrigger>
+          <TabsTrigger value="my-investments">My Investments</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
@@ -275,33 +354,6 @@ const InvestNow = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {selectedPlanData && (
-                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 mt-2">
-                        <p className="text-xs font-bold text-primary uppercase">Plan Details</p>
-                        <div className="grid grid-cols-2 gap-2 mt-1">
-                            <span className="text-xs text-muted-foreground">Min: ${selectedPlanData.min_investment}</span>
-                            <span className="text-xs text-muted-foreground text-right">
-                                {selectedPlanData.fixed_limit ? `Limit: $${selectedPlanData.fixed_limit}` : `Max: ${selectedPlanData.max_investment ? `$${selectedPlanData.max_investment}` : "∞"}`}
-                            </span>
-                        </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="crypto">Payment Currency</Label>
-                  <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select crypto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cryptos.map((crypto) => (
-                        <SelectItem key={crypto.id} value={crypto.id}>
-                          {crypto.name} ({crypto.symbol})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -310,12 +362,51 @@ const InvestNow = () => {
                     ₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0"}
                   </div>
                   <p className="text-[10px] text-muted-foreground italic">
-                    The investment amount is fixed by the platform for this commodity.
+                    The investment amount is fixed by the platform for this commodity. Traders pay in Naira (₦) directly to the vendor.
                   </p>
                 </div>
 
-                <Button className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20" onClick={handleInvest}>
-                  Confirm Investment
+                {/* Trader Slots Information */}
+                {selectedPlanData && (
+                  <div className="space-y-2">
+                    <Label>Available Trader Slots</Label>
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Slots Filled</span>
+                        <span className="font-bold">
+                          {selectedPlanData.current_traders || 0} / {selectedPlanData.max_traders || 0}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all" 
+                          style={{ 
+                            width: `${selectedPlanData.max_traders > 0 ? ((selectedPlanData.current_traders || 0) / selectedPlanData.max_traders) * 100 : 0}%` 
+                          }}
+                        />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {selectedPlanData.max_traders > 0 && (selectedPlanData.current_traders || 0) >= selectedPlanData.max_traders ? (
+                          <span className="text-red-500 font-medium">⚠️ This plan is full</span>
+                        ) : selectedPlanData.max_traders > 0 ? (
+                          <span className="text-green-600 font-medium">✅ Slots available</span>
+                        ) : (
+                          <span className="text-blue-500 font-medium">🔄 Unlimited slots</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button 
+                  className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20" 
+                  onClick={handleInvest}
+                  disabled={selectedPlanData && selectedPlanData.max_traders > 0 && (selectedPlanData.current_traders || 0) >= selectedPlanData.max_traders}
+                >
+                  {selectedPlanData && selectedPlanData.max_traders > 0 && (selectedPlanData.current_traders || 0) >= selectedPlanData.max_traders 
+                    ? "Plan Full - No Slots Available" 
+                    : "Confirm Investment"
+                  }
                 </Button>
               </CardContent>
             </Card>
@@ -358,27 +449,15 @@ const InvestNow = () => {
                         </div>
                     </div>
 
-                    {selectedCryptoData && (
-                        <div className="space-y-4">
-                            <div className="flex justify-center p-4 bg-white rounded-xl">
-                                <QrCode className="h-32 w-32 text-black" />
-                            </div>
-                            <div className="p-4 bg-muted rounded-xl space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Amount to send:</span>
-                                    <span className="font-bold text-primary">₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0.00"}</span>
-                                </div>
-                                <div className="flex justify-between text-sm border-t border-border pt-2 mt-2">
-                                    <span className="text-muted-foreground">Currency:</span>
-                                    <span className="font-bold">{selectedCryptoData.name} ({selectedCryptoData.symbol})</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Network:</span>
-                                    <span className="font-bold text-primary">{selectedCryptoData.network || "Default"}</span>
-                                </div>
-                            </div>
+                    <div className="p-4 bg-muted rounded-xl space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Total Amount to Pay:</span>
+                            <span className="font-black text-xl text-primary">₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0.00"}</span>
                         </div>
-                    )}
+                        <div className="text-[10px] text-muted-foreground italic mt-2">
+                            * Please ensure you send the exact amount mentioned above to the vendor's account to avoid delays in approval.
+                        </div>
+                    </div>
                   </>
                 ) : (
                   <div className="text-center py-20 text-muted-foreground italic">
@@ -388,6 +467,96 @@ const InvestNow = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="my-investments">
+          <Card className="bg-gradient-card border-border shadow-xl">
+            <CardHeader>
+              <CardTitle>My Investments</CardTitle>
+              <CardDescription>
+                Track your investments and upload payment proof
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {userInvestments.map((investment) => (
+                  <div key={investment.id} className="p-6 border-2 rounded-2xl bg-background/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="font-black text-lg">{investment.vendor_plans?.name}</h4>
+                        <p className="text-sm text-muted-foreground">{investment.vendor_plans?.asset_type}</p>
+                      </div>
+                      <Badge variant={
+                        investment.status === 'approved' ? 'default' : 
+                        investment.status === 'pending' ? 'secondary' : 
+                        investment.status === 'awaiting_proof' ? 'outline' : 'destructive'
+                      }>
+                        {investment.status === 'awaiting_proof' ? 'Awaiting Proof' : investment.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground uppercase font-bold">Amount</p>
+                        <p className="font-black text-primary">₦{investment.amount.toLocaleString()}</p>
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground uppercase font-bold">Expected Profit</p>
+                        <p className="font-black text-emerald-500">₦{investment.expected_profit?.toLocaleString() || 0}</p>
+                      </div>
+                    </div>
+
+                    {investment.status === 'awaiting_proof' && (
+                      <div className="space-y-3 p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
+                        <Label className="text-sm font-bold text-yellow-600">Upload Payment Proof</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Enter transaction hash or payment reference..."
+                            id={`proof-${investment.id}`}
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={() => {
+                              const input = document.getElementById(`proof-${investment.id}`) as HTMLInputElement;
+                              if (input) {
+                                handleUploadPaymentProof(investment.id, input.value);
+                              }
+                            }}
+                            disabled={uploadingProof === investment.id}
+                            className="bg-yellow-600 hover:bg-yellow-700"
+                          >
+                            {uploadingProof === investment.id ? "Uploading..." : "Upload Proof"}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Please provide your transaction hash, receipt number, or payment reference for verification.
+                        </p>
+                      </div>
+                    )}
+
+                    {investment.payment_proof && (
+                      <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                        <Label className="text-xs font-bold text-blue-600 uppercase">Payment Proof Submitted</Label>
+                        <p className="text-sm font-mono break-all mt-1">{investment.payment_proof}</p>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Created: {new Date(investment.created_at || "").toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+                
+                {userInvestments.length === 0 && (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>No investments found.</p>
+                    <p className="text-sm">Create your first investment using the "Deposit Funds" tab.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="history">
