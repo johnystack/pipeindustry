@@ -13,14 +13,14 @@ import { TrendingUp, ShieldCheck, Zap, Globe, Users, Award } from "lucide-react"
 const AboutUs: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-primary/30">
-      <div className="container mx-auto py-20 px-4 md:px-6 space-y-20">
+      <div className="container mx-auto py-10 md:py-20 px-4 md:px-6 space-y-16 md:space-y-20">
         
         {/* Hero Section */}
-        <section className="text-center space-y-6 max-w-4xl mx-auto pt-10">
+        <section className="text-center space-y-6 max-w-4xl mx-auto pt-4 md:pt-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-black uppercase tracking-widest animate-fade-in">
             <TrendingUp className="h-4 w-4" /> Global Infrastructure
           </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase italic leading-[1.1]">
+          <h1 className="text-3xl md:text-6xl font-black tracking-tighter uppercase italic leading-[1.1]">
             Elite Commodity Trading <br />
             <span className="text-primary">Redefined.</span>
           </h1>
@@ -38,7 +38,7 @@ const AboutUs: React.FC = () => {
         </section>
 
         {/* Core Pillars */}
-        <section className="grid md:grid-cols-3 gap-8">
+        <section className="grid md:grid-cols-3 gap-6 md:gap-8">
             {[
                 { icon: ShieldCheck, title: "Verified Assets", desc: "Every commodity unit on our platform is backed by physical reserves and blockchain verification." },
                 { icon: Zap, title: "Liquid Growth", desc: "Optimized 24-day cycles with 4-day claim intervals ensure your capital remains working for you." },
@@ -100,8 +100,8 @@ const AboutUs: React.FC = () => {
         </section>
 
         {/* CTA */}
-        <section className="text-center bg-gradient-to-br from-primary/10 to-emerald-500/5 py-16 rounded-[3rem] border border-white/5 shadow-2xl">
-          <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase italic text-white tracking-tighter">
+        <section className="text-center bg-gradient-to-br from-primary/10 to-emerald-500/5 py-12 md:py-16 rounded-[3rem] border border-white/5 shadow-2xl">
+          <h2 className="text-2xl md:text-5xl font-black mb-6 uppercase italic text-white tracking-tighter">
             Ready for <span className="text-primary">Elite</span> Status?
           </h2>
           <p className="text-sm md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 font-medium">

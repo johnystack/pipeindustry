@@ -88,54 +88,54 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-primary/30">
+    <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-primary/30 min-w-[1200px]">
       {/* Hero Section */}
-      <section id="home" className="relative min-h-[70vh] md:min-h-[85vh] flex items-center pt-20 md:pt-32 pb-12 overflow-hidden">
+      <section id="home" className="relative min-h-[80vh] flex items-center pt-8 pb-12 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[100px] animate-pulse" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[100px] animate-pulse delay-700" />
         </div>
 
-        <div className="relative container mx-auto px-4 md:px-6">
-          <div className="grid lg:grid-cols-2 gap-10 md:gap-16 items-center">
-            <div className="space-y-6 md:space-y-8 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] md:text-xs font-black uppercase tracking-widest">
+        <div className="relative container mx-auto px-6">
+          <div className="grid grid-cols-2 gap-16 items-center">
+            <div className="space-y-8 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-xs font-black uppercase tracking-widest">
                 <div className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
                 Global Market Live
               </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-[1.05] md:leading-[0.95] uppercase italic">
+              <h1 className="text-7xl font-black tracking-tighter leading-[0.95] uppercase italic">
                 ELITE <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-primary">COMMODITY</span> <br />
                 TRADING.
               </h1>
-              <p className="text-sm md:text-lg text-slate-400 max-w-lg leading-relaxed font-medium mx-auto lg:mx-0">
+              <p className="text-lg text-slate-400 max-w-lg leading-relaxed font-medium">
                 The premier destination for high-stakes commodity wealth. 
                 Invest in verified assets with fixed-price entry and guaranteed transparency.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-row gap-4">
                 <Link to="/signup">
-                  <Button className="h-12 md:h-14 px-10 w-full sm:w-auto rounded-xl bg-primary text-primary-foreground font-black text-xs md:text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
+                  <Button className="h-14 px-10 rounded-xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
                     Start Trading <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link to="/invest">
-                  <Button variant="outline" className="h-12 md:h-14 px-10 w-full sm:w-auto rounded-xl border-white/10 text-white font-black text-xs md:text-sm uppercase tracking-widest hover:bg-white/5">
+                  <Button variant="outline" className="h-14 px-10 rounded-xl border-white/10 text-white font-black text-sm uppercase tracking-widest hover:bg-white/5">
                     View Market
                   </Button>
                 </Link>
               </div>
               
-              <div className="flex flex-wrap justify-center lg:justify-start items-center gap-3 pt-4">
+              <div className="flex flex-wrap items-center gap-3 pt-4">
                 {commodities.map((item, i) => (
                     <div key={i} className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 hover:border-primary/40 transition-colors group">
-                        <item.icon className={`h-3.5 w-3.5 md:h-4 md:w-4 ${item.color}`} />
-                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">{item.name}</span>
+                        <item.icon className={`h-4 md:h-4 w-4 ${item.color}`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.name}</span>
                     </div>
                 ))}
               </div>
             </div>
             
-            <div className="relative group hidden lg:block">
+            <div className="relative group block">
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-[2.5rem] blur-2xl opacity-30"></div>
               <div className="relative border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <img src={teamExperts} alt="Experts" className="w-full h-[550px] object-cover grayscale-[0.2]" />
@@ -163,25 +163,25 @@ const Home = () => {
       {/* Trust Ticker */}
       <section className="py-8 bg-white/[0.02] border-y border-white/5">
         <div className="container mx-auto px-4">
-            <div className="flex flex-wrap justify-center lg:justify-between items-center gap-8 opacity-40">
-                <div className="flex items-center gap-2 font-black text-[10px] md:text-xs tracking-[0.2em] uppercase italic"><Shield className="h-4 w-4 text-primary" /> Blockchain Secured</div>
-                <div className="flex items-center gap-2 font-black text-[10px] md:text-xs tracking-[0.2em] uppercase italic"><CheckCircle className="h-4 w-4 text-primary" /> Verified Assets</div>
-                <div className="flex items-center gap-2 font-black text-[10px] md:text-xs tracking-[0.2em] uppercase italic"><Gem className="h-4 w-4 text-primary" /> Commodity Backed</div>
-                <div className="flex items-center gap-2 font-black text-[10px] md:text-xs tracking-[0.2em] uppercase italic"><Award className="h-4 w-4 text-primary" /> Tier-1 Status</div>
+            <div className="flex justify-between items-center gap-8 opacity-40">
+                <div className="flex items-center gap-2 font-black text-xs tracking-[0.2em] uppercase italic"><Shield className="h-4 w-4 text-primary" /> Blockchain Secured</div>
+                <div className="flex items-center gap-2 font-black text-xs tracking-[0.2em] uppercase italic"><CheckCircle className="h-4 w-4 text-primary" /> Verified Assets</div>
+                <div className="flex items-center gap-2 font-black text-xs tracking-[0.2em] uppercase italic"><Gem className="h-4 w-4 text-primary" /> Commodity Backed</div>
+                <div className="flex items-center gap-2 font-black text-xs tracking-[0.2em] uppercase italic"><Award className="h-4 w-4 text-primary" /> Tier-1 Status</div>
             </div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 md:py-32">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center lg:text-left mb-16 space-y-4">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic">THE <span className="text-primary">STANDARD</span> OF EXCELLENCE.</h2>
-            <p className="text-slate-400 text-sm md:text-base font-medium max-w-xl leading-relaxed mx-auto lg:mx-0">
+      <section id="features" className="py-24">
+        <div className="container mx-auto px-6">
+          <div className="text-left mb-16 space-y-4">
+            <h2 className="text-5xl font-black tracking-tighter uppercase italic text-white">THE <span className="text-primary">STANDARD</span> OF EXCELLENCE.</h2>
+            <p className="text-slate-400 text-base font-medium max-w-xl leading-relaxed">
               Elite infrastructure designed for institutional-grade asset security and seamless trade execution.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-6">
             {features.map((feature, index) => (
               <Card key={index} className="bg-slate-900/40 border border-white/5 hover:border-primary/30 transition-all duration-500 rounded-2xl overflow-hidden">
                 <CardHeader className="p-8">
@@ -189,7 +189,7 @@ const Home = () => {
                     <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle className="text-base font-black mb-2 text-white uppercase italic">{feature.title}</CardTitle>
-                  <CardDescription className="text-xs md:text-sm font-medium leading-relaxed text-slate-400">
+                  <CardDescription className="text-sm font-medium leading-relaxed text-slate-400">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -200,27 +200,27 @@ const Home = () => {
       </section>
 
       {/* Stats CTA */}
-      <section className="py-12 md:py-20 px-4 md:px-6">
+      <section className="py-12 px-6">
         <div className="container mx-auto">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 rounded-[2.5rem] p-10 md:p-20 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 rounded-[2.5rem] p-16 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
-            <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
-              <div className="space-y-8 text-center lg:text-left">
-                  <h2 className="text-4xl md:text-5xl font-black leading-tight text-white tracking-tighter uppercase italic">JOIN THE <br /> <span className="text-primary">PREMIUM</span> <br /> TRADING CIRCLE.</h2>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="grid grid-cols-2 gap-12 items-center relative z-10">
+              <div className="space-y-8 text-left">
+                  <h2 className="text-5xl font-black leading-tight text-white tracking-tighter uppercase italic">JOIN THE <br /> <span className="text-primary">PREMIUM</span> <br /> TRADING CIRCLE.</h2>
+                  <div className="flex flex-row gap-4">
                     <Link to="/signup">
-                      <Button className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-black text-xs md:text-sm uppercase tracking-widest shadow-lg">Get Started</Button>
+                      <Button className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest shadow-lg">Get Started</Button>
                     </Link>
                     <Link to="/contact">
-                      <Button variant="outline" className="h-12 px-10 rounded-xl border-white/20 text-white font-black text-xs md:text-sm uppercase tracking-widest">Inquire Now</Button>
+                      <Button variant="outline" className="h-12 px-10 rounded-xl border-white/20 text-white font-black text-sm uppercase tracking-widest">Inquire Now</Button>
                     </Link>
                   </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                   {stats.map((stat, i) => (
                       <div key={i} className="p-8 bg-white/[0.02] rounded-2xl border border-white/5 text-center">
-                          <div className="text-3xl md:text-4xl font-black text-white mb-2 italic">{stat.number}</div>
-                          <div className="text-slate-500 font-black uppercase tracking-widest text-[9px] md:text-[10px]">{stat.label}</div>
+                          <div className="text-4xl font-black text-white mb-2 italic">{stat.number}</div>
+                          <div className="text-slate-500 font-black uppercase tracking-widest text-[10px]">{stat.label}</div>
                       </div>
                   ))}
               </div>
@@ -230,25 +230,25 @@ const Home = () => {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-20 md:py-32">
-        <div className="container mx-auto px-4 md:px-6">
+      <section id="testimonials" className="py-24">
+        <div className="container mx-auto px-6">
           <div className="text-center mb-16 space-y-4">
             <Badge className="bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-[0.2em] px-4 py-1 text-[10px]">Success Stories</Badge>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic">VOICES OF THE ELITE.</h2>
+            <h2 className="text-5xl font-black tracking-tighter uppercase italic text-white">VOICES OF THE ELITE.</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             {testimonials.map((t, index) => (
               <Card key={index} className="bg-slate-900/20 backdrop-blur-xl border border-white/5 rounded-[2rem] hover:bg-slate-900/40 transition-all duration-700">
                 <CardContent className="p-10 space-y-6">
                   <div className="flex gap-1">
                     {[1,2,3,4,5].map(i => <Star key={i} className="h-3.5 w-3.5 fill-primary text-primary" />)}
                   </div>
-                  <p className="text-base md:text-lg font-bold italic text-slate-300">"{t.comment}"</p>
+                  <p className="text-lg font-bold italic text-slate-300">"{t.comment}"</p>
                   <div className="flex items-center gap-4 pt-6 border-t border-white/5">
                     <img src={t.image} className="h-12 w-12 rounded-xl object-cover grayscale border border-white/10" />
                     <div>
-                        <h4 className="font-black text-sm md:text-base text-white tracking-tight uppercase italic">{t.name}</h4>
-                        <p className="text-[9px] md:text-[10px] text-primary font-black uppercase tracking-widest">{t.role}</p>
+                        <h4 className="font-black text-base text-white tracking-tight uppercase italic">{t.name}</h4>
+                        <p className="text-[10px] text-primary font-black uppercase tracking-widest">{t.role}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -265,9 +265,9 @@ const Home = () => {
               <div className="p-2 bg-primary/20 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-primary" />
               </div>
-              <span className="text-xl font-black tracking-tighter uppercase italic">TERRASINVESTMENT</span>
+              <span className="text-xl font-black tracking-tighter uppercase italic text-white">TERRASINVESTMENT</span>
           </div>
-          <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+          <div className="flex justify-center gap-10 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link to="/support" className="hover:text-white transition-colors">Support</Link>

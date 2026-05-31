@@ -3,14 +3,14 @@ import { Lock, Eye, Database, ShieldAlert, Globe } from "lucide-react";
 
 const Privacy = () => {
   return (
-    <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 pt-4">
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic text-white">Privacy Architecture</h1>
           <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em]">Data Protection & Security Protocols</p>
         </div>
 
-        <Card className="bg-slate-900/50 border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
           <CardHeader className="p-8 border-b border-white/5 bg-primary/5">
             <CardTitle className="text-xl font-black uppercase flex items-center gap-3 italic text-white">
               <Lock className="h-6 w-6 text-primary" /> Privacy Policy
@@ -18,7 +18,6 @@ const Privacy = () => {
           </CardHeader>
           <CardContent className="p-8 md:p-12 space-y-12 text-slate-300">
             
-            {/* 1. Data Collection */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                 <Database className="h-5 w-5 text-primary" />
@@ -29,7 +28,6 @@ const Privacy = () => {
               </p>
             </div>
 
-            {/* 2. Cryptographic Protection */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                 <ShieldAlert className="h-5 w-5 text-emerald-500" />
@@ -58,7 +56,6 @@ const Privacy = () => {
               </div>
             </div>
 
-            {/* 3. Usage Policy */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                 <Eye className="h-5 w-5 text-primary" />
@@ -69,7 +66,6 @@ const Privacy = () => {
               </p>
             </div>
 
-            {/* 4. Global Compliance */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                 <Globe className="h-5 w-5 text-primary" />
@@ -80,7 +76,7 @@ const Privacy = () => {
               </p>
             </div>
 
-            <div className="pt-10 text-center">
+            <div className="pt-10 text-center border-t border-white/5">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">TerrasInvestment Security Core • Elite Status Protected</p>
             </div>
           </CardContent>

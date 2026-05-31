@@ -211,27 +211,22 @@ export const DashboardLayout = () => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-slate-900 w-full overflow-hidden">
-        {/* Desktop Sidebar */}
+        {/* Sidebar - Always visible like desktop */}
         <div className={cn(
-          "hidden md:block transition-all duration-300 ease-in-out h-screen sticky top-0",
-          isCollapsed ? "w-20" : "w-72"
+          "transition-all duration-300 ease-in-out h-screen sticky top-0 border-r border-slate-800 shrink-0 bg-slate-950",
+          isCollapsed ? "w-20" : "w-64"
         )}>
           {sidebarContent}
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-1 flex-col h-screen overflow-hidden">
-          <Sheet>
-            <DashboardHeader className="bg-slate-950/50 backdrop-blur-xl border-slate-800" />
-            <SheetContent side="left" className="w-72 p-0 border-r border-slate-800 bg-slate-950">
-              {mobileSidebarContent}
-            </SheetContent>
-          </Sheet>
+        <div className="flex flex-1 flex-col h-screen overflow-hidden min-w-[320px]">
+          <DashboardHeader className="bg-slate-950/50 backdrop-blur-xl border-slate-800" />
           
           <main className="flex-1 overflow-y-auto bg-slate-900 text-slate-100 custom-scrollbar relative">
             {/* Subtle Gradient Background */}
             <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
-            <div className="relative z-10 p-4 sm:p-6 lg:p-10">
+            <div className="relative z-10 p-4 md:p-8">
               <Outlet />
             </div>
           </main>

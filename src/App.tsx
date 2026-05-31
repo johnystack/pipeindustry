@@ -51,17 +51,17 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/invest" element={<Invest />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="/contact" element={<ContactUs />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
               </Route>
               <Route path="/signup" element={<Signup />} />
               <Route path="/ref/:username" element={<Signup />} />
               <Route path="/resend-email" element={<ResendEmail />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/contact" element={<ContactUs />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
 
               {/* Protected Routes */}
               <Route
