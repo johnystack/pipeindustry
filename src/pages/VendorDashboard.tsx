@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Plus, List, Users, Gem, Zap, Droplets, Flame, Award, Wallet, Coins, Factory, Sprout, Landmark, Anchor, Mountain, ThermometerSnowflake, Shovel, Copy } from "lucide-react";
+import { Plus, List, Users, Gem, Zap, Droplets, Flame, Award, Wallet, Coins, Factory, Sprout, Landmark, Anchor, Mountain, ThermometerSnowflake, Shovel, Copy, TrendingUp, CheckCircle, Clock, AlertTriangle, Settings } from "lucide-react";
 
 const assetIcons: Record<string, any> = {
     Gold: Gem,
@@ -74,6 +74,7 @@ const VendorDashboard = () => {
     payment_details: "",
     max_traders: 10,
     selected_wallet_id: "",
+    eligibility_tx: "",
   });
 
   useEffect(() => {
@@ -129,7 +130,7 @@ const VendorDashboard = () => {
       .from("investments")
       .select("*, vendor_plans!inner(*), profiles(*)")
       .eq("vendor_plans.vendor_id", user.id)
-      .eq("status", "approved");
+      .in("status", ["active", "completed"]);
 
     if (error) {
       console.error("Error fetching investments:", error);
@@ -160,6 +161,7 @@ const VendorDashboard = () => {
         payment_details: newPlan.payment_details,
         status: "active",
         eligibility_status: "pending",
+        eligibility_tx: newPlan.eligibility_tx,
         max_traders: newPlan.max_traders,
         current_traders: 0,
         selected_wallet_id: newPlan.selected_wallet_id,
@@ -175,7 +177,7 @@ const VendorDashboard = () => {
     } else {
       toast({
         title: "Success",
-        description: "Asset investment plan created. Please pay the ₦5,000,000 eligibility fee to make it live.",
+        description: "Asset investment plan created. Admin will review your eligibility fee verification.",
       });
       setNewPlan({
         name: "",
@@ -183,6 +185,7 @@ const VendorDashboard = () => {
         payment_details: "",
         max_traders: 10,
         selected_wallet_id: "",
+        eligibility_tx: "",
       });
       fetchPlans();
     }
@@ -267,156 +270,162 @@ const VendorDashboard = () => {
         </TabsList>
 
         <TabsContent value="plans">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {plans.map((plan) => {
               const Icon = assetIcons[plan.asset_type || "Gold"] || Gem;
+              const isApproved = plan.eligibility_status === "approved";
               return (
-                <Card key={plan.id} className="overflow-hidden border-2 hover:border-primary/50 transition-all">
-                  <div className={cn(
-                    "h-2",
-                    plan.eligibility_status === "approved" ? "bg-emerald-500" : "bg-yellow-500"
-                  )} />
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Icon className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                            <Badge variant={plan.status === "active" ? "success" : "secondary"}>
-                                {plan.status}
-                            </Badge>
-                            <Badge variant="outline" className="text-[10px] uppercase font-bold">
-                                Eligibility: {plan.eligibility_status}
-                            </Badge>
-                        </div>
-                    </div>
-                    <CardTitle className="mt-4">{plan.name}</CardTitle>
-                    <CardDescription>
-                      {plan.asset_type} • {plan.duration_days} Days
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground text-xs uppercase font-bold">Plan Duration</p>
-                            <p className="font-bold text-lg">24 Days</p>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground text-xs uppercase font-bold">Total ROI</p>
-                            <p className="font-bold text-lg text-emerald-500">50%</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground text-xs uppercase font-bold">Trader Slots</p>
-                            <p className="font-bold text-lg">
-                              {plan.current_traders || 0} / {plan.max_traders || 10}
-                            </p>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                              <div 
-                                className="bg-primary h-2 rounded-full transition-all" 
-                                style={{ width: `${((plan.current_traders || 0) / (plan.max_traders || 10)) * 100}%` }}
-                              ></div>
+                <div
+                    key={plan.id}
+                    className={cn(
+                        "flex flex-col lg:flex-row items-stretch lg:items-center justify-between p-6 rounded-3xl border bg-background/50 gap-6 transition-all hover:border-primary/30",
+                        isApproved ? "border-emerald-500/20 bg-emerald-500/[0.02]" : "border-yellow-500/20 bg-yellow-500/[0.02]"
+                    )}
+                >
+                    <div className="space-y-4 flex-1">
+                        <div className="flex items-center gap-4">
+                            <div className={cn(
+                                "p-3 rounded-2xl",
+                                isApproved ? "bg-emerald-500/10" : "bg-primary/10"
+                            )}>
+                                <Icon className={cn(
+                                    "h-6 w-6",
+                                    isApproved ? "text-emerald-500" : "text-primary"
+                                )} />
                             </div>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg">
-                            <p className="text-muted-foreground text-xs uppercase font-bold">Status</p>
-                            <p className="font-bold text-lg">
-                              {(plan.current_traders || 0) >= (plan.max_traders || 10) ? (
-                                <span className="text-red-500">Full</span>
-                              ) : (
-                                <span className="text-emerald-500">Open</span>
-                              )}
-                            </p>
-                        </div>
-                    </div>
-
-                    {plan.eligibility_status !== "approved" && (
-                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl space-y-4">
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs font-bold text-yellow-600 uppercase">Action Required: ₦5,000,000 Eligibility Fee</p>
-                                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">PENDING</Badge>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground">Please pay the listing fee of ₦5,000,000 to your selected company wallet below.</p>
-                            
-                            <div className="space-y-3">
-                                <Label className="text-[10px] font-bold text-muted-foreground uppercase">Selected Company Wallet</Label>
-                                <div className="grid gap-2">
-                                    {vendorWallets
-                                      .filter(wallet => wallet.id === plan.selected_wallet_id)
-                                      .map((wallet) => (
-                                        <div key={wallet.id} className="flex items-center justify-between p-3 bg-background rounded-lg border border-yellow-500/20 group">
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-1.5 bg-yellow-500/10 rounded-md">
-                                                    <Coins className="h-4 w-4 text-yellow-600" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-white">{wallet.name}</span>
-                                                    <span className="text-xs text-muted-foreground">{wallet.network}</span>
-                                                    <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">{wallet.address}</span>
-                                                </div>
-                                            </div>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="h-8 w-8 hover:bg-yellow-500/10"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(wallet.address);
-                                                    toast({ title: "Copied!", description: `${wallet.name} address copied.` });
-                                                }}
-                                            >
-                                                <Copy className="h-4 w-4 text-yellow-600" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                    {!plan.selected_wallet_id && (
-                                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                                            <p className="text-xs text-red-600 font-bold">No wallet selected for this plan</p>
-                                        </div>
-                                    )}
+                            <div>
+                                <h4 className="font-black text-xl tracking-tight">{plan.name}</h4>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    <Badge variant="secondary" className={cn(
+                                        "font-black uppercase text-[10px] px-3",
+                                        isApproved ? "bg-emerald-500/20 text-emerald-600" : "bg-primary/20 text-primary"
+                                    )}>
+                                        {plan.asset_type}
+                                    </Badge>
+                                    <Badge variant="outline" className={cn(
+                                        "text-[10px] font-bold border-2",
+                                        isApproved ? "border-emerald-500/30 text-emerald-600" : "border-primary/30 text-primary"
+                                    )}>
+                                        STATUS: {plan.status.toUpperCase()}
+                                    </Badge>
+                                    <Badge className={cn(
+                                        "text-[10px] font-black px-3",
+                                        isApproved ? "bg-emerald-500 text-white" : "bg-yellow-500 text-white"
+                                    )}>
+                                        ELIGIBILITY: {plan.eligibility_status.toUpperCase()}
+                                    </Badge>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="space-y-2 pt-2 border-t border-yellow-500/10">
-                                <Label htmlFor={`tx-${plan.id}`} className="text-[10px] font-bold uppercase text-muted-foreground">Upload Payment Proof (TX Hash)</Label>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="Paste transaction hash here..." 
-                                        className="h-9 text-xs bg-background border-yellow-500/20" 
-                                        id={`tx-${plan.id}`}
-                                    />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Expected ROI</p>
+                                <p className="font-black text-emerald-500 text-lg">50% / 24 Days</p>
+                            </div>
+                            <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Trading Price</p>
+                                <p className="font-black text-primary text-lg">₦{plan.min_investment.toLocaleString()}</p>
+                            </div>
+                            <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Trader Slots</p>
+                                <div className="flex items-end gap-2">
+                                    <p className="font-black text-lg">{plan.current_traders || 0} / {plan.max_traders || 10}</p>
+                                    <div className="flex-1 bg-white/5 h-1.5 rounded-full mb-1.5 overflow-hidden">
+                                        <div 
+                                            className="bg-primary h-full rounded-full transition-all" 
+                                            style={{ width: `${((plan.current_traders || 0) / (plan.max_traders || 10)) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Commission</p>
+                                <p className="font-black text-emerald-400 text-lg">50% Per Asset</p>
+                            </div>
+                        </div>
+
+                        {!isApproved && (
+                            <div className="space-y-4 pt-4 border-t border-yellow-500/10">
+                                <div className="flex items-center gap-2 text-yellow-600">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <p className="text-[10px] font-black uppercase">Action Required: Submit Verification Proof (₦5M Fee)</p>
+                                </div>
+                                <div className="flex flex-col lg:flex-row gap-3">
+                                    <div className="flex-1 relative">
+                                        <Input 
+                                            placeholder="Enter Transaction Hash (TX Hash)..." 
+                                            className="h-12 bg-slate-950 border-yellow-500/20 rounded-xl pr-12 text-sm" 
+                                            id={`tx-${plan.id}`}
+                                            defaultValue={plan.eligibility_tx || ""}
+                                        />
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="absolute top-1 right-1 h-10 w-10 hover:bg-white/5"
+                                            onClick={() => {
+                                                const tx = (document.getElementById(`tx-${plan.id}`) as HTMLInputElement).value;
+                                                handlePayEligibility(plan.id, tx);
+                                            }}
+                                        >
+                                            <CheckCircle className="h-5 w-5 text-yellow-600" />
+                                        </Button>
+                                    </div>
                                     <Button 
-                                        size="sm" 
-                                        className="h-9 text-xs bg-yellow-600 hover:bg-yellow-700 shadow-lg shadow-yellow-600/20"
+                                        className="h-12 px-4 bg-yellow-600 hover:bg-yellow-700 text-white font-black uppercase text-xs rounded-xl shadow-lg shadow-yellow-600/20"
                                         onClick={() => {
                                             const tx = (document.getElementById(`tx-${plan.id}`) as HTMLInputElement).value;
                                             handlePayEligibility(plan.id, tx);
                                         }}
                                     >
-                                        Pay Fee
+                                        Update Proof
                                     </Button>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Investment Price:</span>
-                            <span className="font-bold">₦{plan.min_investment.toLocaleString()}</span>
-                        </div>
+                        {isApproved && plan.eligibility_tx && (
+                             <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                <CheckCircle className="h-3 w-3 text-emerald-500" />
+                                Verification Proof: <span className="font-mono text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded">{plan.eligibility_tx.slice(0, 20)}...</span>
+                             </div>
+                        )}
                     </div>
-                  </CardContent>
-                </Card>
+
+                    <div className="flex flex-col justify-center items-center lg:items-end gap-3 lg:w-48 lg:border-l lg:border-white/5 lg:pl-6">
+                        {isApproved ? (
+                            <div className="w-full space-y-3">
+                                <div className="bg-emerald-500/10 text-emerald-500 p-3 rounded-2xl border border-emerald-500/20 text-center space-y-1">
+                                    <p className="text-[8px] font-black uppercase">Asset Status</p>
+                                    <p className="text-sm font-black tracking-widest">LIVE & ACTIVE</p>
+                                </div>
+                                <Button variant="outline" className="w-full h-11 rounded-xl font-bold text-xs gap-2">
+                                    <Settings className="h-4 w-4" />
+                                    Manage Plan
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="w-full space-y-3">
+                                <div className="bg-yellow-500/10 text-yellow-500 p-3 rounded-2xl border border-yellow-500/20 text-center space-y-1">
+                                    <p className="text-[8px] font-black uppercase">Asset Status</p>
+                                    <p className="text-sm font-black tracking-widest">AWAITING REVIEW</p>
+                                </div>
+                                <p className="text-[9px] text-center text-muted-foreground font-bold px-2">
+                                    Admin is verifying your ₦5,000,000 listing fee.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
               );
             })}
             {plans.length === 0 && !loading && (
-              <div className="col-span-full text-center py-20 bg-muted/30 rounded-3xl border-2 border-dashed">
-                <p className="text-muted-foreground">You haven't posted any assets yet.</p>
+              <div className="text-center py-24 bg-muted/20 rounded-3xl border-2 border-dashed border-white/5">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                <h3 className="text-xl font-black mb-2">No Assets Posted</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">Start earning 50% commission by listing your first trading asset.</p>
                 <Button 
-                    variant="outline" 
-                    className="mt-4" 
+                    className="bg-gradient-primary rounded-xl font-bold px-4 h-12" 
                     onClick={() => {
                         const createTab = document.querySelector('[value="create"]') as HTMLElement;
                         if (createTab) createTab.click();
@@ -430,23 +439,23 @@ const VendorDashboard = () => {
         </TabsContent>
 
         <TabsContent value="create">
-          <Card className="max-w-3xl mx-auto border-2">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold">Post New Investment Asset</CardTitle>
-              <CardDescription>
+          <Card className="max-w-3xl mx-auto border-2 rounded-3xl overflow-hidden bg-gradient-to-br from-background to-muted/20">
+            <CardHeader className="text-center pb-8 border-b border-white/5 bg-primary/5">
+              <CardTitle className="text-3xl font-black tracking-tight">Post New Investment Asset</CardTitle>
+              <CardDescription className="text-sm font-bold uppercase tracking-widest text-primary/60">
                 Define the terms for your asset investment plan.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreatePlan} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="asset_type">Asset Type</Label>
+            <CardContent className="p-8">
+              <form onSubmit={handleCreatePlan} className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                        <Label htmlFor="asset_type" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Asset Category</Label>
                         <Select value={newPlan.asset_type} onValueChange={(v) => setNewPlan({ ...newPlan, asset_type: v })}>
-                            <SelectTrigger className="h-12">
+                            <SelectTrigger className="h-14 rounded-xl bg-slate-900/50 border-2 border-white/5">
                                 <SelectValue placeholder="Select asset type" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="rounded-xl">
                                 <SelectItem value="Gold">Gold (₦1,000,000)</SelectItem>
                                 <SelectItem value="Bitcoin">Bitcoin (₦1,000,000)</SelectItem>
                                 <SelectItem value="Palladium">Palladium (₦1,000,000)</SelectItem>
@@ -462,19 +471,19 @@ const VendorDashboard = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Fixed Trading Price</Label>
-                        <div className="h-12 flex items-center px-4 bg-muted rounded-md font-bold text-primary">
+                    <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Fixed Trading Price</Label>
+                        <div className="h-14 flex items-center px-6 bg-primary/10 rounded-xl font-black text-xl text-primary border-2 border-primary/20">
                             ₦{(assetPrices[newPlan.asset_type] || 0).toLocaleString()}
                         </div>
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="name">Plan Name</Label>
+                <div className="space-y-3">
+                    <Label htmlFor="name" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Strategy / Plan Name</Label>
                     <Input
                         id="name"
-                        className="h-12"
+                        className="h-14 rounded-xl bg-slate-900/50 border-2 border-white/5"
                         value={newPlan.name}
                         onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
                         placeholder="e.g., Elite Gold Trading Strategy"
@@ -482,172 +491,203 @@ const VendorDashboard = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Plan Duration (Fixed)</Label>
-                    <div className="h-12 flex items-center px-4 bg-muted rounded-md font-bold text-primary">
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Plan Duration (Fixed)</Label>
+                    <div className="h-14 flex items-center px-6 bg-slate-900/50 rounded-xl font-black text-lg text-white border-2 border-white/5">
                         24 Days
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Total Return (Fixed)</Label>
-                    <div className="h-12 flex items-center px-4 bg-muted rounded-md font-bold text-emerald-500">
+                  <div className="space-y-3">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Return (Fixed)</Label>
+                    <div className="h-14 flex items-center px-6 bg-emerald-500/10 rounded-xl font-black text-lg text-emerald-500 border-2 border-emerald-500/20">
                         50% ROI
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="max_traders">Maximum Traders</Label>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label htmlFor="max_traders" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Maximum Traders</Label>
                     <Input
                       id="max_traders"
                       type="number"
-                      min="0"
-                      max="100"
-                      className="h-12"
+                      min="1"
+                      max="1000"
+                      className="h-14 rounded-xl bg-slate-900/50 border-2 border-white/5"
                       value={newPlan.max_traders}
                       onChange={(e) => setNewPlan({ ...newPlan, max_traders: parseInt(e.target.value) || 10 })}
-                      placeholder="e.g., 10"
                       required
                     />
-                    <p className="text-xs text-muted-foreground">Maximum number of traders that can invest in this plan</p>
+                    <p className="text-[10px] text-muted-foreground font-bold">Limit of traders that can join this specific asset pool.</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="selected_wallet">Payment Wallet</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="selected_wallet" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Payment Wallet</Label>
                     <Select value={newPlan.selected_wallet_id} onValueChange={(v) => setNewPlan({ ...newPlan, selected_wallet_id: v })}>
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select company wallet for payment" />
+                      <SelectTrigger className="h-14 rounded-xl bg-slate-900/50 border-2 border-white/5">
+                        <SelectValue placeholder="Select company wallet" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         {vendorWallets.map((wallet) => (
                           <SelectItem key={wallet.id} value={wallet.id}>
-                            {wallet.name} ({wallet.network}) - {wallet.address.slice(0, 10)}...
+                            {wallet.name} ({wallet.network})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">Choose which company wallet to pay the ₦5M fee to</p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="payment_details" className="flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
-                    Payment / Account Details
+                <div className="space-y-3">
+                  <Label htmlFor="eligibility_tx" className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    Verification Proof (TX Hash)
+                  </Label>
+                  <Input
+                    id="eligibility_tx"
+                    className="h-14 rounded-xl bg-slate-900/50 border-2 border-white/5 font-mono text-sm"
+                    value={newPlan.eligibility_tx}
+                    onChange={(e) => setNewPlan({ ...newPlan, eligibility_tx: e.target.value })}
+                    placeholder="Paste the ₦5,000,000 payment transaction hash here..."
+                  />
+                  <p className="text-[10px] text-yellow-500 font-bold uppercase">Provide the hash for the ₦5M listing fee to activate your plan.</p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="payment_details" className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-primary" />
+                    Your Receiving Account Details
                   </Label>
                   <Textarea
                     id="payment_details"
-                    className="min-h-[100px]"
+                    className="min-h-[120px] rounded-xl bg-slate-900/50 border-2 border-white/5 p-4"
                     value={newPlan.payment_details}
                     onChange={(e) => setNewPlan({ ...newPlan, payment_details: e.target.value })}
-                    placeholder="Enter account details where users should send their investment funds..."
+                    placeholder="Where should traders send their investment funds? (e.g., BTC Address, Network, etc.)"
                     required
                   />
                 </div>
 
-                {/* Vendor Payment Wallets Section */}
-                <div className="space-y-4 p-6 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="h-5 w-5 text-yellow-600" />
-                    <h3 className="font-bold text-lg">₦5,000,000 Eligibility Fee Payment</h3>
+                {/* Company Payment Wallets Section */}
+                <div className="space-y-6 p-8 bg-slate-950/50 border-2 border-yellow-500/20 rounded-[2rem] relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="h-32 w-32" />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    To activate your asset plan, you must pay the ₦5,000,000 eligibility fee to one of the admin wallets below. 
-                    After payment, submit your transaction hash for verification.
-                  </p>
+                  <div className="flex items-center gap-3 relative">
+                    <div className="p-3 bg-yellow-500/10 rounded-2xl">
+                        <Wallet className="h-6 w-6 text-yellow-600" />
+                    </div>
+                    <h3 className="font-black text-2xl tracking-tight">₦5,000,000 Commitment Fee</h3>
+                  </div>
                   
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold text-yellow-600 uppercase">Company Payment Wallets</Label>
-                    <div className="grid gap-3">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                        To list an asset on the platform, vendors must pay a one-time <b>₦5,000,000</b> eligibility fee. 
+                        This ensures platform security and vendor quality. Pay to any company wallet below:
+                    </p>
+                    
+                    <div className="grid gap-4">
                       {vendorWallets.map((wallet) => (
-                        <div key={wallet.id} className="flex items-center justify-between p-4 bg-background rounded-lg border border-yellow-500/20 group">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-yellow-500/10 rounded-lg">
-                              <Coins className="h-4 w-4 text-yellow-600" />
+                        <div key={wallet.id} className="flex items-center justify-between p-5 bg-background/50 rounded-2xl border-2 border-white/5 hover:border-yellow-500/20 transition-all group/wallet">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-yellow-500/10 rounded-xl">
+                              <Coins className="h-5 w-5 text-yellow-600" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="font-bold text-white">{wallet.symbol}</span>
-                              <span className="text-xs text-muted-foreground">{wallet.network}</span>
-                              <span className="text-xs text-muted-foreground font-mono break-all">{wallet.address}</span>
+                              <span className="font-black text-lg text-white tracking-tight">{wallet.symbol}</span>
+                              <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">{wallet.network}</span>
+                              <span className="text-xs text-muted-foreground font-mono mt-1 break-all opacity-60 group-hover/wallet:opacity-100 transition-opacity">{wallet.address}</span>
                             </div>
                           </div>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 hover:bg-yellow-500/10"
+                            className="h-10 w-10 hover:bg-yellow-500/10 rounded-xl"
                             onClick={() => {
                               navigator.clipboard.writeText(wallet.address);
-                              toast({ title: "Copied!", description: `${wallet.symbol} address copied to clipboard.` });
+                              toast({ title: "Copied!", description: `${wallet.symbol} address copied.` });
                             }}
                           >
-                            <Copy className="h-4 w-4 text-yellow-600" />
+                            <Copy className="h-5 w-5 text-yellow-600" />
                           </Button>
                         </div>
                       ))}
                     </div>
                   </div>
                   
-                  <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-                    <p className="text-xs text-yellow-600 font-bold uppercase mb-2">Important Notice</p>
-                    <p className="text-xs text-muted-foreground">
-                      • Send exactly ₦5,000,000 equivalent in any supported cryptocurrency<br/>
-                      • Your plan will remain pending until payment is verified<br/>
-                      • Only approved plans will be visible to traders<br/>
-                      • Keep your transaction hash for verification
-                    </p>
+                  <div className="p-4 bg-yellow-500/10 rounded-2xl border border-yellow-500/20 flex gap-4">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-[10px] text-yellow-600 font-black uppercase tracking-widest">Notice</p>
+                        <p className="text-xs text-muted-foreground leading-normal">
+                            Your asset will be visible to traders immediately after admin verifies your payment hash. 
+                            Ensure the hash is correct to avoid activation delays.
+                        </p>
+                    </div>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20">Post Investment Asset</Button>
+                <Button type="submit" className="w-full h-16 text-xl font-black uppercase tracking-widest bg-gradient-to-r from-primary to-primary/80 rounded-[1.25rem] shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all">
+                    Post Investment Asset
+                </Button>
               </form>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="investors">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Recent Traders</CardTitle>
-              <CardDescription>
+          <Card className="border-2 rounded-[2rem] overflow-hidden">
+            <CardHeader className="p-8 border-b border-white/5">
+              <CardTitle className="text-2xl font-black">Recent Traders</CardTitle>
+              <CardDescription className="text-sm font-bold text-muted-foreground">
                 Track who is investing in your asset plans.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="text-left py-4 px-4 font-bold uppercase tracking-wider text-xs">User</th>
-                      <th className="text-left py-4 px-4 font-bold uppercase tracking-wider text-xs">Asset Plan</th>
-                      <th className="text-left py-4 px-4 font-bold uppercase tracking-wider text-xs">Amount</th>
-                      <th className="text-left py-4 px-4 font-bold uppercase tracking-wider text-xs">Status</th>
-                      <th className="text-left py-4 px-4 font-bold uppercase tracking-wider text-xs">Date</th>
+                      <th className="text-left py-3 px-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground">User</th>
+                      <th className="text-left py-3 px-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground">Asset Plan</th>
+                      <th className="text-left py-3 px-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground">Amount</th>
+                      <th className="text-left py-3 px-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground">Status</th>
+                      <th className="text-left py-3 px-4 font-black uppercase tracking-widest text-[10px] text-muted-foreground">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {investments.map((inv) => (
-                      <tr key={inv.id} className="border-b hover:bg-muted/30 transition-colors">
-                        <td className="py-4 px-4 font-medium">{inv.user_id.slice(0, 8)}...</td>
-                        <td className="py-4 px-4">
-                            <Badge variant="outline" className="font-bold">
+                      <tr key={inv.id} className="border-b hover:bg-muted/30 transition-colors group">
+                        <td className="py-3 px-4 font-bold text-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs">
+                                    {inv.profiles?.username?.[0].toUpperCase() || "U"}
+                                </div>
+                                {inv.profiles?.username || `${inv.user_id.slice(0, 8)}...`}
+                            </div>
+                        </td>
+                        <td className="py-3 px-4">
+                            <Badge variant="outline" className="font-black border-2 px-3 py-1">
                                 {inv.plan_name}
                             </Badge>
                         </td>
-                        <td className="py-4 px-4 font-black text-primary">₦{inv.amount.toLocaleString()}</td>
-                        <td className="py-4 px-4">
-                          <Badge variant={inv.status === 'active' ? 'success' : 'secondary'}>
-                            {inv.status}
+                        <td className="py-3 px-4 font-black text-lg text-primary">₦{inv.amount.toLocaleString()}</td>
+                        <td className="py-3 px-4">
+                          <Badge className={cn(
+                              "font-black px-3 py-1",
+                              inv.status === 'active' ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
+                          )}>
+                            {inv.status.toUpperCase()}
                           </Badge>
                         </td>
-                        <td className="py-4 px-4 text-muted-foreground">
+                        <td className="py-3 px-4 text-muted-foreground font-bold text-xs">
                           {new Date(inv.approved_at || (inv as any).created_at).toLocaleDateString()}
                         </td>
                       </tr>
                     ))}
                     {investments.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="text-center py-12 text-muted-foreground italic">
+                        <td colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">
                           No traders have invested in your assets yet.
                         </td>
                       </tr>

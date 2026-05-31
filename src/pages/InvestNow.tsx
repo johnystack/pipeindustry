@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -18,581 +17,490 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   Copy,
-  QrCode,
-  Clock,
   CheckCircle,
-  AlertCircle,
   TrendingUp,
   Wallet,
+  Upload,
+  Image as ImageIcon,
+  ArrowRight,
+  RefreshCcw,
+  Zap,
+  Clock,
+  ArrowUpRight,
+  ArrowDownRight,
+  ShieldCheck,
+  CircleDollarSign,
+  Calendar,
+  History,
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { Crypto, Deposit, VendorPlan } from "@/lib/types";
+import { Transaction, VendorPlan, Investment } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const InvestNow = () => {
   const { user } = useAuth();
-  const [selectedCrypto, setSelectedCrypto] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const { toast } = useToast();
 
-  const [cryptos, setCryptos] = useState<Crypto[]>([]);
   const [vendorPlans, setVendorPlans] = useState<VendorPlan[]>([]);
-  const [recentDeposits, setRecentDeposits] = useState<Deposit[]>([]);
-  const [userInvestments, setUserInvestments] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [userInvestments, setUserInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploadingProof, setUploadingProof] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [claiming, setClaiming] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      
-      // Fetch Cryptos
-      const { data: cryptoData, error: cryptoError } = await supabase
-        .from("cryptocurrencies")
-        .select("*");
-
-      if (cryptoError) {
-        console.error("Error fetching cryptocurrencies:", cryptoError);
-      } else {
-        setCryptos(cryptoData || []);
-        if (cryptoData && cryptoData.length > 0) {
-          setSelectedCrypto(cryptoData[0].id);
-        }
-      }
-
-      // Fetch Vendor Plans
-      const { data: planData, error: planError } = await supabase
+  const fetchData = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data: planData } = await supabase
         .from("vendor_plans")
-        .select(`
-          *,
-          profiles(username, first_name, last_name)
-        `)
+        .select(`*, profiles(username, first_name, last_name)`)
         .eq("status", "active")
         .eq("eligibility_status", "approved")
         .order("created_at", { ascending: false });
 
-      if (planError) {
-        console.error("Error fetching vendor plans:", planError);
-      } else {
-        const mappedPlans = planData?.map((plan: any) => ({
-          ...plan,
-          vendor_name: plan.profiles?.username || `${plan.profiles?.first_name} ${plan.profiles?.last_name}`.trim() || "Unknown Vendor"
-        })) || [];
-        setVendorPlans(mappedPlans);
-        if (mappedPlans.length > 0) {
-          setSelectedPlanId(mappedPlans[0].id);
-        }
-      }
+      const mappedPlans = planData?.map((plan: any) => ({
+        ...plan,
+        vendor_name: plan.profiles?.username || `${plan.profiles?.first_name} ${plan.profiles?.last_name}`.trim() || "Vendor"
+      })) || [];
+      setVendorPlans(mappedPlans);
+      if (mappedPlans.length > 0 && !selectedPlanId) setSelectedPlanId(mappedPlans[0].id);
 
-      // Fetch User Investments
-      if (user) {
-        const { data: investmentData, error: investmentError } = await supabase
-          .from("investments")
-          .select(`
-            *,
-            vendor_plans(name, asset_type)
-          `)
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+      // Fetch Investments
+      const { data: investmentData } = await supabase
+        .from("investments")
+        .select(`*`)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      setUserInvestments(investmentData || []);
 
-        if (investmentError) {
-          console.error("Error fetching user investments:", investmentError);
-        } else {
-          setUserInvestments(investmentData || []);
-        }
-      }
+      // Fetch Recent Transactions
+      const { data: transactionData } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setRecentTransactions(transactionData as any || []);
 
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
-    fetchData();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchRecentDeposits = async () => {
-      if (user) {
-        const { data, error } = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("type", "deposit")
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        if (error) {
-          console.error("Error fetching recent deposits:", error);
-        } else {
-          setRecentDeposits(data as any || []);
-        }
-      }
-    };
-
-    fetchRecentDeposits();
+  useEffect(() => { 
+    if (user) {
+      fetchData(); 
+    }
   }, [user]);
 
   const handleInvest = async () => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to invest.",
-        variant: "destructive",
-      });
+    if (!user || !selectedFile) {
+      toast({ title: "Action Required", description: "Select a plan and upload proof.", variant: "destructive" });
       return;
     }
-
     const plan = vendorPlans.find((p) => p.id === selectedPlanId);
-    if (!plan) {
-      toast({
-        title: "Error",
-        description: "Invalid investment plan selected.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!plan) return;
 
-    // Check if plan has available slots
-    if (plan.max_traders > 0 && (plan.current_traders || 0) >= plan.max_traders) {
-      toast({
-        title: "Plan Full",
-        description: "This investment plan has reached its maximum number of traders. Please select another plan.",
-        variant: "destructive",
-      });
-      return;
-    }
+    setSubmitting(true);
+    try {
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `receipts/${user.id}/${fileName}`;
 
-    const fixedAmount = plan.min_investment;
-    const fixedDuration = 24;
-    const fixedTotalReturn = 0.5; // 50%
-    const expectedProfit = fixedAmount * fixedTotalReturn;
+      const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(filePath, selectedFile);
+      if (uploadError) throw uploadError;
 
-    const { error } = await supabase.from("investments").insert([
-      {
-        user_id: user.id,
-        plan_id: selectedPlanId,
-        plan_name: plan.name,
-        amount: fixedAmount,
-        crypto: "NGN", // Traders pay in Naira
-        status: "awaiting_proof", // Changed from "pending" to "awaiting_proof"
-        expected_profit: expectedProfit,
-        daily_return: fixedTotalReturn / fixedDuration,
-        duration: fixedDuration,
-        due_date: new Date(
-          new Date().getTime() + fixedDuration * 24 * 60 * 60 * 1000,
-        ),
-      },
-    ]);
+      const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(filePath);
 
-    if (error) {
-      toast({
-        title: "Error creating investment",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      // Insert into transactions table for deposit
-      const { error: transactionError } = await supabase
-        .from("transactions")
-        .insert([
-          {
-            user_id: user.id,
-            type: "deposit",
-            amount: fixedAmount,
-            status: "pending",
-            description: `Investment in ${plan.name} (${plan.asset_type})`,
-            reference: `INV-${Date.now()}`,
-            crypto: "NGN", // Traders pay in Naira
-          },
-        ]);
+      const fixedAmount = plan.min_investment;
+      const { error: investError } = await supabase.from("investments").insert([{
+        user_id: user.id, plan_id: selectedPlanId, plan_name: plan.name,
+        amount: fixedAmount, crypto: "NGN", status: "pending",
+        expected_profit: fixedAmount * 0.5, daily_return: (fixedAmount * 0.5) / 24,
+        duration: 24, payment_proof: publicUrl, payment_proof_uploaded_at: new Date().toISOString(),
+        due_date: new Date(new Date().getTime() + 24 * 24 * 60 * 60 * 1000),
+      }]);
+      if (investError) throw investError;
 
-      if (transactionError) {
-        console.error("Error creating transaction:", transactionError);
-      }
+      await supabase.from("transactions").insert([{
+        user_id: user.id, type: "deposit", amount: fixedAmount, status: "pending",
+        description: `Trade: ${plan.name}`, reference: `TRD-${Date.now()}`, crypto: "NGN",
+      }]);
 
-      toast({
-        title: "Success",
-        description: "Your investment request has been submitted. Please upload your payment proof to complete the process.",
-      });
-      
-      // Refresh user investments to show the new one
-      if (user) {
-        const { data: investmentData } = await supabase
-          .from("investments")
-          .select(`
-            *,
-            vendor_plans(name, asset_type)
-          `)
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-        setUserInvestments(investmentData || []);
-      }
+      toast({ title: "Success!", description: "Trade entry submitted for verification." });
+      setSelectedFile(null);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleUploadPaymentProof = async (investmentId: string, proofText: string) => {
-    if (!proofText.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter your payment proof/transaction hash.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploadingProof(investmentId);
-    
-    const { error } = await supabase
-      .from("investments")
-      .update({ 
-        payment_proof: proofText,
-        status: "pending" // Change from "awaiting_proof" to "pending" for admin review
-      })
-      .eq("id", investmentId);
-
-    if (error) {
-      console.error("Error uploading payment proof:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload payment proof. Please try again.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Payment proof uploaded successfully! Your investment is now pending admin approval.",
-      });
+  const handleClaim = async (investmentId: string) => {
+    setClaiming(investmentId);
+    try {
+      const { data, error } = await supabase.rpc('claim_investment_assets', { p_investment_id: investmentId });
       
-      // Refresh user investments
-      if (user) {
-        const { data: investmentData } = await supabase
-          .from("investments")
-          .select(`
-            *,
-            vendor_plans(name, asset_type)
-          `)
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-        setUserInvestments(investmentData || []);
+      if (error) throw error;
+
+      if (data.success) {
+        toast({ title: "Claim Successful", description: data.message });
+        await fetchData();
+      } else {
+        toast({ title: "Claim Failed", description: data.message, variant: "destructive" });
       }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setClaiming(null);
     }
-    
-    setUploadingProof(null);
   };
 
-  const selectedCryptoData = cryptos.find((c) => c.id === selectedCrypto);
+  const calculateInvestmentStats = (inv: Investment) => {
+    if (inv.status === 'pending' || !inv.approved_at) return {
+      daysPassed: 0,
+      progress: 0,
+      totalValue: inv.amount,
+      accumulated: 0,
+      claimable: 0,
+      nextClaimDays: 4,
+      claimStage: 0
+    };
+
+    const start = new Date(inv.approved_at).getTime();
+    const now = Date.now();
+    const diff = now - start;
+    const daysPassed = Math.min(24, Math.floor(diff / (1000 * 60 * 60 * 24)));
+    const progress = (daysPassed / 24) * 100;
+    
+    const totalExpectedReturn = inv.amount * 1.5;
+    const accumulatedValue = (totalExpectedReturn * (daysPassed / 24));
+    
+    const claimBlocksAvailable = Math.floor(daysPassed / 4);
+    const totalPossibleClaimed = claimBlocksAvailable * (inv.amount * 0.25);
+    const currentClaimed = inv.claimed_amount || 0;
+    const claimable = Math.max(0, totalPossibleClaimed - currentClaimed);
+    
+    const nextClaimDays = 4 - (daysPassed % 4);
+
+    // Each block claimed is 1/6 of the cycle
+    const claimStage = Math.round(currentClaimed / (inv.amount * 0.25));
+
+    return {
+      daysPassed,
+      progress,
+      totalValue: totalExpectedReturn,
+      accumulated: accumulatedValue,
+      claimable,
+      nextClaimDays: daysPassed >= 24 ? 0 : nextClaimDays,
+      claimStage: Math.min(6, claimStage)
+    };
+  };
+
   const selectedPlanData = vendorPlans.find((p) => p.id === selectedPlanId);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: "Copied to clipboard",
-    });
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
-    }
-  };
-
-  if (loading) {
-    return <div className="p-8 text-center">Loading plans and cryptos...</div>;
+  if (loading && vendorPlans.length === 0) {
+    return <div className="flex items-center justify-center h-[50vh]"><RefreshCcw className="h-8 w-8 animate-spin text-primary/40" /></div>;
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8 flex flex-col items-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-black bg-gradient-primary bg-clip-text text-transparent">
-          Secure Investment Portal
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Fund your chosen asset plan. Please use the vendor's payment details provided below.
-        </p>
+    <div className="container mx-auto p-4 md:p-6 space-y-8 animate-in fade-in duration-500">
+      {/* ... previous content ... */}
+      <div className="flex flex-col items-center text-center space-y-2">
+        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white uppercase italic">Market Entry</h1>
+        <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase opacity-60">Verified Commodity Paths</p>
       </div>
 
-      <Tabs defaultValue="deposit" className="space-y-6 w-full max-w-5xl">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-          <TabsTrigger value="deposit">Deposit Funds</TabsTrigger>
-          <TabsTrigger value="my-investments">My Investments</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+      <Tabs defaultValue="deposit" className="w-full max-w-4xl mx-auto">
+        <TabsList className="grid w-full grid-cols-3 h-10 bg-slate-900/50 border border-white/5 p-1 rounded-lg mb-6">
+          <TabsTrigger value="deposit" className="rounded-md font-black text-[10px] tracking-widest">ENTRY</TabsTrigger>
+          <TabsTrigger value="my-investments" className="rounded-md font-black text-[10px] tracking-widest">PORTFOLIO</TabsTrigger>
+          <TabsTrigger value="history" className="rounded-md font-black text-[10px] tracking-widest">LOGS</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="deposit" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Left: Investment Selection */}
-            <Card className="bg-gradient-card border-border shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Select Your Plan
-                </CardTitle>
-                <CardDescription>
-                  Choose an asset and the crypto you want to use.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="plan">Asset Investment Plan</Label>
-                  <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Choose investment plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendorPlans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} ({plan.asset_type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Investment Amount (Fixed)</Label>
-                  <div className="h-12 flex items-center px-4 bg-muted rounded-md font-black text-xl text-primary border-2 border-primary/20">
-                    ₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0"}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground italic">
-                    The investment amount is fixed by the platform for this commodity. Traders pay in Naira (₦) directly to the vendor.
-                  </p>
-                </div>
-
-                {/* Trader Slots Information */}
-                {selectedPlanData && (
+        <TabsContent value="deposit" className="space-y-6 outline-none">
+          <div className="grid lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 space-y-4">
+              <Card className="bg-slate-900/40 border border-white/10 shadow-2xl rounded-2xl overflow-hidden backdrop-blur-xl">
+                <CardHeader className="p-5 border-b border-white/5">
+                  <CardTitle className="text-sm font-black flex items-center gap-2 tracking-widest uppercase">
+                    <Zap className="h-4 w-4 text-primary" /> Start Trade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-5 space-y-6">
                   <div className="space-y-2">
-                    <Label>Available Trader Slots</Label>
-                    <div className="p-4 bg-muted/50 rounded-lg border">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Slots Filled</span>
-                        <span className="font-bold">
-                          {selectedPlanData.current_traders || 0} / {selectedPlanData.max_traders || 0}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-primary h-2 rounded-full transition-all" 
-                          style={{ 
-                            width: `${selectedPlanData.max_traders > 0 ? ((selectedPlanData.current_traders || 0) / selectedPlanData.max_traders) * 100 : 0}%` 
-                          }}
-                        />
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        {selectedPlanData.max_traders > 0 && (selectedPlanData.current_traders || 0) >= selectedPlanData.max_traders ? (
-                          <span className="text-red-500 font-medium">⚠️ This plan is full</span>
-                        ) : selectedPlanData.max_traders > 0 ? (
-                          <span className="text-green-600 font-medium">✅ Slots available</span>
-                        ) : (
-                          <span className="text-blue-500 font-medium">🔄 Unlimited slots</span>
-                        )}
-                      </div>
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Select Plan</Label>
+                    <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                      <SelectTrigger className="h-10 rounded-lg bg-slate-950/50 border border-white/10 text-xs font-bold">
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-white/10">
+                        {vendorPlans.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id} className="text-xs font-bold">{plan.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 bg-slate-950/50 rounded-xl border border-white/5">
+                        <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Capital</p>
+                        <p className="text-lg font-black text-primary">₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0"}</p>
+                    </div>
+                    <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                        <p className="text-[8px] font-black uppercase text-emerald-600/70 mb-1">ROI</p>
+                        <p className="text-lg font-black text-emerald-500">₦{selectedPlanData ? (selectedPlanData.min_investment * 0.5).toLocaleString() : "0"}</p>
                     </div>
                   </div>
-                )}
 
-                <Button 
-                  className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20" 
-                  onClick={handleInvest}
-                  disabled={selectedPlanData && selectedPlanData.max_traders > 0 && (selectedPlanData.current_traders || 0) >= selectedPlanData.max_traders}
-                >
-                  {selectedPlanData && selectedPlanData.max_traders > 0 && (selectedPlanData.current_traders || 0) >= selectedPlanData.max_traders 
-                    ? "Plan Full - No Slots Available" 
-                    : "Confirm Investment"
-                  }
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Right: Vendor Payment Info */}
-            <Card className="bg-gradient-card border-border shadow-xl overflow-hidden">
-              <div className="h-2 bg-emerald-500" />
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Wallet className="h-5 w-5 text-emerald-500" />
-                    Vendor Payment Details
-                </CardTitle>
-                <CardDescription>
-                  Send your funds directly to the vendor's account below.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {selectedPlanData ? (
-                  <>
-                    <div className="p-6 bg-emerald-500/5 rounded-2xl border-2 border-emerald-500/10 space-y-4">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-bold text-emerald-600 uppercase">Vendor Name</Label>
-                            <p className="font-bold text-lg">{selectedPlanData.vendor_name}</p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-emerald-600 uppercase">Account / Payment Details</Label>
-                            <div className="bg-background p-4 rounded-xl border-2 border-emerald-500/20 relative group">
-                                <p className="whitespace-pre-wrap font-mono text-sm break-all pr-10">
-                                    {selectedPlanData.payment_details || "No details provided by vendor."}
-                                </p>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="absolute top-2 right-2 hover:bg-emerald-500/10"
-                                    onClick={() => copyToClipboard(selectedPlanData.payment_details || "")}
-                                >
-                                    <Copy className="h-4 w-4 text-emerald-500" />
-                                </Button>
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Payment Receipt</Label>
+                    <div className={cn(
+                        "p-6 border border-dashed rounded-xl bg-slate-950/30 flex flex-col items-center justify-center gap-2 text-center transition-all cursor-pointer hover:bg-slate-950/50",
+                        selectedFile ? "border-emerald-500/40 bg-emerald-500/5" : "border-white/10"
+                    )} onClick={() => document.getElementById('proof-upload')?.click()}>
+                        <input type="file" id="proof-upload" className="hidden" accept="image/*,.pdf" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                        {selectedFile ? (
+                            <div className="flex flex-col items-center gap-1">
+                                <CheckCircle className="h-5 w-5 text-emerald-500" />
+                                <p className="text-[10px] font-bold truncate max-w-[150px]">{selectedFile.name}</p>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <Upload className="h-5 w-5 text-muted-foreground opacity-30" />
+                                <p className="text-[10px] font-bold uppercase tracking-tighter">SELECT FILE</p>
+                            </>
+                        )}
                     </div>
-
-                    <div className="p-4 bg-muted rounded-xl space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Total Amount to Pay:</span>
-                            <span className="font-black text-xl text-primary">₦{selectedPlanData ? selectedPlanData.min_investment.toLocaleString() : "0.00"}</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground italic mt-2">
-                            * Please ensure you send the exact amount mentioned above to the vendor's account to avoid delays in approval.
-                        </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-20 text-muted-foreground italic">
-                    Select an investment plan to view vendor payment details.
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  <Button className="w-full h-12 text-xs font-black rounded-lg shadow-lg shadow-primary/20" onClick={handleInvest} disabled={submitting}>
+                    {submitting ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "CONFIRM POSITION"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-5">
+              <Card className="bg-slate-900/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl">
+                <CardHeader className="p-5 pb-2">
+                  <CardTitle className="text-[10px] font-black flex items-center gap-2 uppercase tracking-widest opacity-50">
+                      <Wallet className="h-3 w-3" /> Settlement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-5 pt-0 space-y-4">
+                  {selectedPlanData ? (
+                    <>
+                      <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10 space-y-3">
+                          <div className="space-y-1">
+                              <p className="text-[8px] font-black text-emerald-600/70 uppercase">Certified Vendor</p>
+                              <p className="font-black text-base">{selectedPlanData.vendor_name}</p>
+                          </div>
+                          <div className="space-y-1">
+                              <p className="text-[8px] font-black text-emerald-600/70 uppercase">Detail</p>
+                              <div className="bg-slate-950 p-3 rounded-lg border border-emerald-500/10 relative group">
+                                  <p className="whitespace-pre-wrap font-mono text-[10px] break-all leading-relaxed font-bold">
+                                      {selectedPlanData.payment_details}
+                                  </p>
+                                  <Button size="icon" variant="ghost" className="absolute top-1 right-1 h-6 w-6 hover:bg-emerald-500/10" onClick={() => { navigator.clipboard.writeText(selectedPlanData.payment_details || ""); toast({ title: "Copied" }); }}>
+                                      <Copy className="h-3 w-3 text-emerald-600" />
+                                  </Button>
+                              </div>
+                          </div>
+                      </div>
+                      <div className="p-3 bg-slate-950/50 rounded-lg border border-white/5 text-center">
+                        <span className="text-sm font-black text-primary tracking-tight">₦{selectedPlanData.min_investment.toLocaleString()}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-12 opacity-30 italic text-[10px] font-black uppercase tracking-widest">Select Plan</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="my-investments">
-          <Card className="bg-gradient-card border-border shadow-xl">
-            <CardHeader>
-              <CardTitle>My Investments</CardTitle>
-              <CardDescription>
-                Track your investments and upload payment proof
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {userInvestments.map((investment) => (
-                  <div key={investment.id} className="p-6 border-2 rounded-2xl bg-background/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-black text-lg">{investment.vendor_plans?.name}</h4>
-                        <p className="text-sm text-muted-foreground">{investment.vendor_plans?.asset_type}</p>
-                      </div>
-                      <Badge variant={
-                        investment.status === 'approved' ? 'default' : 
-                        investment.status === 'pending' ? 'secondary' : 
-                        investment.status === 'awaiting_proof' ? 'outline' : 'destructive'
-                      }>
-                        {investment.status === 'awaiting_proof' ? 'Awaiting Proof' : investment.status}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-xs text-muted-foreground uppercase font-bold">Amount</p>
-                        <p className="font-black text-primary">₦{investment.amount.toLocaleString()}</p>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-xs text-muted-foreground uppercase font-bold">Expected Profit</p>
-                        <p className="font-black text-emerald-500">₦{investment.expected_profit?.toLocaleString() || 0}</p>
-                      </div>
-                    </div>
+        <TabsContent value="my-investments" className="outline-none space-y-6">
+            {userInvestments.length === 0 ? (
+                <div className="py-20 text-center space-y-4 opacity-20">
+                    <TrendingUp className="h-12 w-12 mx-auto" />
+                    <p className="text-xs font-black uppercase tracking-[0.2em]">No Active Positions Found</p>
+                </div>
+            ) : (
+                userInvestments.map((inv) => {
+                    const stats = calculateInvestmentStats(inv);
+                    return (
+                        <Card key={inv.id} className="bg-slate-900/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl relative group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
+                            
+                            <CardHeader className="p-6 pb-2">
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-[7px] font-black uppercase border-primary/20 text-primary px-1.5 py-0">Stage {stats.claimStage}/6</Badge>
+                                            <h3 className="text-lg font-black uppercase tracking-tighter italic">{inv.plan_name}</h3>
+                                        </div>
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                                            <Calendar className="h-2.5 w-2.5" /> Started: {new Date(inv.created_at || "").toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <Badge className={cn(
+                                        "font-black text-[9px] px-3 py-1 rounded-lg tracking-widest uppercase italic",
+                                        inv.status === 'active' ? "bg-emerald-600" : 
+                                        inv.status === 'pending' ? "bg-amber-600" : "bg-slate-600"
+                                    )}>
+                                        {inv.status}
+                                    </Badge>
+                                </div>
+                            </CardHeader>
+                            {/* ... card content rest ... */}
 
-                    {investment.status === 'awaiting_proof' && (
-                      <div className="space-y-3 p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
-                        <Label className="text-sm font-bold text-yellow-600">Upload Payment Proof</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Enter transaction hash or payment reference..."
-                            id={`proof-${investment.id}`}
-                            className="flex-1"
-                          />
-                          <Button
-                            onClick={() => {
-                              const input = document.getElementById(`proof-${investment.id}`) as HTMLInputElement;
-                              if (input) {
-                                handleUploadPaymentProof(investment.id, input.value);
-                              }
-                            }}
-                            disabled={uploadingProof === investment.id}
-                            className="bg-yellow-600 hover:bg-yellow-700"
-                          >
-                            {uploadingProof === investment.id ? "Uploading..." : "Upload Proof"}
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Please provide your transaction hash, receipt number, or payment reference for verification.
-                        </p>
-                      </div>
-                    )}
+                            <CardContent className="p-6 pt-4 space-y-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-1.5">
+                                        <p className="text-[8px] font-black text-muted-foreground uppercase flex items-center gap-1.5">
+                                            <Wallet className="h-2.5 w-2.5" /> Entry Capital
+                                        </p>
+                                        <p className="text-sm font-black italic">₦{inv.amount.toLocaleString()}</p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <p className="text-[8px] font-black text-emerald-600/70 uppercase flex items-center gap-1.5">
+                                            <ArrowUpRight className="h-2.5 w-2.5" /> Expected Total
+                                        </p>
+                                        <p className="text-sm font-black text-emerald-500 italic">₦{(inv.amount * 1.5).toLocaleString()}</p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <p className="text-[8px] font-black text-purple-600/70 uppercase flex items-center gap-1.5">
+                                            <ShieldCheck className="h-2.5 w-2.5" /> Claimed
+                                        </p>
+                                        <p className="text-sm font-black text-purple-500 italic">₦{(inv.claimed_amount || 0).toLocaleString()}</p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <p className="text-[8px] font-black text-cyan-600/70 uppercase flex items-center gap-1.5">
+                                            <TrendingUp className="h-2.5 w-2.5" /> Matured Value
+                                        </p>
+                                        <p className="text-sm font-black text-cyan-500 italic">₦{Math.floor(stats.accumulated).toLocaleString()}</p>
+                                    </div>
+                                </div>
 
-                    {investment.payment_proof && (
-                      <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                        <Label className="text-xs font-bold text-blue-600 uppercase">Payment Proof Submitted</Label>
-                        <p className="text-sm font-mono break-all mt-1">{investment.payment_proof}</p>
-                      </div>
-                    )}
+                                {inv.status === 'active' && (
+                                    <div className="space-y-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                                        <div className="flex justify-between items-end">
+                                            <div className="space-y-1">
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Cycle Progress</p>
+                                                <p className="text-[10px] font-black italic">{stats.daysPassed}/24 DAYS ELAPSED</p>
+                                            </div>
+                                            {stats.nextClaimDays > 0 && (
+                                                <p className="text-[7px] font-black uppercase text-primary/50">Next Claim Window: {stats.nextClaimDays} Days</p>
+                                            )}
+                                        </div>
+                                        <Progress value={stats.progress} className="h-1.5 bg-slate-950" />
+                                    </div>
+                                )}
 
-                    <p className="text-xs text-muted-foreground mt-4">
-                      Created: {new Date(investment.created_at || "").toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
-                
-                {userInvestments.length === 0 && (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No investments found.</p>
-                    <p className="text-sm">Create your first investment using the "Deposit Funds" tab.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                    <Button 
+                                        onClick={() => handleClaim(inv.id)}
+                                        disabled={stats.claimable <= 0 || !!claiming}
+                                        className={cn(
+                                            "flex-1 h-12 font-black text-[10px] tracking-[0.2em] rounded-xl uppercase italic shadow-xl transition-all",
+                                            stats.claimable > 0 
+                                                ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20" 
+                                                : "bg-slate-800 opacity-50 cursor-not-allowed"
+                                        )}
+                                    >
+                                        {claiming === inv.id ? (
+                                            <RefreshCcw className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <CircleDollarSign className="h-4 w-4 mr-2" />
+                                                {stats.claimable > 0 ? `CLAIM ₦${stats.claimable.toLocaleString()}` : "NO ASSETS READY"}
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    {inv.payment_proof && (
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => window.open(inv.payment_proof, '_blank')}
+                                            className="h-12 px-6 border-white/10 rounded-xl font-black text-[9px] tracking-widest uppercase hover:bg-white/5"
+                                        >
+                                            VIEW RECEIPT
+                                        </Button>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })
+            )}
         </TabsContent>
 
-        <TabsContent value="history">
-            <Card className="bg-gradient-card border-border shadow-xl">
-                <CardHeader>
-                    <CardTitle>Investment History</CardTitle>
+        <TabsContent value="history" className="outline-none">
+            <Card className="bg-slate-900/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl">
+                <CardHeader className="p-5 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[10px] font-black flex items-center gap-2 uppercase tracking-widest opacity-60">
+                        <History className="h-3 w-3" /> Recent Activity
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {recentDeposits.map((deposit) => (
-                            <div key={deposit.id} className="flex items-center justify-between p-5 border-2 rounded-2xl hover:bg-muted/30 transition-all">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-primary/10 rounded-xl">
-                                        <TrendingUp className="h-5 w-5 text-primary" />
+                <CardContent className="p-0">
+                    {recentTransactions.length === 0 ? (
+                        <div className="py-12 text-center opacity-20">
+                            <Clock className="h-8 w-8 mx-auto mb-2" />
+                            <p className="text-[9px] font-black uppercase tracking-widest">No Recent Activity</p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-white/5">
+                            {recentTransactions.map((tx) => (
+                                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn(
+                                            "h-10 w-10 rounded-xl flex items-center justify-center border",
+                                            tx.type === 'deposit' ? "bg-primary/10 border-primary/20 text-primary" :
+                                            tx.type === 'withdrawal' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                                            "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                                        )}>
+                                            {tx.type === 'deposit' ? <ArrowUpRight className="h-5 w-5" /> :
+                                             tx.type === 'withdrawal' ? <ArrowDownRight className="h-5 w-5" /> :
+                                             <CircleDollarSign className="h-5 w-5" />}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-black uppercase tracking-tighter italic">
+                                                {tx.description || tx.type.toUpperCase()}
+                                            </p>
+                                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                {tx.created_at ? new Date(tx.created_at).toLocaleString() : 'Recent'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-black text-lg">₦{deposit.amount.toLocaleString()}</p>
-                                        <p className="text-xs text-muted-foreground font-medium">{deposit.description}</p>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-sm font-black italic">
+                                            {tx.type === 'withdrawal' ? '-' : '+'}₦{tx.amount.toLocaleString()}
+                                        </p>
+                                        <Badge variant="outline" className={cn(
+                                            "text-[7px] font-black uppercase px-1.5 py-0 border-white/10",
+                                            tx.status === 'completed' ? "text-emerald-500 border-emerald-500/20 bg-emerald-500/5" :
+                                            tx.status === 'pending' ? "text-amber-500 border-amber-500/20 bg-amber-500/5" :
+                                            "text-red-500 border-red-500/20 bg-red-500/5"
+                                        )}>
+                                            {tx.status}
+                                        </Badge>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <div className="flex items-center gap-2">
-                                        {getStatusIcon(deposit.status)}
-                                        <span className="text-sm font-bold capitalize">{deposit.status}</span>
-                                    </div>
-                                    <span className="text-[10px] text-muted-foreground">{new Date(deposit.created_at || "").toLocaleString()}</span>
-                                </div>
-                            </div>
-                        ))}
-                        {recentDeposits.length === 0 && (
-                            <div className="text-center py-16 text-muted-foreground">
-                                <Clock className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                                <p>No investment history found.</p>
-                            </div>
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </TabsContent>

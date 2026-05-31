@@ -3,7 +3,7 @@ import Header from "./Header";
 
 const Layout = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-slate-950">
       <Header />
       <main>
         <Outlet />

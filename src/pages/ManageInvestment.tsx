@@ -15,7 +15,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, TrendingUp, Gem, Coins, DollarSign, Wallet, CheckCircle, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ManageInvestment = () => {
   const navigate = useNavigate();
@@ -36,8 +38,8 @@ const ManageInvestment = () => {
       return;
     }
 
-    const totalReturn = investment.amount + investment.return + investment.bonus;
-    const amountToReinvest = reinvestAll ? (investment.amount + investment.return) : Number(reinvestAmount);
+    const totalReturn = (investment.amount || 0) + (investment.return || 0) + (investment.bonus || 0);
+    const amountToReinvest = reinvestAll ? ((investment.amount || 0) + (investment.return || 0)) : Number(reinvestAmount);
 
     if (!amountToReinvest) {
       toast({
@@ -48,7 +50,7 @@ const ManageInvestment = () => {
       return;
     }
 
-    if (amountToReinvest > (investment.amount + investment.return)) {
+    if (amountToReinvest > ((investment.amount || 0) + (investment.return || 0))) {
       toast({
         title: "Error",
         description: "You cannot reinvest more than the capital and profit.",
@@ -90,28 +92,25 @@ const ManageInvestment = () => {
         });
       } else {
         // Update withdrawable balance if partial reinvestment or all bonus
-        const remainingCapitalAndProfit = (investment.amount + investment.return) - amountToReinvest;
-        const totalToAddToWithdrawable = remainingCapitalAndProfit + investment.bonus;
+        const remainingCapitalAndProfit = ((investment.amount || 0) + (investment.return || 0)) - amountToReinvest;
+        const totalToAddToWithdrawable = remainingCapitalAndProfit + (investment.bonus || 0);
 
         if (totalToAddToWithdrawable > 0) {
           const { error: profileError } = await supabase
             .from("profiles")
             .update({
-              withdrawable_balance: withdrawableBalance + totalToAddToWithdrawable,
+              withdrawable_balance: (withdrawableBalance || 0) + totalToAddToWithdrawable,
             })
-            .eq("user_id", user.id);
+            .eq("id", user.id);
 
           if (profileError) {
-            toast({
-              title: "Error updating withdrawable balance",
-              description: profileError.message,
-              variant: "destructive",
-            });
+            console.error("Error updating profile balance:", profileError);
           }
         }
+
         toast({
-          title: "Re-invested successfully",
-          description: `You have successfully reinvested ${amountToReinvest.toLocaleString()}. The remaining ${totalToAddToWithdrawable.toLocaleString()} (including bonus) has been added to your withdrawable balance. Your new withdrawable balance is ${(withdrawableBalance + totalToAddToWithdrawable).toLocaleString()}.`,
+          title: "Re-investment successful",
+          description: `You have successfully re-invested ₦${amountToReinvest.toLocaleString()}.`,
         });
         navigate("/dashboard");
       }
@@ -119,167 +118,198 @@ const ManageInvestment = () => {
   };
 
   const handleWithdraw = async () => {
-    if (!user) {
+    if (!user) return;
+
+    const totalReturn = (investment.amount || 0) + (investment.return || 0) + (investment.bonus || 0);
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        withdrawable_balance: (withdrawableBalance || 0) + totalReturn,
+      })
+      .eq("id", user.id);
+
+    if (profileError) {
       toast({
-        title: "Error",
-        description: "You must be logged in to withdraw.",
+        title: "Error withdrawing funds",
+        description: profileError.message,
         variant: "destructive",
       });
       return;
     }
 
-    const totalReturn = investment.amount + investment.return + investment.bonus;
+    const { error: investmentError } = await supabase
+      .from("investments")
+      .update({ status: "withdrawn", bonus: 0 })
+      .eq("id", id);
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ withdrawable_balance: withdrawableBalance + totalReturn })
-      .eq("id", user.id);
-
-    if (profileError) {
+    if (investmentError) {
       toast({
-        title: "Error updating withdrawable balance",
-        description: profileError.message,
+        title: "Error updating investment",
+        description: investmentError.message,
         variant: "destructive",
       });
     } else {
-      // Update the investment status to 'withdrawn'
-      const { error: updateError } = await supabase
-        .from("investments")
-        .update({ status: "withdrawn" })
-        .eq("id", id);
-
-      if (updateError) {
-        toast({
-          title: "Error updating investment",
-          description: updateError.message,
-          variant: "destructive",
-        });
-      } else {
-        const { error: transactionError } = await supabase
-          .from("transactions")
-          .insert([
-            {
-              user_id: user.id,
-              type: "withdrawal",
-              amount: totalReturn,
-              status: "completed",
-              description: "Investment return to withdrawable balance",
-              withdrawal_type: "to_balance",
-            },
-          ]);
-
-        if (transactionError) {
-          console.error("Error creating transaction:", transactionError);
-        }
-
-        toast({
-          title: "Withdrawal successful",
-          description: `The total return of ${totalReturn.toLocaleString()} has been added to your withdrawable balance. Your new withdrawable balance is ${(withdrawableBalance + totalReturn).toLocaleString()}.`,
-        });
-        navigate("/withdraw", {
-          state: { withdrawableBalance: withdrawableBalance + totalReturn },
-        });
-      }
+      toast({
+        title: "Withdrawal successful",
+        description: `Your funds of ₦${totalReturn.toLocaleString()} have been added to your withdrawable balance.`,
+      });
+      navigate("/dashboard");
     }
   };
 
   if (!investment) {
-    return <div>Investment not found</div>;
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <p className="text-muted-foreground mb-4">Investment not found.</p>
+        <Link to="/dashboard">
+          <Button variant="outline">Return to Dashboard</Button>
+        </Link>
+      </div>
+    );
   }
 
-  const isDue = new Date(investment.end_date) < new Date();
+  const isCompleted = investment.status === 'completed';
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Manage Investment
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Manage your investment, re-invest or withdraw your earnings.
-        </p>
+    <div className="container mx-auto p-6 space-y-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-primary/10 via-background to-background p-8 rounded-3xl border-2 border-primary/10 shadow-2xl">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight">Manage Investment</h1>
+          <p className="text-muted-foreground text-lg">
+            Details for <span className="text-white font-bold">{investment.plan_name}</span>
+          </p>
+        </div>
+        <Link to="/dashboard">
+          <Button variant="outline" className="h-12 px-6 rounded-xl border-2 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
       </div>
-      <Card className="bg-gradient-card border-border shadow-card">
-        <CardHeader>
-          <CardTitle>{investment.plan_name}</CardTitle>
-          <CardDescription>Investment Details</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between">
-            <span>Capital:</span>
-            <span>${investment.amount?.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Expected Profit:</span>
-            <span className="text-green-500">
-              ${investment.expected_profit?.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex justify-between font-bold text-lg">
-            <span>Total Return:</span>
-            <span>
-              $
-              {(
-                investment.amount + investment.expected_profit
-              )?.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Bonus:</span>
-            <span className="text-green-500">
-              ${investment.bonus?.toLocaleString() || '0'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Status:</span>
-            <span
-              className={`px-2 py-1 rounded-full text-xs ${investment.status === "completed" ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-500"}`}
-            >
-              {investment.status}
-            </span>
-          </div>
-          {investment.status === "completed" && (
-            <div className="pt-4 border-t">
-              <h3 className="text-lg font-semibold mb-2">
-                What would you like to do?
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="reinvest-amount">Re-invest Amount</Label>
-                  <Input
-                    id="reinvest-amount"
-                    type="number"
-                    placeholder="Enter amount"
-                    value={reinvestAmount}
-                    onChange={(e) => setReinvestAmount(e.target.value)}
-                  />
-                  <Button
-                    onClick={() => handleReinvest(false)}
-                    className="w-full mt-2"
-                  >
-                    Re-invest
-                  </Button>
+
+      <div 
+        className={cn(
+          "flex flex-col lg:flex-row items-stretch lg:items-center justify-between p-8 rounded-[2rem] border bg-background/50 gap-10 transition-all hover:border-primary/30",
+          isCompleted ? "border-emerald-500/20 bg-emerald-500/[0.02]" : "border-primary/10"
+        )}
+      >
+        <div className="space-y-8 flex-1">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                    <div className={cn(
+                        "p-4 rounded-[1.5rem] bg-primary/10 border-2 border-primary/20"
+                    )}>
+                        <Gem className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="font-black text-2xl tracking-tight">{investment.plan_name}</h3>
+                        <div className="flex gap-3 mt-2">
+                            <Badge variant="secondary" className="text-xs uppercase font-black px-4 py-1">
+                                {investment.status}
+                            </Badge>
+                            {isCompleted && (
+                                <Badge className="bg-emerald-500 text-white text-xs font-black px-4 py-1">
+                                    READY FOR ACTION
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                <div className="flex flex-col space-y-2">
-                  <Button
-                    onClick={() => handleReinvest(true)}
-                    className="w-full"
-                  >
-                    Re-invest All
-                  </Button>
-                  <Button
-                    onClick={handleWithdraw}
-                    variant="destructive"
-                    className="w-full"
-                  >
-                    Withdraw All to Balance
-                  </Button>
+                <div className="text-right">
+                    <p className="text-xs uppercase font-black text-muted-foreground tracking-widest">Invested Capital</p>
+                    <p className="text-3xl font-black text-white">₦{investment.amount?.toLocaleString()}</p>
                 </div>
-              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-6 bg-slate-900/50 rounded-[1.5rem] border border-white/5 backdrop-blur-sm shadow-xl">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        Expected Profit
+                    </p>
+                    <p className="text-3xl font-black text-primary">₦{investment.expected_profit?.toLocaleString() || 0}</p>
+                </div>
+                <div className="p-6 bg-slate-900/50 rounded-[1.5rem] border border-white/5 backdrop-blur-sm shadow-xl">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <Coins className="h-4 w-4 text-emerald-500" />
+                        Bonus Earned
+                    </p>
+                    <p className="text-3xl font-black text-emerald-500">₦{investment.bonus?.toLocaleString() || '0'}</p>
+                </div>
+                <div className="p-6 bg-slate-950 rounded-[1.5rem] border-2 border-white/5 shadow-2xl">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-white" />
+                        Total Maturity Return
+                    </p>
+                    <p className="text-3xl font-black text-white">
+                        ₦{(investment.amount + (investment.expected_profit || 0) + (investment.bonus || 0)).toLocaleString()}
+                    </p>
+                </div>
+            </div>
+
+            {isCompleted && (
+                <div className="space-y-6 pt-8 border-t border-white/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-500/10 rounded-lg">
+                            <CheckCircle className="h-5 w-5 text-emerald-500" />
+                        </div>
+                        <h3 className="text-xl font-black uppercase tracking-tight">Post-Maturity Options</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="p-8 bg-slate-900/50 rounded-[2rem] border border-white/5 space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="reinvest-amount" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Re-investment</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="reinvest-amount"
+                                        type="number"
+                                        placeholder="Enter amount to re-trade..."
+                                        value={reinvestAmount}
+                                        onChange={(e) => setReinvestAmount(e.target.value)}
+                                        className="h-16 pl-10 rounded-2xl bg-background border-2 border-white/5 font-black text-lg"
+                                    />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black">₦</div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <Button
+                                    onClick={() => handleReinvest(false)}
+                                    className="h-14 rounded-xl font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                >
+                                    Confirm Partial Re-trade
+                                </Button>
+                                <Button
+                                    onClick={() => handleReinvest(true)}
+                                    variant="outline"
+                                    className="h-14 rounded-xl font-black uppercase tracking-widest border-2"
+                                >
+                                    Re-trade Capital + Profit
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="p-8 bg-emerald-500/[0.03] rounded-[2rem] border-2 border-emerald-500/10 flex flex-col justify-between">
+                            <div className="space-y-2">
+                                <h4 className="text-lg font-black text-white uppercase tracking-tight">Full Withdrawal</h4>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    Withdraw your entire capital, profit, and bonus directly to your main wallet balance.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={handleWithdraw}
+                                className="h-16 mt-8 rounded-2xl font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20"
+                            >
+                                <Wallet className="h-5 w-5 mr-2" />
+                                Withdraw All to Balance
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+      </div>
     </div>
   );
 };

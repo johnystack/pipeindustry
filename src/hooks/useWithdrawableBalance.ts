@@ -22,7 +22,7 @@ export const useWithdrawableBalance = () => {
           console.error('Error fetching withdrawable balance:', error);
           setError(error);
         } else {
-          setBalance(data?.withdrawable_balance || 0);
+          setBalance(Math.max(0, data?.withdrawable_balance || 0));
         }
         setLoading(false);
       }

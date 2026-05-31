@@ -8,6 +8,7 @@ export interface AuthContextType {
   session: Session | null;
   user: User | null;
   role: string | null;
+  avatar_url: string | null;
   loading: boolean;
 }
 
@@ -17,6 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [avatar_url, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,14 +32,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.user) {
         const { data, error } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, avatar_url")
           .eq("id", session.user.id)
           .single();
 
         if (error) {
-          console.error("Error fetching user role:", error);
+          console.error("Error fetching user profile:", error);
         } else {
           setRole(data?.role || null);
+          setAvatarUrl(data?.avatar_url || null);
         }
       }
       setLoading(false);
@@ -50,22 +53,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          const fetchRole = async () => {
+          const fetchProfile = async () => {
             const { data, error } = await supabase
               .from("profiles")
-              .select("role")
+              .select("role, avatar_url")
               .eq("id", session.user.id)
               .single();
 
             if (error) {
-              console.error("Error fetching user role:", error);
+              console.error("Error fetching user profile:", error);
             } else {
               setRole(data?.role || null);
+              setAvatarUrl(data?.avatar_url || null);
             }
           };
-          fetchRole();
+          fetchProfile();
         } else {
           setRole(null);
+          setAvatarUrl(null);
         }
       },
     );
@@ -79,6 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     user,
     role,
+    avatar_url,
     loading,
   };
 

@@ -12,6 +12,10 @@ export interface User {
   referral_earnings?: number;
   username?: string;
   role?: string;
+  bank_name?: string;
+  account_number?: string;
+  account_name?: string;
+  avatar_url?: string;
 }
 
 export interface Crypto {
@@ -46,7 +50,7 @@ export interface AdminStat {
 
 export interface Investment {
   id: string;
-  status: 'active' | 'completed' | 'withdrawn' | 'pending' | 'denied';
+  status: 'active' | 'completed' | 'withdrawn' | 'pending' | 'denied' | 'awaiting_proof';
   amount: number;
   return?: number;
   approved_at: string;
@@ -54,7 +58,19 @@ export interface Investment {
   user_id: string;
   crypto: string;
   duration: number;
+  bonus?: number;
   plan_id?: string;
+  claimed_amount?: number;
+  last_claim_at?: string;
+  expected_profit?: number;
+  payment_proof?: string;
+  payment_proof_uploaded_at?: string;
+  created_at?: string;
+  profiles?: {
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+  };
 }
 
 export interface VendorPlan {
@@ -100,9 +116,10 @@ export interface Transaction {
   date?: string;
   fee?: string;
   plan?: string;
-  withdrawal_type?: 'to_wallet' | 'to_balance';
+  withdrawal_type?: 'to_wallet' | 'to_bank' | 'to_balance';
   address?: string;
   created_at?: string;
+  profiles?: User;
 }
 
 export interface Deposit {

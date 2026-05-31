@@ -1,16 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Menu, User, Bell, Briefcase, TrendingUp } from "lucide-react";
+import { Menu, User, Briefcase, TrendingUp } from "lucide-react";
 import { SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface DashboardHeaderProps {
   className?: string;
 }
 
 export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
-  const { role } = useAuth();
+  const { role, avatar_url, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -24,9 +25,8 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
     )}>
       <div className="flex items-center gap-4">
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-white hover:bg-slate-800">
+          <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-white">
             <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle Menu</span>
           </Button>
         </SheetTrigger>
 
@@ -39,12 +39,12 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
               className={cn(
                 "h-8 px-4 rounded-lg text-[10px] font-black uppercase transition-all gap-2",
                 !isVendorView 
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-slate-400"
               )}
             >
               <TrendingUp className="h-3 w-3" />
-              Trader Mode
+              Trader
             </Button>
             <Button
               variant="ghost"
@@ -53,35 +53,39 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
               className={cn(
                 "h-8 px-4 rounded-lg text-[10px] font-black uppercase transition-all gap-2",
                 isVendorView 
-                  ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-emerald-500 text-white" 
+                  : "text-slate-400"
               )}
             >
               <Briefcase className="h-3 w-3" />
-              Vendor Mode
+              Vendor
             </Button>
           </div>
         )}
       </div>
       
       <div className="flex items-center gap-4">
-        {/* Mobile View Toggle */}
         {isAdmin && (
           <Button 
             variant="ghost" 
             size="icon" 
-            className="sm:hidden text-slate-400 hover:text-white hover:bg-slate-800"
+            className="sm:hidden text-slate-400"
             onClick={() => navigate(isVendorView ? "/dashboard" : "/vendor-dashboard")}
           >
             {isVendorView ? <TrendingUp className="h-5 w-5" /> : <Briefcase className="h-5 w-5" />}
           </Button>
         )}
         
-        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800 rounded-full">
-            <Bell className="h-5 w-5" />
-        </Button>
-        <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center">
-            <User className="h-4 w-4 text-primary" />
+        <div 
+          className="h-9 w-9 cursor-pointer"
+          onClick={() => navigate("/settings")}
+        >
+          <Avatar className="h-full w-full border border-primary/20 hover:border-primary/50 transition-all">
+            <AvatarImage src={avatar_url || ""} />
+            <AvatarFallback className="bg-primary/20 text-primary font-black uppercase">
+              {user?.email?.[0] || <User className="h-4 w-4" />}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </header>

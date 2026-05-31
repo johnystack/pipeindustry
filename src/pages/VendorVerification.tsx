@@ -14,35 +14,66 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, Copy, Clock, CheckCircle2, AlertCircle, Wallet } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ShieldCheck, Copy, Clock, CheckCircle2, AlertCircle, Wallet, Loader2 } from "lucide-react";
+import { VendorPaymentWallet } from "@/lib/types";
 
 const VendorVerification = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [fetchingWallets, setFetchingWallets] = useState(true);
   const [txHash, setTxHash] = useState("");
   const [status, setStatus] = useState<string>("not_applied");
+  const [wallets, setWallets] = useState<VendorPaymentWallet[]>([]);
+  const [selectedWallet, setSelectedWallet] = useState<VendorPaymentWallet | null>(null);
 
-  // Company verification wallet (static for now)
-  const VERIFICATION_WALLET = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
   const VERIFICATION_FEE = "$5,000,000.00";
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      if (user) {
-        const { data, error } = await supabase
+    const fetchData = async () => {
+      if (!user) return;
+      
+      setFetchingWallets(true);
+      try {
+        // Fetch verification status
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("vendor_verification_status")
           .eq("id", user.id)
           .single();
         
-        if (!error && data) {
-          setStatus(data.vendor_verification_status || "not_applied");
+        if (!profileError && profileData) {
+          setStatus(profileData.vendor_verification_status || "not_applied");
         }
+
+        // Fetch active vendor wallets
+        const { data: walletData, error: walletError } = await supabase
+          .from("vendor_payment_wallets")
+          .select("*")
+          .eq("is_active", true);
+        
+        if (!walletError && walletData) {
+          setWallets(walletData);
+          if (walletData.length > 0) {
+            setSelectedWallet(walletData[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching vendor verification data:", error);
+      } finally {
+        setFetchingWallets(false);
       }
     };
-    fetchStatus();
+    
+    fetchData();
   }, [user]);
 
   const handleApply = async () => {
@@ -148,15 +179,51 @@ const VendorVerification = () => {
                                 <span className="font-bold text-muted-foreground uppercase text-xs">Fee Amount</span>
                                 <Badge className="bg-primary text-white text-lg px-4 py-1">{VERIFICATION_FEE}</Badge>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase text-muted-foreground">Company Verification Wallet (USDT/BTC/ETH)</Label>
-                                <div className="flex gap-2">
-                                    <Input value={VERIFICATION_WALLET} readOnly className="bg-background font-mono text-sm" />
-                                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(VERIFICATION_WALLET)}>
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
+
+                            {fetchingWallets ? (
+                                <div className="flex items-center justify-center py-4">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                 </div>
-                            </div>
+                            ) : wallets.length > 0 ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-black uppercase text-muted-foreground">Select Payment Method</Label>
+                                        <Select 
+                                            value={selectedWallet?.id} 
+                                            onValueChange={(val) => setSelectedWallet(wallets.find(w => w.id === val) || null)}
+                                        >
+                                            <SelectTrigger className="w-full h-12 bg-background border-white/10">
+                                                <SelectValue placeholder="Select a wallet" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {wallets.map((wallet) => (
+                                                    <SelectItem key={wallet.id} value={wallet.id}>
+                                                        {wallet.name} ({wallet.symbol}) • {wallet.network}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {selectedWallet && (
+                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <Label className="text-xs font-black uppercase text-muted-foreground">
+                                                {selectedWallet.name} Address ({selectedWallet.network})
+                                            </Label>
+                                            <div className="flex gap-2">
+                                                <Input value={selectedWallet.address} readOnly className="bg-background font-mono text-sm" />
+                                                <Button variant="outline" size="icon" onClick={() => copyToClipboard(selectedWallet.address)}>
+                                                    <Copy className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-center">
+                                    <p className="text-xs font-bold text-destructive">No active payment wallets found. Please contact support.</p>
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
                             <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -188,7 +255,7 @@ const VendorVerification = () => {
                         <Button 
                             className="w-full h-14 text-lg font-black shadow-xl shadow-primary/20" 
                             onClick={handleApply}
-                            disabled={loading}
+                            disabled={loading || wallets.length === 0}
                         >
                             {loading ? "Submitting..." : "Submit Application"}
                         </Button>
