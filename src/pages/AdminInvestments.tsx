@@ -24,6 +24,8 @@ import {
   Image as ImageIcon,
   ShieldAlert,
   ArrowUpRight,
+  RefreshCcw,
+  Zap,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -122,7 +124,7 @@ const AdminInvestments = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-4 space-y-10 animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="container mx-auto p-4 md:p-6 space-y-10 animate-in fade-in slide-in-from-top-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black tracking-[0.2em] uppercase">
@@ -142,42 +144,42 @@ const AdminInvestments = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card className="bg-primary/5 border-2 border-primary/10 rounded-xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Clock className="h-12 w-12" />
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform hidden sm:block">
+              <Clock className="h-12 w-12 text-primary" />
           </div>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary/70">Awaiting Action</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-6 pt-4 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-primary/70 truncate">Awaiting Action</CardTitle>
           </CardHeader>
-          <CardContent><div className="text-2xl font-black">{pendingCount}</div></CardContent>
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6"><div className="text-xl md:text-2xl font-black truncate">{pendingCount}</div></CardContent>
         </Card>
         <Card className="bg-emerald-500/5 border-2 border-emerald-500/10 rounded-xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-emerald-500">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-emerald-500 hidden sm:block">
               <Zap className="h-12 w-12" />
           </div>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-emerald-600/70">Live Entries</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-6 pt-4 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600/70 truncate">Live Entries</CardTitle>
           </CardHeader>
-          <CardContent><div className="text-2xl font-black text-emerald-500">{investments.filter(i => i.status === 'active').length}</div></CardContent>
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6"><div className="text-xl md:text-2xl font-black text-emerald-500 truncate">{investments.filter(i => i.status === 'active').length}</div></CardContent>
         </Card>
         <Card className="bg-slate-900/50 border-2 border-white/5 rounded-xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform hidden sm:block">
               <Users className="h-12 w-12" />
           </div>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Traders</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-6 pt-4 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground truncate">Total Traders</CardTitle>
           </CardHeader>
-          <CardContent><div className="text-2xl font-black">{new Set(investments.map(i => i.user_id)).size}</div></CardContent>
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6"><div className="text-xl md:text-2xl font-black truncate">{new Set(investments.map(i => i.user_id)).size}</div></CardContent>
         </Card>
         <Card className="bg-slate-900/50 border-2 border-white/5 rounded-xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform hidden sm:block">
               <ArrowUpRight className="h-12 w-12" />
           </div>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Gross Volume</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-6 pt-4 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground truncate">Gross Volume</CardTitle>
           </CardHeader>
-          <CardContent><div className="text-2xl font-black">₦{investments.reduce((acc, i) => acc + i.amount, 0).toLocaleString()}</div></CardContent>
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6"><div className="text-xl md:text-2xl font-black truncate">₦{investments.reduce((acc, i) => acc + i.amount, 0).toLocaleString()}</div></CardContent>
         </Card>
       </div>
 
@@ -197,21 +199,21 @@ const AdminInvestments = () => {
             <Card key={inv.id} className="group bg-slate-900/40 border-2 border-white/5 hover:border-primary/30 transition-all rounded-[2rem] overflow-hidden backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
               <div className="p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
                 <div className="flex-1 space-y-6">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
                     <div className="flex items-center gap-5">
                       <div className="h-12 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:rotate-6 transition-transform">
                           <Gem className="text-primary h-8 w-8" />
                       </div>
-                      <div>
-                        <h4 className="font-black text-2xl tracking-tight uppercase italic">{inv.plan_name}</h4>
+                      <div className="min-w-0">
+                        <h4 className="font-black text-xl md:text-2xl tracking-tight uppercase italic truncate">{inv.plan_name}</h4>
                         <div className="flex items-center gap-3 mt-1">
-                            <p className="text-sm font-bold text-white/80">{inv.profiles?.username || `${inv.profiles?.first_name} ${inv.profiles?.last_name}`}</p>
-                            <div className="h-1 w-1 rounded-full bg-white/20" />
-                            <p className="text-xs font-medium text-muted-foreground">{inv.profiles?.email}</p>
+                            <p className="text-sm font-bold text-white/80 truncate">{inv.profiles?.username || `${inv.profiles?.first_name} ${inv.profiles?.last_name}`}</p>
+                            <div className="h-1 w-1 rounded-full bg-white/20 shrink-0" />
+                            <p className="text-xs font-medium text-muted-foreground truncate">{inv.profiles?.email}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                         <Badge className="font-black text-xl px-6 py-2 bg-slate-950 border-2 border-primary/20 text-primary rounded-2xl">₦{inv.amount.toLocaleString()}</Badge>
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2">CAPITAL SETTLEMENT</p>
                     </div>
@@ -228,7 +230,7 @@ const AdminInvestments = () => {
                             <p className="text-[10px] text-muted-foreground font-bold">Uploaded {new Date(inv.payment_proof_uploaded_at || "").toLocaleString()}</p>
                         </div>
                       </div>
-                      <Button size="lg" variant="secondary" onClick={() => window.open(inv.payment_proof, '_blank')} className="font-black gap-2 h-14 px-4 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl">
+                      <Button size="lg" variant="secondary" onClick={() => window.open(inv.payment_proof, '_blank')} className="font-black gap-2 h-14 w-full sm:w-auto px-4 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl">
                         <Eye className="h-5 w-5" /> VERIFY DOCUMENT
                       </Button>
                     </div>
@@ -262,12 +264,12 @@ const AdminInvestments = () => {
                     <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center group-hover:rotate-12 transition-transform">
                     <TrendingUp className="h-6 w-6 opacity-30" />
                     </div>
-                    <div>
-                    <h5 className="font-black text-lg tracking-tight">{inv.plan_name}</h5>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{inv.profiles?.email}</p>
+                    <div className="min-w-0">
+                    <h5 className="font-black text-lg tracking-tight truncate max-w-[140px]">{inv.plan_name}</h5>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest truncate max-w-[140px]">{inv.profiles?.email}</p>
                     </div>
                 </div>
-                <div className="text-right space-y-2">
+                <div className="text-right space-y-2 shrink-0">
                     <span className="block font-black text-lg">₦{inv.amount.toLocaleString()}</span>
                     <Badge variant={inv.status === 'active' ? 'default' : 'destructive'} className={cn(
                         "font-black text-[9px] tracking-widest px-3 py-0.5 rounded-lg",

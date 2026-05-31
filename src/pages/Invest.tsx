@@ -212,7 +212,7 @@ const Invest = () => {
             </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             {vendorPlans.map((plan) => {
             const Icon = assetIcons[plan.asset_type || "Gold"] || TrendingUp;
             const colorClass = assetColors[plan.asset_type || "Gold"] || "text-primary bg-primary/10";
@@ -220,70 +220,67 @@ const Invest = () => {
             return (
                 <Card
                 key={plan.id}
-                className={`relative bg-gradient-card border-border shadow-card transition-all duration-300 hover:shadow-glow cursor-pointer group ${
-                    selectedPlan === plan.id ? "ring-2 ring-primary" : ""
+                className={`relative bg-slate-900/60 border-white/5 shadow-2xl transition-all duration-300 hover:border-primary/30 cursor-pointer group rounded-2xl md:rounded-[2.5rem] overflow-hidden backdrop-blur-xl ${
+                    selectedPlan === plan.id ? "ring-2 ring-primary border-primary" : ""
                 }`}
                 onClick={() => setSelectedPlan(plan.id)}
                 >
-                <CardHeader className="text-center p-6">
-                    <div className="flex justify-center mb-4">
-                    <div className={`p-4 rounded-2xl ${colorClass} transition-transform group-hover:scale-110`}>
-                        <Icon className="h-8 w-8" />
+                <CardHeader className="text-center p-4 md:p-8">
+                    <div className="flex justify-center mb-2 md:mb-6">
+                    <div className={`p-3 md:p-6 rounded-2xl ${colorClass} transition-transform group-hover:scale-110 shadow-lg`}>
+                        <Icon className="h-6 w-6 md:h-10 md:w-10" />
                     </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                    <CardDescription className="flex items-center justify-center gap-1 font-medium">
-                        <Badge variant="secondary" className="font-bold">{plan.asset_type}</Badge>
-                        <span className="text-muted-foreground mx-1">•</span>
-                        <span>{plan.vendor_name}</span>
+                    <CardTitle className="text-sm md:text-2xl font-black uppercase tracking-tighter italic truncate">{plan.name}</CardTitle>
+                    <CardDescription className="flex items-center justify-center gap-1 font-black text-[7px] md:text-xs uppercase tracking-widest">
+                        <Badge variant="secondary" className="font-black text-[6px] md:text-[9px] px-1.5 py-0">{plan.asset_type}</Badge>
+                        <span className="text-muted-foreground mx-1 opacity-20">|</span>
+                        <span className="truncate">{plan.vendor_name}</span>
                     </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-6 p-6">
-                    <div className="text-center p-4 bg-muted/50 rounded-xl space-y-1">
-                        <div className="text-4xl font-black text-primary">
+                <CardContent className="space-y-4 md:space-y-8 p-4 md:p-8 pt-0">
+                    <div className="text-center p-3 md:p-6 bg-slate-950/50 rounded-2xl border border-white/5 space-y-0.5 md:space-y-2">
+                        <div className="text-2xl md:text-5xl font-black text-emerald-500 italic leading-none tracking-tighter">
                             50%
                         </div>
-                        <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                            Expected ROI
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                            Fixed Return in 24 Days
+                        <div className="text-[6px] md:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+                            Growth Projection
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                            <span className="text-xs text-muted-foreground uppercase font-bold">Fixed Entry Price</span>
-                            <p className="font-black text-xl text-primary">₦{plan.min_investment.toLocaleString()}</p>
+                    <div className="space-y-1.5 md:space-y-3">
+                        <div className="flex justify-between items-center p-2.5 md:p-4 bg-slate-950/80 rounded-xl md:rounded-2xl border border-white/5 group-hover:border-primary/20 transition-all">
+                            <span className="text-[6px] md:text-[10px] text-muted-foreground uppercase font-black tracking-widest italic opacity-40">Entry Price</span>
+                            <p className="font-black text-sm md:text-2xl text-primary italic">₦{plan.min_investment.toLocaleString()}</p>
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                    <h4 className="font-bold text-sm flex items-center gap-2">
-                        <Check className="h-4 w-4 text-primary" />
-                        Plan Benefits
-                    </h4>
-                    <ul className="grid grid-cols-1 gap-2">
-                        {plan.features.slice(0, 3).map((feature, featureIndex) => (
-                        <li
-                            key={featureIndex}
-                            className="flex items-center text-sm text-muted-foreground"
-                        >
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary/50 mr-2" />
-                            {feature}
-                        </li>
-                        ))}
-                    </ul>
+                    <div className="space-y-2 md:space-y-4 hidden md:block">
+                        <h4 className="font-black text-[9px] md:text-xs flex items-center gap-2 uppercase tracking-widest opacity-40 italic">
+                            <Check className="h-3 w-3 md:h-4 md:w-4 text-emerald-500" />
+                            Network Perks
+                        </h4>
+                        <ul className="grid grid-cols-1 gap-1.5 md:gap-3">
+                            {plan.features.slice(0, 3).map((feature, featureIndex) => (
+                            <li
+                                key={featureIndex}
+                                className="flex items-center text-[8px] md:text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight"
+                            >
+                                <div className="h-1 w-1 rounded-full bg-emerald-500/50 mr-2 shrink-0" />
+                                {feature}
+                            </li>
+                            ))}
+                        </ul>
                     </div>
 
-                    <div className="pt-4 border-t">
+                    <div className="pt-2 md:pt-6 border-t border-white/5">
                     <Button
                         size="lg"
-                        className="w-full font-bold shadow-lg shadow-primary/20"
+                        className="w-full h-10 md:h-14 font-black uppercase tracking-widest text-[8px] md:text-sm italic rounded-xl md:rounded-2xl bg-primary text-white shadow-xl shadow-primary/10 transition-all active:scale-95 group-hover:scale-[1.02]"
                         onClick={handleSelectPlan}
                     >
-                        Invest in {plan.asset_type}
+                        Initialize Trade
                     </Button>
                     </div>
                 </CardContent>

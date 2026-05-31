@@ -299,13 +299,15 @@ const Admin = () => {
             { label: 'Volume', val: `₦${stats.totalVolume.toLocaleString()}`, icon: ArrowUpRight, color: 'text-amber-500' }
         ].map((s, i) => (
             <Card key={i} className="bg-slate-900/50 border border-white/5 rounded-2xl overflow-hidden relative group hover:bg-white/[0.01] transition-all shadow-xl">
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform hidden sm:block">
                     <s.icon className={cn("h-8 w-8", s.color)} />
                 </div>
-                <CardHeader className="pb-1 px-5 pt-5">
-                    <CardTitle className="text-[9px] font-black uppercase tracking-widest opacity-50">{s.label}</CardTitle>
+                <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5">
+                    <CardTitle className="text-[7px] md:text-[9px] font-black uppercase tracking-widest opacity-50 truncate">{s.label}</CardTitle>
                 </CardHeader>
-                <CardContent className="px-5 pb-5"><div className="text-2xl md:text-3xl font-black tracking-tighter italic">{s.val}</div></CardContent>
+                <CardContent className="px-4 md:px-5 pb-4 md:pb-5">
+                  <div className="text-xl md:text-3xl font-black tracking-tighter italic truncate">{s.val}</div>
+                </CardContent>
             </Card>
         ))}
       </div>

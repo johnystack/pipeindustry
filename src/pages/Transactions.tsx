@@ -153,51 +153,51 @@ const Transactions = () => {
       </div>
 
       {/* Summary Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-3xl overflow-hidden relative group">
-          <CardHeader className="pb-2 px-6 pt-6">
-            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Total Inbound</CardTitle>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-2xl md:rounded-3xl overflow-hidden relative group">
+          <CardHeader className="pb-1 px-4 pt-4 md:pb-2 md:px-6 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Total Inbound</CardTitle>
           </CardHeader>
-          <CardContent className="px-6 pb-6 flex items-center justify-between">
-            <div className="text-2xl font-black text-emerald-500 italic">₦{summary.totalDeposits.toLocaleString()}</div>
-            <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-              <ArrowUpFromLine className="h-6 w-6 text-emerald-500" />
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6 flex items-center justify-between">
+            <div className="text-sm sm:text-lg md:text-2xl font-black text-emerald-500 italic truncate">₦{summary.totalDeposits.toLocaleString()}</div>
+            <div className="p-1.5 md:p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20 hidden sm:block">
+              <ArrowUpFromLine className="h-4 w-4 md:h-6 md:w-6 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-3xl overflow-hidden relative group">
-          <CardHeader className="pb-2 px-6 pt-6">
-            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Total Outbound</CardTitle>
+        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-2xl md:rounded-3xl overflow-hidden relative group">
+          <CardHeader className="pb-1 px-4 pt-4 md:pb-2 md:px-6 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Total Outbound</CardTitle>
           </CardHeader>
-          <CardContent className="px-6 pb-6 flex items-center justify-between">
-            <div className="text-2xl font-black text-orange-500 italic">₦{summary.totalWithdrawals.toLocaleString()}</div>
-            <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-              <ArrowDownToLine className="h-6 w-6 text-orange-500" />
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6 flex items-center justify-between">
+            <div className="text-sm sm:text-lg md:text-2xl font-black text-orange-500 italic truncate">₦{summary.totalWithdrawals.toLocaleString()}</div>
+            <div className="p-1.5 md:p-2 bg-orange-500/10 rounded-lg border border-orange-500/20 hidden sm:block">
+              <ArrowDownToLine className="h-4 w-4 md:h-6 md:w-6 text-orange-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-3xl overflow-hidden relative group">
-          <CardHeader className="pb-2 px-6 pt-6">
-            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Growth Earned</CardTitle>
+        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-2xl md:rounded-3xl overflow-hidden relative group">
+          <CardHeader className="pb-1 px-4 pt-4 md:pb-2 md:px-6 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Growth Earned</CardTitle>
           </CardHeader>
-          <CardContent className="px-6 pb-6 flex items-center justify-between">
-            <div className="text-2xl font-black text-primary italic">₦{summary.totalProfits.toLocaleString()}</div>
-            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
-              <TrendingUp className="h-6 w-6 text-primary" />
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6 flex items-center justify-between">
+            <div className="text-sm sm:text-lg md:text-2xl font-black text-primary italic truncate">₦{summary.totalProfits.toLocaleString()}</div>
+            <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg border border-primary/20 hidden sm:block">
+              <TrendingUp className="h-4 w-4 md:h-6 md:w-6 text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-3xl overflow-hidden relative group">
-          <CardHeader className="pb-2 px-6 pt-6">
-            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Active Stake</CardTitle>
+        <Card className="bg-slate-900/30 border-white/10 shadow-xl rounded-2xl md:rounded-3xl overflow-hidden relative group">
+          <CardHeader className="pb-1 px-4 pt-4 md:pb-2 md:px-6 md:pt-6">
+            <CardTitle className="text-[7px] md:text-[10px] uppercase font-black text-muted-foreground tracking-widest italic opacity-50">Active Stake</CardTitle>
           </CardHeader>
-          <CardContent className="px-6 pb-6 flex items-center justify-between">
-            <div className="text-2xl font-black text-white italic">₦{summary.totalInvestments.toLocaleString()}</div>
-            <div className="p-2 bg-white/5 rounded-lg border border-white/10">
-              <Gem className="h-6 w-6 text-white" />
+          <CardContent className="px-4 pb-4 md:px-6 md:pb-6 flex items-center justify-between">
+            <div className="text-sm sm:text-lg md:text-2xl font-black text-white italic truncate">₦{summary.totalInvestments.toLocaleString()}</div>
+            <div className="p-1.5 md:p-2 bg-white/5 rounded-lg border border-white/10 hidden sm:block">
+              <Gem className="h-4 w-4 md:h-6 md:w-6 text-white" />
             </div>
           </CardContent>
         </Card>

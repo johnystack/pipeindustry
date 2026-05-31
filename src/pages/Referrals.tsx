@@ -171,39 +171,39 @@ const Referrals = () => {
     <div className="container mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-primary/10 via-background to-background p-6 md:p-8 rounded-2xl md:rounded-[2rem] border-2 border-primary/5 shadow-xl">
-        <div className="space-y-1">
+        <div className="space-y-1 text-center md:text-left">
           <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase italic">Referral Program</h1>
-          <p className="text-muted-foreground text-xs md:text-sm font-bold opacity-60 uppercase tracking-wide">
+          <p className="text-muted-foreground text-[10px] md:text-sm font-bold opacity-60 uppercase tracking-wide">
             Earn tiered commissions based on your network of direct referrals.
           </p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card className="bg-slate-900/50 border border-white/5 shadow-lg rounded-2xl overflow-hidden relative group hover:bg-white/[0.02] transition-all">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform hidden sm:block">
             <Users className="h-12 w-12 text-blue-500" />
           </div>
-          <CardHeader className="pb-1 px-5 pt-5">
-            <CardTitle className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">Total Referrals</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5">
+            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground tracking-widest truncate">Total Referrals</CardTitle>
           </CardHeader>
-          <CardContent className="px-5 pb-5">
-            <div className="text-2xl md:text-3xl font-black tracking-tighter italic">
+          <CardContent className="px-4 md:px-5 pb-4 md:pb-5">
+            <div className="text-xl md:text-3xl font-black tracking-tighter italic">
               {referralStats.total_referrals || 0}
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-slate-900/50 border border-white/5 shadow-lg rounded-2xl overflow-hidden relative group hover:bg-white/[0.02] transition-all">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform hidden sm:block">
             <TrendingUp className="h-12 w-12 text-emerald-500" />
           </div>
-          <CardHeader className="pb-1 px-5 pt-5">
-            <CardTitle className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">Active Referrals</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5">
+            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground tracking-widest truncate">Active Referrals</CardTitle>
           </CardHeader>
-          <CardContent className="px-5 pb-5">
-            <div className="text-2xl md:text-3xl font-black tracking-tighter italic">
+          <CardContent className="px-4 md:px-5 pb-4 md:pb-5">
+            <div className="text-xl md:text-3xl font-black tracking-tighter italic">
               {referralStats.active_referrals || 0}
             </div>
           </CardContent>
@@ -211,39 +211,39 @@ const Referrals = () => {
 
         <Card className="bg-slate-900/40 border-2 border-emerald-500/20 shadow-[0_0_25px_-5px_rgba(16,185,129,0.1)] rounded-2xl overflow-hidden relative group hover:bg-emerald-500/[0.02] transition-all">
           <div className="absolute inset-0 bg-emerald-500/[0.02] pointer-events-none" />
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform hidden sm:block">
             <DollarSign className="h-12 w-12 text-emerald-500" />
           </div>
-          <CardHeader className="pb-1 px-5 pt-5 relative z-10">
-            <CardTitle className="text-[9px] uppercase font-black text-emerald-500 tracking-widest">Total Earned</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5 relative z-10">
+            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-emerald-500 tracking-widest truncate">Total Earned</CardTitle>
           </CardHeader>
-          <CardContent className="px-5 pb-5 relative z-10">
-            <div className="text-2xl md:text-3xl font-black tracking-tighter italic text-emerald-500 drop-shadow-sm">
+          <CardContent className="px-4 md:px-5 pb-4 md:pb-5 relative z-10">
+            <div className="text-xl md:text-3xl font-black tracking-tighter italic text-emerald-500 drop-shadow-sm">
               ₦{(referralStats.total_earned || 0).toLocaleString()}
             </div>
             <Button
-              className="mt-4 w-full h-10 rounded-xl font-black uppercase text-[10px] tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 transition-all gap-2"
+              className="mt-3 md:mt-4 w-full h-8 md:h-10 rounded-lg md:rounded-xl font-black uppercase text-[8px] md:text-[10px] tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 transition-all gap-1.5 md:gap-2"
               onClick={handleWithdrawReferrals}
               disabled={!profile || (profile.referral_earnings || 0) <= 0}
             >
-              <Wallet className="h-3.5 w-3.5" />
-              Claim Yield
+              <Wallet className="h-3 w-3 md:h-3.5 md:w-3.5" />
+              Claim
             </Button>
           </CardContent>
         </Card>
 
         <Card className="bg-slate-900/50 border border-primary/20 shadow-lg rounded-2xl overflow-hidden relative group">
           <div className="absolute inset-0 bg-primary/5 opacity-50" />
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform hidden sm:block">
             <Award className="h-12 w-12 text-primary" />
           </div>
-          <CardHeader className="pb-1 px-5 pt-5 relative z-10">
-            <CardTitle className="text-[9px] uppercase font-black text-primary tracking-widest">Current Tier</CardTitle>
+          <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5 relative z-10">
+            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-primary tracking-widest truncate">Current Tier</CardTitle>
           </CardHeader>
-          <CardContent className="px-5 pb-5 relative z-10">
-            <div className="text-2xl md:text-3xl font-black tracking-tighter italic">{referralStats.currentLevel}</div>
-            <div className="mt-1 text-[8px] font-black uppercase text-primary/60 tracking-widest italic">
-              {referralStats.currentPercent}% REVENUE SHARE
+          <CardContent className="px-4 md:px-5 pb-4 md:pb-5 relative z-10">
+            <div className="text-xl md:text-3xl font-black tracking-tighter italic truncate">{referralStats.currentLevel}</div>
+            <div className="mt-1 text-[7px] md:text-[8px] font-black uppercase text-primary/60 tracking-widest italic">
+              {referralStats.currentPercent}% SHARE
             </div>
           </CardContent>
         </Card>

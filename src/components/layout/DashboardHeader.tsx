@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Menu, User, Briefcase, TrendingUp } from "lucide-react";
-import { SheetTrigger } from "@/components/ui/sheet";
+import { User, Briefcase, TrendingUp, Menu } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,15 +20,11 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
 
   return (
     <header className={cn(
-      "sticky top-0 z-40 flex h-16 items-center justify-between border-b px-6 md:px-10",
+      "sticky top-0 z-40 flex h-16 items-center justify-between border-b px-4 md:px-8",
       className
     )}>
-      <div className="flex items-center gap-4">
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-white">
-            <Menu className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
+      <div className="flex items-center gap-2 md:gap-4">
+        <SidebarTrigger className="text-slate-400 hover:text-white transition-colors" />
 
         {isAdmin && (
           <div className="hidden sm:flex bg-slate-900/50 p-1 rounded-xl border border-slate-800 shadow-inner">
@@ -80,9 +76,9 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
           className="h-9 w-9 cursor-pointer"
           onClick={() => navigate("/settings")}
         >
-          <Avatar className="h-full w-full border border-primary/20 hover:border-primary/50 transition-all">
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-primary/20 hover:border-primary/50 transition-all">
             <AvatarImage src={avatar_url || ""} />
-            <AvatarFallback className="bg-primary/20 text-primary font-black uppercase">
+            <AvatarFallback className="bg-primary/20 text-primary font-black uppercase text-[10px]">
               {user?.email?.[0] || <User className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>

@@ -189,62 +189,62 @@ const Dashboard = () => {
       </div>
 
       {/* Balanced Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Market Value */}
         <Card className="bg-slate-900/60 border border-white/5 rounded-2xl relative group overflow-hidden">
-            <CardHeader className="p-4 pb-0">
-                <CardTitle className="text-muted-foreground uppercase text-[8px] font-black tracking-[0.2em] flex items-center gap-2">
-                    <TrendingUp className="h-2.5 w-2.5" /> Market Value
+            <CardHeader className="p-3 md:p-4 pb-0">
+                <CardTitle className="text-muted-foreground uppercase text-[7px] md:text-[8px] font-black tracking-[0.2em] flex items-center gap-1.5 md:gap-2">
+                    <TrendingUp className="h-2 w-2 md:h-2.5 md:w-2.5" /> Market Value
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-2">
-                <div className="text-2xl md:text-3xl font-black tracking-tighter italic">
+            <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
+                <div className="text-lg sm:text-2xl md:text-3xl font-black tracking-tighter italic">
                     ₦{statsData.totalBalance?.toLocaleString() || "0"}
                 </div>
             </CardContent>
-            <div className="absolute -bottom-2 -right-2 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Coins className="h-12 w-12" />
+            <div className="absolute -bottom-2 -right-2 p-2 md:p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Coins className="h-8 w-8 md:h-12 md:w-12" />
             </div>
         </Card>
 
         {/* Liquid Assets */}
         <Card className="bg-emerald-600 border-none rounded-2xl relative group overflow-hidden shadow-xl shadow-emerald-900/20 transition-all hover:scale-[1.02]">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-            <CardHeader className="p-4 pb-0 relative z-10">
-                <CardTitle className="text-emerald-50 text-[8px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Wallet className="h-2.5 w-2.5" /> Liquid Assets
+            <CardHeader className="p-3 md:p-4 pb-0 relative z-10">
+                <CardTitle className="text-emerald-50 text-[7px] md:text-[8px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 md:gap-2">
+                    <Wallet className="h-2 w-2 md:h-2.5 md:w-2.5" /> Liquid Assets
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-2 space-y-3 relative z-10">
-                <div className="text-2xl md:text-3xl font-black tracking-tighter italic text-white leading-none drop-shadow-md">
+            <CardContent className="p-3 md:p-4 pt-1 md:pt-2 space-y-2 md:space-y-3 relative z-10">
+                <div className="text-lg sm:text-2xl md:text-3xl font-black tracking-tighter italic text-white leading-none drop-shadow-md">
                     ₦{statsData.withdrawableBalance?.toLocaleString() || "0"}
                 </div>
                 <Link to="/withdraw">
-                    <Button variant="secondary" className="h-8 w-full text-[8px] font-black uppercase tracking-widest bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl px-0 shadow-lg">
+                    <Button variant="secondary" className="h-7 md:h-8 w-full text-[7px] md:text-[8px] font-black uppercase tracking-widest bg-white text-emerald-700 hover:bg-emerald-50 rounded-lg md:rounded-xl px-0 shadow-lg">
                         Liquidate
                     </Button>
                 </Link>
             </CardContent>
             <div className="absolute -bottom-4 -right-4 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Wallet className="h-20 w-20 text-white" />
+                <Wallet className="h-16 w-16 md:h-20 md:w-20 text-white" />
             </div>
         </Card>
 
         {/* Active Positions */}
-        <Card className="bg-slate-900/40 border border-white/5 shadow-sm p-4 flex flex-col justify-center rounded-2xl group hover:bg-white/[0.01] transition-all">
-            <p className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground/60 tracking-widest mb-1 italic">Active Positions</p>
-            <p className="text-2xl md:text-3xl font-black italic group-hover:text-primary transition-colors">{statsData.activeInvestments || 0}</p>
+        <Card className="bg-slate-900/40 border border-white/5 shadow-sm p-3 md:p-4 flex flex-col justify-center rounded-2xl group hover:bg-white/[0.01] transition-all">
+            <p className="text-[6px] md:text-[9px] uppercase font-black text-muted-foreground/60 tracking-widest mb-0.5 md:mb-1 italic">Active Positions</p>
+            <p className="text-xl md:text-3xl font-black italic group-hover:text-primary transition-colors">{statsData.activeInvestments || 0}</p>
         </Card>
 
         {/* Referral Yield */}
-        <Card className="bg-slate-950 border border-primary/20 shadow-[0_0_20px_-5px_rgba(var(--primary-rgb),0.1)] p-4 flex flex-col justify-center rounded-2xl relative overflow-hidden group">
+        <Card className="bg-slate-950 border border-primary/20 shadow-[0_0_20px_-5px_rgba(var(--primary-rgb),0.1)] p-3 md:p-4 flex flex-col justify-center rounded-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-primary/[0.02] pointer-events-none" />
-            <p className="text-[7px] md:text-[9px] uppercase font-black text-primary/60 tracking-widest mb-1 italic relative z-10">Referral Yield</p>
-            <p className="text-2xl md:text-3xl font-black text-primary italic relative z-10 drop-shadow-sm transition-all group-hover:scale-105">
+            <p className="text-[6px] md:text-[9px] uppercase font-black text-primary/60 tracking-widest mb-0.5 md:mb-1 italic relative z-10">Referral Yield</p>
+            <p className="text-xl md:text-3xl font-black text-primary italic relative z-10 drop-shadow-sm transition-all group-hover:scale-105">
                 ₦{statsData.referralEarnings?.toLocaleString() || "0"}
             </p>
             <div className="absolute -bottom-4 -right-4 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Users className="h-16 w-16 text-primary" />
+                <Users className="h-12 w-12 md:h-16 md:w-16 text-primary" />
             </div>
         </Card>
       </div>
