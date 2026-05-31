@@ -50,7 +50,7 @@ const assetColors: Record<string, string> = {
 const assetPrices: Record<string, number> = {
   Gold: 1000000,
   Bitcoin: 1000000,
-  Palladium: 500000,
+  Palladium: 1000000,
   Platinum: 500000,
   Silver: 500000,
   Nickel: 250000,
@@ -140,61 +140,67 @@ const Invest = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-12">
+    <div className="container mx-auto py-4 md:p-6 space-y-6 md:space-y-12">
       {/* Header Section */}
-      <div className="text-center space-y-4">
-        <h1 className="text-5xl font-extrabold tracking-tight">Investment Opportunities</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-          Explore high-value asset plans posted by our verified vendors. Choose your preferred asset and start growing your wealth.
+      <div className="text-center space-y-4 pt-4 md:pt-12">
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight uppercase italic leading-none">Market Opportunities</h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto text-xs md:text-lg font-bold uppercase tracking-widest opacity-60">
+            Choose your preferred asset node and initiate wealth distribution protocols.
         </p>
       </div>
 
       {/* Choice Section */}
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        <Card className="bg-gradient-to-br from-primary/10 to-background border-primary/20 shadow-lg hover:shadow-primary/10 transition-all">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+      <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+        <Card className="bg-slate-900/40 border-primary/20 shadow-xl hover:shadow-primary/5 transition-all rounded-2xl md:rounded-3xl overflow-hidden backdrop-blur-sm relative group">
+          <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
+              <TrendingUp className="h-20 w-20" />
+          </div>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="flex items-center gap-3 text-xl font-black uppercase italic">
                 <TrendingUp className="h-6 w-6 text-primary" />
-                Normal Investment
+                Active Stake
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
                 Browse and invest in existing plans posted by our vendors.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => document.getElementById('plans-grid')?.scrollIntoView({ behavior: 'smooth' })}>
-                View Plans
+          <CardContent className="p-4 md:p-6 pt-0">
+            <Button className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-xs" onClick={() => document.getElementById('plans-grid')?.scrollIntoView({ behavior: 'smooth' })}>
+                View Asset Matrix
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-emerald-500/10 to-background border-emerald-500/20 shadow-lg hover:shadow-emerald-500/10 transition-all">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-slate-900/40 border-emerald-500/20 shadow-xl hover:shadow-emerald-500/5 transition-all rounded-2xl md:rounded-3xl overflow-hidden backdrop-blur-sm relative group">
+          <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
+              <Award className="h-20 w-20 text-emerald-500" />
+          </div>
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="flex items-center gap-3 text-xl font-black uppercase italic">
                 <Award className="h-6 w-6 text-emerald-500" />
-                Be a Vendor
+                Node Vendor
             </CardTitle>
-            <CardDescription>
-                Get verified to post your commodities like Gold and Lithium. (Verification fee applies)
+            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                Get verified to post your commodities like Gold and Lithium.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 md:p-6 pt-0">
             {role === 'vendor' ? (
                 <Link to="/vendor-dashboard">
-                    <Button variant="outline" className="w-full border-emerald-500 text-emerald-500 hover:bg-emerald-500/10">
-                        Go to Vendor Dashboard
+                    <Button variant="outline" className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-xs border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10">
+                        Vendor Hub
                     </Button>
                 </Link>
             ) : (
-                <Button variant="outline" className="w-full border-emerald-500 text-emerald-500 hover:bg-emerald-500/10" onClick={handleBeVendor}>
-                    Apply for Verification
+                <Button variant="outline" className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-xs border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10" onClick={handleBeVendor}>
+                    Request Authority
                 </Button>
             )}
           </CardContent>
@@ -202,17 +208,17 @@ const Invest = () => {
       </div>
 
       {/* Investment Plans Grid */}
-      <div id="plans-grid" className="space-y-8">
-        <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold">Available Asset Plans</h2>
-            <div className="flex gap-2">
-                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Gold</Badge>
-                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20">Lithium</Badge>
-                <Badge variant="outline" className="bg-slate-800/10 text-slate-800 border-slate-800/20">Crude Oil</Badge>
+      <div id="plans-grid" className="space-y-4 md:space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter italic">Asset Matrix</h2>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 font-black px-3">GOLD</Badge>
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20 font-black px-3">LITHIUM</Badge>
+                <Badge variant="outline" className="bg-slate-800/10 text-slate-800 border-slate-800/20 font-black px-3 text-white">CRUDE OIL</Badge>
             </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
             {vendorPlans.map((plan) => {
             const Icon = assetIcons[plan.asset_type || "Gold"] || TrendingUp;
             const colorClass = assetColors[plan.asset_type || "Gold"] || "text-primary bg-primary/10";
@@ -220,132 +226,103 @@ const Invest = () => {
             return (
                 <Card
                 key={plan.id}
-                className={`relative bg-slate-900/60 border-white/5 shadow-2xl transition-all duration-300 hover:border-primary/30 cursor-pointer group rounded-2xl md:rounded-[2.5rem] overflow-hidden backdrop-blur-xl ${
+                className={`relative bg-slate-900/60 border-white/5 shadow-2xl transition-all duration-300 hover:border-primary/30 cursor-pointer group rounded-xl md:rounded-[2.5rem] overflow-hidden backdrop-blur-xl ${
                     selectedPlan === plan.id ? "ring-2 ring-primary border-primary" : ""
                 }`}
                 onClick={() => setSelectedPlan(plan.id)}
                 >
-                <CardHeader className="text-center p-4 md:p-8">
-                    <div className="flex justify-center mb-2 md:mb-6">
-                    <div className={`p-3 md:p-6 rounded-2xl ${colorClass} transition-transform group-hover:scale-110 shadow-lg`}>
-                        <Icon className="h-6 w-6 md:h-10 md:w-10" />
+                <CardHeader className="text-center p-3 md:p-8">
+                    <div className="flex justify-center mb-1 md:mb-6">
+                    <div className={`p-2 md:p-6 rounded-xl md:rounded-2xl ${colorClass} transition-transform group-hover:scale-110 shadow-lg`}>
+                        <Icon className="h-5 w-5 md:h-10 md:w-10" />
                     </div>
                     </div>
-                    <CardTitle className="text-sm md:text-2xl font-black uppercase tracking-tighter italic truncate">{plan.name}</CardTitle>
-                    <CardDescription className="flex items-center justify-center gap-1 font-black text-[7px] md:text-xs uppercase tracking-widest">
-                        <Badge variant="secondary" className="font-black text-[6px] md:text-[9px] px-1.5 py-0">{plan.asset_type}</Badge>
-                        <span className="text-muted-foreground mx-1 opacity-20">|</span>
-                        <span className="truncate">{plan.vendor_name}</span>
+                    <CardTitle className="text-[10px] md:text-2xl font-black uppercase tracking-tighter italic truncate">{plan.name}</CardTitle>
+                    <CardDescription className="flex items-center justify-center gap-1 font-black text-[6px] md:text-xs uppercase tracking-widest">
+                        <Badge variant="secondary" className="font-black text-[5px] md:text-[9px] px-1 py-0">{plan.asset_type}</Badge>
                     </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-4 md:space-y-8 p-4 md:p-8 pt-0">
-                    <div className="text-center p-3 md:p-6 bg-slate-950/50 rounded-2xl border border-white/5 space-y-0.5 md:space-y-2">
-                        <div className="text-2xl md:text-5xl font-black text-emerald-500 italic leading-none tracking-tighter">
+                <CardContent className="space-y-2 md:space-y-8 p-3 md:p-8 pt-0">
+                    <div className="text-center p-2 md:p-6 bg-slate-950/50 rounded-lg md:rounded-2xl border border-white/5">
+                        <div className="text-lg md:text-5xl font-black text-emerald-500 italic leading-none tracking-tighter">
                             50%
                         </div>
-                        <div className="text-[6px] md:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/60">
-                            Growth Projection
+                        <p className="text-[5px] md:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/60 mt-1">Growth</p>
+                    </div>
+
+                    <div className="space-y-1 md:space-y-3">
+                        <div className="flex justify-between items-center p-2 md:p-4 bg-slate-950/80 rounded-lg md:rounded-2xl border border-white/5">
+                            <span className="text-[5px] md:text-[10px] text-muted-foreground uppercase font-black opacity-40">Entry</span>
+                            <p className="font-black text-[9px] md:text-2xl text-primary italic">₦{plan.min_investment.toLocaleString()}</p>
                         </div>
                     </div>
 
-                    <div className="space-y-1.5 md:space-y-3">
-                        <div className="flex justify-between items-center p-2.5 md:p-4 bg-slate-950/80 rounded-xl md:rounded-2xl border border-white/5 group-hover:border-primary/20 transition-all">
-                            <span className="text-[6px] md:text-[10px] text-muted-foreground uppercase font-black tracking-widest italic opacity-40">Entry Price</span>
-                            <p className="font-black text-sm md:text-2xl text-primary italic">₦{plan.min_investment.toLocaleString()}</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2 md:space-y-4 hidden md:block">
-                        <h4 className="font-black text-[9px] md:text-xs flex items-center gap-2 uppercase tracking-widest opacity-40 italic">
-                            <Check className="h-3 w-3 md:h-4 md:w-4 text-emerald-500" />
-                            Network Perks
-                        </h4>
-                        <ul className="grid grid-cols-1 gap-1.5 md:gap-3">
-                            {plan.features.slice(0, 3).map((feature, featureIndex) => (
-                            <li
-                                key={featureIndex}
-                                className="flex items-center text-[8px] md:text-[11px] font-bold text-muted-foreground/80 uppercase tracking-tight"
-                            >
-                                <div className="h-1 w-1 rounded-full bg-emerald-500/50 mr-2 shrink-0" />
-                                {feature}
-                            </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className="pt-2 md:pt-6 border-t border-white/5">
+                    <div className="pt-1 md:pt-6 border-t border-white/5">
                     <Button
-                        size="lg"
-                        className="w-full h-10 md:h-14 font-black uppercase tracking-widest text-[8px] md:text-sm italic rounded-xl md:rounded-2xl bg-primary text-white shadow-xl shadow-primary/10 transition-all active:scale-95 group-hover:scale-[1.02]"
+                        size="sm"
+                        className="w-full h-8 md:h-14 font-black uppercase tracking-widest text-[7px] md:text-sm italic rounded-lg md:rounded-2xl bg-primary text-white"
                         onClick={handleSelectPlan}
                     >
-                        Initialize Trade
+                        Stake
                     </Button>
                     </div>
                 </CardContent>
                 </Card>
             );
             })}
-            {vendorPlans.length === 0 && (
-            <div className="col-span-full text-center py-24 bg-muted/20 rounded-3xl border-2 border-dashed">
-                <p className="text-muted-foreground text-lg">No investment plans available at the moment.</p>
-                <Button variant="link" onClick={handleBeVendor}>Become the first vendor</Button>
-            </div>
-            )}
         </div>
       </div>
 
       {/* Investment Calculator */}
-      <Card className="bg-gradient-card border-border shadow-2xl overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-            <TrendingUp className="h-32 w-32" />
+      <Card className="bg-slate-900/60 border-white/5 shadow-2xl overflow-hidden relative rounded-2xl md:rounded-[3rem] backdrop-blur-2xl">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+            <TrendingUp className="h-32 w-32 text-primary" />
         </div>
-        <CardHeader className="relative">
-          <CardTitle className="text-3xl">Profit Calculator</CardTitle>
-          <CardDescription className="text-lg">
-            Project your earnings based on current vendor plans.
+        <CardHeader className="relative p-4 md:p-12 pb-0">
+          <CardTitle className="text-xl md:text-4xl font-black uppercase italic tracking-tighter">Forecaster</CardTitle>
+          <CardDescription className="text-[8px] md:text-lg font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+            Project your earnings based on verified distribution protocols.
           </CardDescription>
         </CardHeader>
-        <CardContent className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Fixed Investment (₦)</label>
-                <div className="w-full px-4 py-3 bg-muted border-2 border-border rounded-xl text-lg font-bold text-primary flex items-center">
+        <CardContent className="relative p-4 md:p-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-16">
+            <div className="space-y-4 md:space-y-10">
+              <div className="space-y-1 md:space-y-4">
+                <label className="text-[8px] md:text-xs font-black uppercase tracking-[0.3em] text-muted-foreground italic opacity-50">Active Stake (₦)</label>
+                <div className="w-full px-4 md:px-8 py-3 md:py-6 bg-slate-950 border-2 border-white/5 rounded-xl md:rounded-[2rem] text-lg md:text-4xl font-black text-primary italic flex items-center">
                     ₦{investmentAmount.toLocaleString()}
                 </div>
-                <p className="text-[10px] text-muted-foreground italic">Price is fixed for the selected commodity.</p>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Investment Plan</label>
+              <div className="space-y-1 md:space-y-4">
+                <label className="text-[8px] md:text-xs font-black uppercase tracking-[0.3em] text-muted-foreground italic opacity-50">Select Asset Node</label>
                 <select
-                  className="w-full h-12 px-4 py-2 bg-background border-2 border-border focus:border-primary rounded-xl text-sm font-medium transition-all"
+                  className="w-full h-10 md:h-20 px-4 md:px-8 bg-slate-950 border-2 border-white/5 focus:border-primary/50 rounded-xl md:rounded-[2rem] text-[9px] md:text-lg font-black uppercase italic tracking-wider outline-none"
                   value={selectedPlan || ""}
                   onChange={(e) => setSelectedPlan(e.target.value)}
                 >
-                  <option value="">Select a plan</option>
+                  <option value="">SCANNING NETWORK...</option>
                   {vendorPlans.map((plan) => (
                     <option key={plan.id} value={plan.id}>
-                      {plan.name} ({plan.asset_type}) - {plan.daily_return_percent}% daily
+                      {plan.asset_type.toUpperCase()} • {plan.name.toUpperCase()}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10 flex flex-col justify-center">
-                <div className="grid grid-cols-1 gap-6">
-                    <div className="flex justify-between items-end border-b border-primary/10 pb-4">
-                        <span className="text-sm font-bold text-muted-foreground uppercase">Expected Profit</span>
-                        <span className="text-3xl font-black text-emerald-500">
-                            ₦{expectedProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <div className="bg-primary/5 rounded-xl md:rounded-[3.5rem] p-4 md:p-16 border border-primary/10 flex flex-col justify-center">
+                <div className="grid grid-cols-1 gap-4 md:gap-12 relative z-10">
+                    <div className="flex justify-between items-end border-b border-white/5 pb-2 md:pb-10">
+                        <span className="text-[8px] md:text-xs font-black text-muted-foreground uppercase opacity-40">Yield</span>
+                        <span className="text-lg md:text-5xl font-black text-emerald-500 italic">
+                            +₦{expectedProfit.toLocaleString()}
                         </span>
                     </div>
                     <div className="flex justify-between items-end">
-                        <span className="text-sm font-bold text-muted-foreground uppercase">Total Return</span>
-                        <span className="text-3xl font-black text-primary">
-                            ₦{totalReturn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        <span className="text-[8px] md:text-xs font-black text-muted-foreground uppercase opacity-40">Maturity</span>
+                        <span className="text-xl md:text-6xl font-black text-primary italic">
+                            ₦{totalReturn.toLocaleString()}
                         </span>
                     </div>
                 </div>

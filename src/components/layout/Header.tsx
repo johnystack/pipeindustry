@@ -32,7 +32,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+      <div className="container mx-auto flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 select-none">
           <div className="p-1.5 bg-primary rounded-lg shadow-lg shadow-primary/20">
             <TrendingUp className="h-4 w-4 text-primary-foreground" />

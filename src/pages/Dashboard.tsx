@@ -158,7 +158,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6 md:space-y-8 animate-in fade-in duration-700">
+    <div className="container mx-auto px-4 py-2 md:p-6 space-y-6 md:space-y-8 animate-in fade-in duration-700">
       {/* Smart Welcome Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 bg-slate-900/40 p-4 md:p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden backdrop-blur-sm">
         <div className="absolute top-0 right-0 p-8 opacity-5">

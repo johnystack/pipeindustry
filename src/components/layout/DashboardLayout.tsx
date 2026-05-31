@@ -170,7 +170,7 @@ export const DashboardLayout = () => {
 
           <main className="flex-1 overflow-y-auto text-slate-100 custom-scrollbar relative">
             <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
-            <div className="relative z-10 p-4 md:p-8">
+            <div className="relative z-10">
               <Outlet />
             </div>
           </main>
