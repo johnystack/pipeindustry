@@ -104,7 +104,7 @@ const Home = () => {
                 Global Market Live
               </div>
               <h1 className="text-xl sm:text-2xl md:text-7xl font-black tracking-tighter leading-[0.95] uppercase italic">
-                ELITE <br />
+                TERRAS <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-primary">COMMODITY</span> <br />
                 TRADING.
               </h1>
@@ -173,7 +173,7 @@ const Home = () => {
           <div className="text-left mb-8 md:mb-12 space-y-3">
             <h2 className="text-2xl md:text-5xl font-black tracking-tighter uppercase italic text-white">THE <span className="text-primary">STANDARD</span> OF EXCELLENCE.</h2>
             <p className="text-slate-400 text-xs md:text-base font-medium max-w-xl leading-relaxed">
-              Elite infrastructure designed for institutional-grade asset security and seamless trade execution.
+              Terras infrastructure designed for institutional-grade asset security and seamless trade execution.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -226,7 +226,7 @@ const Home = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-8 md:mb-16 space-y-3">
             <Badge className="bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-[0.2em] px-4 py-1 text-[8px] md:text-[10px]">Success Stories</Badge>
-            <h2 className="text-2xl md:text-5xl font-black tracking-tighter uppercase italic text-white">VOICES OF THE ELITE.</h2>
+            <h2 className="text-2xl md:text-5xl font-black tracking-tighter uppercase italic text-white">VOICES OF THE TERRAS.</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             {testimonials.map((t, index) => (
@@ -265,7 +265,7 @@ const Home = () => {
             <Link to="/support" className="hover:text-white transition-colors">Support</Link>
             <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
           </div>
-          <p className="text-slate-600 text-[7px] md:text-[10px] font-bold uppercase tracking-widest">© 2026 TERRASINVESTMENT. ELITE STATUS SECURED.</p>
+          <p className="text-slate-600 text-[7px] md:text-[10px] font-bold uppercase tracking-widest">© 2026 TERRASINVESTMENT. TERRAS STATUS SECURED.</p>
         </div>
       </footer>
     </div>

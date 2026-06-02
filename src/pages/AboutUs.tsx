@@ -21,7 +21,7 @@ const AboutUs: React.FC = () => {
             <TrendingUp className="h-4 w-4" /> Global Infrastructure
           </div>
           <h1 className="text-3xl md:text-6xl font-black tracking-tighter uppercase italic leading-[1.1]">
-            Elite Commodity Trading <br />
+            Terras Commodity Trading <br />
             <span className="text-primary">Redefined.</span>
           </h1>
           <p className="text-sm md:text-lg text-slate-400 leading-relaxed font-medium">
@@ -41,7 +41,7 @@ const AboutUs: React.FC = () => {
         <section className="grid md:grid-cols-3 gap-6 md:gap-8">
             {[
                 { icon: ShieldCheck, title: "Verified Assets", desc: "Every commodity unit on our platform is backed by physical reserves and blockchain verification." },
-                { icon: Zap, title: "Liquid Growth", desc: "Optimized 24-day cycles with 4-day claim intervals ensure your capital remains working for you." },
+                { icon: Zap, title: "Liquid Growth", desc: "Optimized 24-cycle with 4-day claim intervals ensure your capital remains working for you." },
                 { icon: Globe, title: "Global Reach", desc: "Connecting verified vendors from the world's most resource-rich regions with strategic investors." }
             ].map((pillar, i) => (
                 <Card key={i} className="bg-slate-900/40 border-white/5 p-8 rounded-[2rem] hover:border-primary/30 transition-all group">
@@ -72,7 +72,7 @@ const AboutUs: React.FC = () => {
             </CardHeader>
             <CardContent className="p-10 md:p-16 space-y-8 text-sm md:text-lg leading-relaxed text-slate-300 max-w-4xl mx-auto">
               <p>
-                At TerrasInvestment, our mission is to provide an elite gateway to robust investment portfolios, 
+                At TerrasInvestment, our mission is to provide a Terras gateway to robust investment portfolios, 
                 ensuring every strategic trader has the opportunity to capitalize on emerging commodity trends. 
                 We are committed to a platform where transparency, security, and exceptional returns are 
                 guaranteed operational realities.
@@ -102,7 +102,7 @@ const AboutUs: React.FC = () => {
         {/* CTA */}
         <section className="text-center bg-gradient-to-br from-primary/10 to-emerald-500/5 py-12 md:py-16 rounded-[3rem] border border-white/5 shadow-2xl">
           <h2 className="text-2xl md:text-5xl font-black mb-6 uppercase italic text-white tracking-tighter">
-            Ready for <span className="text-primary">Elite</span> Status?
+            Ready for <span className="text-primary">Terras</span> Status?
           </h2>
           <p className="text-sm md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 font-medium">
             Join the global network of traders building their financial future with physical asset security.
