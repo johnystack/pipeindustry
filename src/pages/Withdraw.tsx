@@ -55,89 +55,126 @@ const Withdraw = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [totalCommissionDue, setTotalCommissionDue] = useState(0);
   const [pendingInvestments, setPendingInvestments] = useState<any[]>([]);
+  const [reinvestableInvestments, setReinvestableInvestments] = useState<any[]>([]);
+  const [reinvesting, setReinvesting] = useState<string | null>(null);
   const [withdrawalFeePercent, setWithdrawalFeePercent] = useState(6.67);
 
   // Receipt Modal State
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (user) {
-        setLoading(true);
-        
-        // Fetch profile, settings, and pending commissions
-        const [profileRes, settingsRes, investmentsRes] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("withdrawable_balance, bank_name, account_number, account_name")
-            .eq("id", user.id)
-            .single(),
-          supabase
-            .from("settings")
-            .select("withdrawal_fee_percent")
-            .eq("id", 1)
-            .single(),
-          supabase
-            .from("investments")
-            .select("*")
-            .eq("user_id", user.id)
-            .eq("status", "completed")
-            .eq("commission_paid", false)
-        ]);
+  const isWeekend = [0, 6].includes(new Date().getDay());
 
-        if (profileRes.error) {
-          console.error("Error fetching balance:", profileRes.error);
-        } else {
-          setWithdrawableBalance(Math.max(0, profileRes.data?.withdrawable_balance || 0));
-          setUserProfile(profileRes.data);
-        }
-
-        let feePercent = 6.67;
-        if (settingsRes.error) {
-          console.error("Error fetching settings:", settingsRes.error);
-        } else if (settingsRes.data) {
-          feePercent = Number(settingsRes.data.withdrawal_fee_percent);
-          setWithdrawalFeePercent(feePercent);
-        }
-
-        if (investmentsRes.error) {
-          console.error("Error fetching investments:", investmentsRes.error);
-        } else {
-          const completedUnpaid = investmentsRes.data || [];
-          setPendingInvestments(completedUnpaid);
-          
-          // Calculate total commission due: 6.67% of the total 150% return (which is 10% of capital)
-          const commission = completedUnpaid.reduce((sum, inv) => {
-            const totalReturn = inv.amount * 1.5;
-            return sum + (totalReturn * (feePercent / 100));
-          }, 0);
-          setTotalCommissionDue(commission);
-        }
-
-        setLoadingBalance(false);
-
-        const { data: historyData, error: historyError } = await supabase
-          .from("transactions")
+  const fetchData = async () => {
+    if (user) {
+      setLoading(true);
+      
+      // Fetch profile, settings, and pending commissions
+      const [profileRes, settingsRes, investmentsRes, reinvestRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("withdrawable_balance, bank_name, account_number, account_name")
+          .eq("id", user.id)
+          .single(),
+        supabase
+          .from("settings")
+          .select("withdrawal_fee_percent")
+          .eq("id", 1)
+          .single(),
+        supabase
+          .from("investments")
           .select("*")
           .eq("user_id", user.id)
-          .eq("type", "withdrawal")
-          .order("created_at", { ascending: false });
+          .eq("status", "completed")
+          .eq("commission_paid", false),
+        supabase
+          .from("investments")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("status", "completed")
+          .eq("reinvested", false)
+      ]);
 
-        if (historyError) {
-          console.error("Error fetching withdrawal history:", historyError);
-        } else {
-          setWithdrawalHistory(historyData || []);
-        }
-        setLoading(false);
+      if (profileRes.error) {
+        console.error("Error fetching balance:", profileRes.error);
+      } else {
+        setWithdrawableBalance(Math.max(0, profileRes.data?.withdrawable_balance || 0));
+        setUserProfile(profileRes.data);
       }
-    };
 
+      let feePercent = 6.67;
+      if (settingsRes.error) {
+        console.error("Error fetching settings:", settingsRes.error);
+      } else if (settingsRes.data) {
+        feePercent = Number(settingsRes.data.withdrawal_fee_percent);
+        setWithdrawalFeePercent(feePercent);
+      }
+
+      if (investmentsRes.error) {
+        console.error("Error fetching investments:", investmentsRes.error);
+      } else {
+        const completedUnpaid = investmentsRes.data || [];
+        setPendingInvestments(completedUnpaid);
+        
+        // Calculate total commission due: 6.67% of the total 150% return (which is 10% of capital)
+        const commission = completedUnpaid.reduce((sum, inv) => {
+          const totalReturn = inv.amount * 1.5;
+          return sum + (totalReturn * (feePercent / 100));
+        }, 0);
+        setTotalCommissionDue(commission);
+      }
+
+      if (!reinvestRes.error) {
+        setReinvestableInvestments(reinvestRes.data || []);
+      }
+
+      setLoadingBalance(false);
+
+      const { data: historyData, error: historyError } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("type", "withdrawal")
+        .order("created_at", { ascending: false });
+
+      if (historyError) {
+        console.error("Error fetching withdrawal history:", historyError);
+      } else {
+        setWithdrawalHistory(historyData || []);
+      }
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [user]);
 
   const feeAmount = totalCommissionDue;
   const netAmount = Math.max(0, Number(amount) - feeAmount);
+
+  const handleReinvest = async (investmentId: string) => {
+    setReinvesting(investmentId);
+    try {
+      const { data, error } = await supabase.rpc('reinvest_capital_from_balance', {
+        p_user_id: user?.id,
+        p_old_investment_id: investmentId
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({ title: "Reinvestment Successful", description: data.message });
+        await fetchData();
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      toast({ title: "Reinvestment Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setReinvesting(null);
+    }
+  };
 
   const handleWithdraw = async () => {
     if (!user) return;
@@ -243,6 +280,59 @@ const Withdraw = () => {
       </div>
 
       <div className="space-y-8">
+        {reinvestableInvestments.length > 0 && (
+          <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+            <Card className="bg-slate-900/30 border-primary/20 shadow-2xl rounded-3xl overflow-hidden border-2">
+              <CardHeader className="p-6 md:p-8 border-b border-white/5 bg-primary/10">
+                <CardTitle className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 italic">
+                  <RefreshCcw className="h-6 w-6 text-primary animate-spin-slow" /> Perfect Reinvestment
+                </CardTitle>
+                <CardDescription className="text-[10px] font-black uppercase tracking-widest text-primary/60">
+                  Keep your capital working. Reinvest instantly from your internal balance.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 md:p-8">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {reinvestableInvestments.map((inv) => (
+                    <div key={inv.id} className="group relative bg-slate-950/50 rounded-2xl border border-white/5 p-6 space-y-4 hover:border-primary/50 transition-all overflow-hidden">
+                      <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Zap className="h-12 w-12 text-primary" />
+                      </div>
+                      <div className="space-y-1 relative">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{inv.plan_name}</p>
+                        <p className="text-2xl font-black italic tracking-tighter text-white">₦{inv.amount.toLocaleString()}</p>
+                      </div>
+                      <div className="pt-2">
+                        <Button 
+                          onClick={() => handleReinvest(inv.id)}
+                          disabled={withdrawableBalance < inv.amount || !!reinvesting}
+                          className={cn(
+                            "w-full h-12 font-black text-[10px] tracking-[0.2em] uppercase italic rounded-xl transition-all shadow-lg",
+                            withdrawableBalance >= inv.amount 
+                              ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20" 
+                              : "bg-slate-800 text-muted-foreground opacity-50 cursor-not-allowed border border-white/5"
+                          )}
+                        >
+                          {reinvesting === inv.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            withdrawableBalance >= inv.amount ? "Reinvest Capital" : "Insufficient Balance"
+                          )}
+                        </Button>
+                      </div>
+                      {withdrawableBalance < inv.amount && (
+                        <p className="text-[8px] font-black text-amber-500/80 uppercase text-center italic animate-pulse">
+                          Need ₦{(inv.amount - withdrawableBalance).toLocaleString()} more
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <TabsContent value="withdraw" className="grid lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-4 space-y-6 order-first lg:order-last">
             <Card className="bg-slate-900/30 border-white/10 shadow-2xl rounded-3xl overflow-hidden group">
@@ -281,6 +371,15 @@ const Withdraw = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 md:p-10 space-y-8">
+                {isWeekend && (
+                  <div className="p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-red-500 italic tracking-widest">Withdrawals Closed</p>
+                      <p className="text-[9px] font-bold text-red-500/60 uppercase leading-relaxed">Liquidation requests are only processed on business days (Monday - Friday). Please return on Monday to withdraw your funds.</p>
+                    </div>
+                  </div>
+                )}
                 {withdrawableBalance <= 0 ? (
                   <div className="py-12 text-center space-y-6">
                     <div className="h-16 w-16 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5">
@@ -388,10 +487,10 @@ const Withdraw = () => {
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button 
-                                disabled={!userProfile?.bank_name || !amount}
+                                disabled={!userProfile?.bank_name || !amount || isWeekend}
                                 className="w-full h-16 text-lg font-black uppercase tracking-[0.2em] bg-primary hover:bg-primary/90 rounded-2xl shadow-xl shadow-primary/10 transition-all active:scale-[0.98] italic text-primary-foreground"
                             >
-                                Withdraw Funds
+                                {isWeekend ? "Market Closed" : "Withdraw Funds"}
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="rounded-[2.5rem] bg-slate-900 border-2 border-white/5 w-[95%] max-w-sm text-white">

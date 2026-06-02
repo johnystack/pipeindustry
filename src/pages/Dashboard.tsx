@@ -38,6 +38,7 @@ import {
 const Dashboard = () => {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const isWeekend = [0, 6].includes(new Date().getDay());
   const [profile, setProfile] = useState<User | null>(null);
   const [statsData, setStatsData] = useState<StatsData>({});
   const [investments, setInvestments] = useState<Investment[]>([]);
@@ -219,11 +220,19 @@ const Dashboard = () => {
                 <div className="text-lg sm:text-2xl md:text-3xl font-black tracking-tighter italic text-white leading-none drop-shadow-md">
                     ₦{statsData.withdrawableBalance?.toLocaleString() || "0"}
                 </div>
-                <Link to="/withdraw">
-                    <Button variant="secondary" className="h-7 md:h-8 w-full text-[7px] md:text-[8px] font-black uppercase tracking-widest bg-white text-emerald-700 hover:bg-emerald-50 rounded-lg md:rounded-xl px-0 shadow-lg">
-                        Liquidate
+                <Link to="/withdraw" className={cn(isWeekend && "pointer-events-none")}>
+                    <Button 
+                        variant="secondary" 
+                        disabled={isWeekend}
+                        className={cn(
+                            "h-7 md:h-8 w-full text-[7px] md:text-[8px] font-black uppercase tracking-widest bg-white text-emerald-700 hover:bg-emerald-500 rounded-lg md:rounded-xl px-0 shadow-lg",
+                            isWeekend && "opacity-50 cursor-not-allowed"
+                        )}
+                    >
+                        {isWeekend ? "Market Closed" : "Liquidate"}
                     </Button>
                 </Link>
+
             </CardContent>
             <div className="absolute -bottom-4 -right-4 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Wallet className="h-16 w-16 md:h-20 md:w-20 text-white" />

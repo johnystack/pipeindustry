@@ -65,6 +65,8 @@ export interface Investment {
   expected_profit?: number;
   payment_proof?: string;
   payment_proof_uploaded_at?: string;
+  reinvested?: boolean;
+  commission_paid?: boolean;
   created_at?: string;
   profiles?: {
     username?: string;
@@ -154,4 +156,15 @@ export interface AuthContextType {
   user: SupabaseUser | null;
   role: string | null;
   loading: boolean;
+}
+
+export interface Notification {
+  id: string;
+  user_id?: string | null;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  link?: string;
+  created_at: string;
+  is_read?: boolean;
 }

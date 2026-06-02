@@ -38,7 +38,6 @@ const ManageInvestment = () => {
       return;
     }
 
-    const totalReturn = (investment.amount || 0) + (investment.return || 0) + (investment.bonus || 0);
     const amountToReinvest = reinvestAll ? ((investment.amount || 0) + (investment.return || 0)) : Number(reinvestAmount);
 
     if (!amountToReinvest) {
@@ -59,61 +58,35 @@ const ManageInvestment = () => {
       return;
     }
 
-    // Create new investment
-    const { error: insertError } = await supabase.from("investments").insert([
-      {
-        user_id: user.id,
-        plan_name: investment.plan_name,
-        amount: amountToReinvest,
-        crypto: investment.crypto,
-        status: "pending",
-        reinvested: true,
-      },
-    ]);
+    // Calculate how much should go to the user's balance
+    const remainingCapitalAndProfit = ((investment.amount || 0) + (investment.return || 0)) - amountToReinvest;
+    const totalToAddToWithdrawable = remainingCapitalAndProfit + (investment.bonus || 0);
 
-    if (insertError) {
-      toast({
-        title: "Error re-investing",
-        description: insertError.message,
-        variant: "destructive",
+    try {
+      const { data, error } = await supabase.rpc('reinvest_investment', {
+        p_user_id: user.id,
+        p_old_investment_id: id,
+        p_amount_to_reinvest: amountToReinvest,
+        p_amount_to_balance: totalToAddToWithdrawable
       });
-    } else {
-      // Update old investment
-      const { error: updateError } = await supabase
-        .from("investments")
-        .update({ status: "completed", reinvested: true, bonus: 0 })
-        .eq("id", id);
 
-      if (updateError) {
-        toast({
-          title: "Error updating investment",
-          description: updateError.message,
-          variant: "destructive",
-        });
-      } else {
-        // Update withdrawable balance if partial reinvestment or all bonus
-        const remainingCapitalAndProfit = ((investment.amount || 0) + (investment.return || 0)) - amountToReinvest;
-        const totalToAddToWithdrawable = remainingCapitalAndProfit + (investment.bonus || 0);
+      if (error) throw error;
 
-        if (totalToAddToWithdrawable > 0) {
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .update({
-              withdrawable_balance: (withdrawableBalance || 0) + totalToAddToWithdrawable,
-            })
-            .eq("id", user.id);
-
-          if (profileError) {
-            console.error("Error updating profile balance:", profileError);
-          }
-        }
-
+      if (data.success) {
         toast({
           title: "Re-investment successful",
           description: `You have successfully re-invested ₦${amountToReinvest.toLocaleString()}.`,
         });
         navigate("/dashboard");
+      } else {
+        throw new Error(data.message);
       }
+    } catch (error: any) {
+      toast({
+        title: "Error re-investing",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -122,39 +95,30 @@ const ManageInvestment = () => {
 
     const totalReturn = (investment.amount || 0) + (investment.return || 0) + (investment.bonus || 0);
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        withdrawable_balance: (withdrawableBalance || 0) + totalReturn,
-      })
-      .eq("id", user.id);
+    try {
+      const { data, error } = await supabase.rpc('withdraw_investment_to_balance', {
+        p_user_id: user.id,
+        p_investment_id: id,
+        p_total_return: totalReturn
+      });
 
-    if (profileError) {
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Withdrawal successful",
+          description: `Your funds of ₦${totalReturn.toLocaleString()} have been added to your withdrawable balance.`,
+        });
+        navigate("/dashboard");
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
       toast({
         title: "Error withdrawing funds",
-        description: profileError.message,
+        description: error.message,
         variant: "destructive",
       });
-      return;
-    }
-
-    const { error: investmentError } = await supabase
-      .from("investments")
-      .update({ status: "withdrawn", bonus: 0 })
-      .eq("id", id);
-
-    if (investmentError) {
-      toast({
-        title: "Error updating investment",
-        description: investmentError.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Withdrawal successful",
-        description: `Your funds of ₦${totalReturn.toLocaleString()} have been added to your withdrawable balance.`,
-      });
-      navigate("/dashboard");
     }
   };
 

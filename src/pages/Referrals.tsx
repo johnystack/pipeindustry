@@ -56,49 +56,34 @@ const Referrals = () => {
       return;
     }
 
-    const newWithdrawableBalance =
-      (profile.withdrawable_balance || 0) + (profile.referral_earnings || 0);
+    try {
+      const { data, error } = await supabase.rpc('claim_referral_earnings', { p_user_id: user.id });
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        withdrawable_balance: newWithdrawableBalance,
-        referral_earnings: 0,
-      })
-      .eq("id", user.id);
+      if (error) throw error;
 
-    if (error) {
+      if (data.success) {
+        // Calculate new balance locally for instant UI update
+        const claimedAmount = profile.referral_earnings;
+        const newWithdrawableBalance = (profile.withdrawable_balance || 0) + claimedAmount;
+        
+        setProfile({
+          ...profile,
+          withdrawable_balance: newWithdrawableBalance,
+          referral_earnings: 0,
+        });
+
+        toast({
+          title: "Withdrawal successful",
+          description: `Your referral earnings of ₦${claimedAmount.toLocaleString()} have been added to your withdrawable balance.`,
+        });
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
       toast({
         title: "Error withdrawing earnings",
         description: error.message,
         variant: "destructive",
-      });
-    } else {
-      const { error: transactionError } = await supabase
-        .from("transactions")
-        .insert([
-          {
-            user_id: user.id,
-            type: "withdrawal",
-            amount: profile.referral_earnings,
-            status: "completed",
-            description: "Referral earnings to withdrawable balance",
-            withdrawal_type: "to_balance",
-          },
-        ]);
-
-      if (transactionError) {
-        console.error("Error creating transaction:", transactionError);
-      }
-
-      setProfile({
-        ...profile,
-        withdrawable_balance: newWithdrawableBalance,
-        referral_earnings: 0,
-      });
-      toast({
-        title: "Withdrawal successful",
-        description: `Your referral earnings of ${profile.referral_earnings.toLocaleString()} have been added to your withdrawable balance.`,
       });
     }
   };

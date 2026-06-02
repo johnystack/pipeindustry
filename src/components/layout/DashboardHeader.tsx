@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationCenter } from "./NotificationCenter";
 
 interface DashboardHeaderProps {
   className?: string;
@@ -72,6 +73,8 @@ export const DashboardHeader = ({ className }: DashboardHeaderProps) => {
           </Button>
         )}
         
+        <NotificationCenter />
+
         <div 
           className="h-9 w-9 cursor-pointer"
           onClick={() => navigate("/settings")}

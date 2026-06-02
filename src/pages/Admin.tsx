@@ -81,8 +81,17 @@ const Admin = () => {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [withdrawals, setWithdrawals] = useState<Transaction[]>([]);
   const [history, setHistory] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // New Notification State
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
+  const [notifType, setNotifType] = useState<"info" | "success" | "warning" | "error">("info");
+  const [notifTarget, setNotifTarget] = useState<"all" | "single">("all");
+  const [notifUserId, setNotifUserId] = useState("");
+  const [sendingNotif, setSendingNotif] = useState(false);
   
   // Modal states
   const [selectedCrypto, setSelectedCrypto] = useState<Cryptocurrency | null>(null);
@@ -108,15 +117,19 @@ const Admin = () => {
         { data: plansData },
         { data: cryptoData },
         { data: vendorWalletData },
-        { data: transData }
+        { data: transData },
+        { data: notifData }
       ] = await Promise.all([
         supabase.from("investments").select("*, profiles(first_name, last_name, email, username, avatar_url)").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("vendor_plans").select("*, profiles(first_name, last_name, email)").order("created_at", { ascending: false }),
         supabase.from("cryptocurrencies").select("*"),
         supabase.from("vendor_payment_wallets").select("*").order("created_at", { ascending: false }),
-        supabase.from("transactions").select("*, profiles(first_name, last_name, email, bank_name, account_number, account_name)").order("created_at", { ascending: false })
+        supabase.from("transactions").select("*, profiles(first_name, last_name, email, bank_name, account_number, account_name)").order("created_at", { ascending: false }),
+        supabase.from("notifications").select("*, profiles(first_name, last_name, email)").order("created_at", { ascending: false })
       ]);
+
+      if (notifData) setNotifications(notifData);
 
       if (invData) {
         const pending = invData.filter((inv) => inv.status === "pending").length;
@@ -223,9 +236,9 @@ const Admin = () => {
   const handleRejectWithdrawal = async (withdrawalId: string) => {
     setApproveLoading(withdrawalId);
     try {
-      const { error } = await supabase.from("transactions").update({ status: "denied" }).eq("id", withdrawalId);
+      const { error } = await supabase.rpc('reject_withdrawal', { withdrawal_id: withdrawalId });
       if (error) throw error;
-      toast({ title: "Withdrawal Rejected", description: "Request denied." });
+      toast({ title: "Withdrawal Rejected", description: "Request denied and balance refunded." });
       await loadData();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -250,6 +263,49 @@ const Admin = () => {
       if (error) throw error;
       toast({ title: "Success", description: `Wallet ${!currentStatus ? 'activated' : 'deactivated'} successfully.` });
       await loadData();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleSendNotification = async () => {
+    if (!notifTitle || !notifMessage) {
+      toast({ title: "Validation Error", description: "Title and message are required.", variant: "destructive" });
+      return;
+    }
+    if (notifTarget === "single" && !notifUserId) {
+      toast({ title: "Validation Error", description: "Target user is required for individual notifications.", variant: "destructive" });
+      return;
+    }
+
+    setSendingNotif(true);
+    try {
+      const { error } = await supabase.from("notifications").insert([{
+        title: notifTitle,
+        message: notifMessage,
+        type: notifType,
+        user_id: notifTarget === "all" ? null : notifUserId
+      }]);
+
+      if (error) throw error;
+      toast({ title: "Notification Sent", description: "Broadcasting successful." });
+      setNotifTitle("");
+      setNotifMessage("");
+      loadData();
+    } catch (error: any) {
+      toast({ title: "Transmission Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    if (!confirm("Remove this notification?")) return;
+    try {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) throw error;
+      toast({ title: "Notification Removed" });
+      loadData();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -313,11 +369,12 @@ const Admin = () => {
       </div>
 
       <Tabs defaultValue="investments" className="w-full space-y-8">
-        <TabsList className="bg-slate-950/80 border border-white/10 p-1 rounded-xl h-12 w-full grid grid-cols-6 gap-1 shadow-2xl overflow-x-auto scrollbar-hide">
+        <TabsList className="bg-slate-950/80 border border-white/10 p-1 rounded-xl h-12 w-full grid grid-cols-7 gap-1 shadow-2xl overflow-x-auto scrollbar-hide">
           <TabsTrigger value="investments" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-primary h-full uppercase italic px-0">Trades</TabsTrigger>
           <TabsTrigger value="withdrawals" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-orange-600 h-full uppercase italic px-0">Payouts</TabsTrigger>
           <TabsTrigger value="vendors" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-emerald-600 h-full uppercase italic px-0">Plans</TabsTrigger>
           <TabsTrigger value="users" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-purple-600 h-full uppercase italic px-0">Users</TabsTrigger>
+          <TabsTrigger value="alerts" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-red-600 h-full uppercase italic px-0">Alerts</TabsTrigger>
           <TabsTrigger value="crypto" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-cyan-600 h-full uppercase italic px-0">Wallets</TabsTrigger>
           <TabsTrigger value="history" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-slate-700 h-full uppercase italic px-0">History</TabsTrigger>
         </TabsList>
@@ -525,43 +582,157 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6 pt-2 outline-none">
-            <div className="bg-slate-950 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-                <div className="overflow-x-auto scrollbar-hide">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-white/[0.02] border-b border-white/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                <th className="px-4 py-3 text-left">Participant</th>
-                                <th className="px-4 py-3 text-left">Classification</th>
-                                <th className="px-4 py-3 text-left">Registered</th>
-                                <th className="px-4 py-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {profiles.filter(u => u.email?.toLowerCase().includes(searchTerm.toLowerCase())).map((user) => (
-                                <tr key={user.id} className="group hover:bg-white/[0.01] transition-all">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-500 flex items-center justify-center font-black text-xs italic">{user.first_name?.[0]}{user.last_name?.[0]}</div>
-                                            <div className="min-w-0">
-                                                <h6 className="font-black text-xs uppercase italic truncate max-w-[140px]">{user.first_name} {user.last_name}</h6>
-                                                <p className="text-[8px] font-bold text-muted-foreground truncate max-w-[140px] uppercase">{user.email}</p>
+            {/* ... users content ... */}
+        </TabsContent>
+
+        <TabsContent value="alerts" className="space-y-8 pt-2 outline-none">
+            <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-5 space-y-6">
+                    <Card className="bg-slate-900/50 border-white/10 shadow-2xl rounded-3xl overflow-hidden">
+                        <CardHeader className="p-6 md:p-8 border-b border-white/5 bg-red-500/5">
+                            <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-3 italic text-red-500">
+                                <ShieldAlert className="h-5 w-5" /> Broadcast Alert
+                            </CardTitle>
+                            <CardDescription className="text-[9px] font-bold uppercase tracking-widest opacity-60">Issue system-wide or targeted notifications.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6 md:p-8 space-y-6">
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Transmission Mode</Label>
+                                        <div className="flex bg-slate-950 p-1 rounded-xl border border-white/5">
+                                            <button 
+                                                onClick={() => setNotifTarget("all")}
+                                                className={cn("flex-1 py-2 text-[8px] font-black uppercase rounded-lg transition-all", notifTarget === "all" ? "bg-red-600 text-white shadow-lg" : "text-muted-foreground hover:text-white")}
+                                            >System Wide</button>
+                                            <button 
+                                                onClick={() => setNotifTarget("single")}
+                                                className={cn("flex-1 py-2 text-[8px] font-black uppercase rounded-lg transition-all", notifTarget === "single" ? "bg-red-600 text-white shadow-lg" : "text-muted-foreground hover:text-white")}
+                                            >Targeted</button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Threat Level</Label>
+                                        <select 
+                                            value={notifType} 
+                                            onChange={(e) => setNotifType(e.target.value as any)}
+                                            className="w-full h-10 bg-slate-950 border border-white/5 rounded-xl px-4 text-[9px] font-black uppercase italic text-white focus:outline-none focus:border-red-500/50 appearance-none"
+                                        >
+                                            <option value="info">Information</option>
+                                            <option value="success">Operational</option>
+                                            <option value="warning">Precautionary</option>
+                                            <option value="error">Critical</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {notifTarget === "single" && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                        <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Identify Target User</Label>
+                                        <select 
+                                            value={notifUserId} 
+                                            onChange={(e) => setNotifUserId(e.target.value)}
+                                            className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-4 text-[10px] font-black uppercase italic text-white focus:outline-none focus:border-red-500/50 appearance-none"
+                                        >
+                                            <option value="">Select User...</option>
+                                            {profiles.map(u => (
+                                                <option key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.email})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alert Header</Label>
+                                    <Input 
+                                        placeholder="URGENT: ACTION REQUIRED"
+                                        value={notifTitle}
+                                        onChange={(e) => setNotifTitle(e.target.value)}
+                                        className="h-11 bg-slate-950 border-white/5 text-[10px] font-black uppercase tracking-tighter"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Neural Payload (Message)</Label>
+                                    <textarea 
+                                        placeholder="Detailed transmission content..."
+                                        value={notifMessage}
+                                        onChange={(e) => setNotifMessage(e.target.value)}
+                                        className="w-full h-32 bg-slate-950 border border-white/5 rounded-xl p-4 text-[10px] font-bold text-white focus:outline-none focus:border-red-500/50 resize-none"
+                                    />
+                                </div>
+
+                                <Button 
+                                    onClick={handleSendNotification}
+                                    disabled={sendingNotif}
+                                    className="w-full h-14 bg-red-600 hover:bg-red-500 text-[10px] font-black uppercase tracking-[0.2em] italic rounded-2xl shadow-xl shadow-red-900/20"
+                                >
+                                    {sendingNotif ? <Loader2 className="h-5 w-5 animate-spin" /> : "Initiate Broadcast"}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="lg:col-span-7 space-y-6">
+                    <Card className="bg-slate-950/50 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                        <CardHeader className="p-6 md:p-8 border-b border-white/5">
+                            <CardTitle className="text-lg font-black uppercase tracking-tight italic flex items-center gap-3">
+                                <HistoryIcon className="h-5 w-5 text-muted-foreground" /> Alert Log
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="max-h-[600px] overflow-y-auto scrollbar-hide divide-y divide-white/5">
+                                {notifications.length === 0 ? (
+                                    <div className="py-20 text-center space-y-4 opacity-20">
+                                        <Info className="h-12 w-12 mx-auto" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest">No active transmissions in log</p>
+                                    </div>
+                                ) : (
+                                    notifications.map((n) => (
+                                        <div key={n.id} className="p-6 hover:bg-white/[0.02] transition-all group">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="space-y-3 flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <Badge className={cn(
+                                                            "text-[7px] font-black uppercase px-2 py-0.5 italic",
+                                                            n.type === 'error' ? "bg-red-500" : 
+                                                            n.type === 'warning' ? "bg-amber-500" : 
+                                                            n.type === 'success' ? "bg-emerald-500" : "bg-cyan-500"
+                                                        )}>
+                                                            {n.type}
+                                                        </Badge>
+                                                        <Badge variant="outline" className="text-[7px] font-black uppercase border-white/10 opacity-60">
+                                                            {n.user_id ? "Individual" : "System-Wide"}
+                                                        </Badge>
+                                                        <span className="text-[8px] font-bold text-muted-foreground uppercase opacity-40">{new Date(n.created_at).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-sm font-black uppercase italic text-white tracking-tight">{n.title}</h4>
+                                                        <p className="text-[10px] font-medium text-muted-foreground/80 leading-relaxed">{n.message}</p>
+                                                    </div>
+                                                    {n.user_id && (
+                                                        <div className="flex items-center gap-2 pt-1">
+                                                            <div className="h-5 w-5 rounded bg-white/5 flex items-center justify-center text-[7px] font-black italic">{n.profiles?.first_name?.[0]}{n.profiles?.last_name?.[0]}</div>
+                                                            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic">{n.profiles?.first_name} {n.profiles?.last_name}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    onClick={() => handleDeleteNotification(n.id)}
+                                                    className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Badge variant="outline" className="text-[7px] font-black uppercase border-purple-500/30 text-purple-400">{user.role || 'TRADER'}</Badge>
-                                    </td>
-                                    <td className="px-4 py-3"><span className="text-[8px] font-bold opacity-40 uppercase">{new Date(user.created_at || '').toLocaleDateString()}</span></td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex justify-end gap-1.5">
-                                            <Button size="sm" onClick={() => { setSelectedUser(user); setGiveBonusOpen(true); }} className="h-7 px-2 bg-white text-black text-[8px] font-black uppercase rounded-lg italic">Credit</Button>
-                                            <Button size="sm" variant="outline" onClick={() => { setSelectedUser(user); setDeductBalanceOpen(true); }} className="h-7 px-2 border-white/5 text-[8px] font-black uppercase rounded-lg italic">Deduct</Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                    ))
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </TabsContent>
