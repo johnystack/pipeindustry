@@ -48,7 +48,7 @@ const assetPrices: Record<string, number> = {
     "Crude Oil": 50000,
     "Iron Ore": 50000,
     Lithium: 250000, // Default for those not specified
-    "Natural Gas": 100000,
+    "Natural Gas": 25000,
 };
 
 const VendorDashboard = () => {
@@ -464,7 +464,7 @@ const VendorDashboard = () => {
                                 <SelectItem value="Nickel">Nickel (₦250,000)</SelectItem>
                                 <SelectItem value="Copper">Copper (₦250,000)</SelectItem>
                                 <SelectItem value="Lithium">Lithium (₦250,000)</SelectItem>
-                                <SelectItem value="Natural Gas">Natural Gas (₦100,000)</SelectItem>
+                                <SelectItem value="Natural Gas">Natural Gas (₦25,000)</SelectItem>
                                 <SelectItem value="Aluminum">Aluminum (₦100,000)</SelectItem>
                                 <SelectItem value="Crude Oil">Crude Oil (₦50,000)</SelectItem>
                                 <SelectItem value="Iron Ore">Iron Ore (₦50,000)</SelectItem>

@@ -13,6 +13,7 @@ import { Wallet, Loader2, Mail, ShieldCheck, RefreshCcw, ArrowLeft } from "lucid
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabaseClient";
+import { cn } from "@/lib/utils";
 import {
   InputOTP,
   InputOTPGroup,

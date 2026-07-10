@@ -34,6 +34,7 @@ import {
   RefreshCcw,
   LayoutGrid,
 } from "lucide-react";
+import { LiveActivityFeed } from "@/components/LiveActivityFeed";
 
 const Dashboard = () => {
   const { user, role } = useAuth();
@@ -42,7 +43,6 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<User | null>(null);
   const [statsData, setStatsData] = useState<StatsData>({});
   const [investments, setInvestments] = useState<Investment[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
 
   const fetchData = async () => {
@@ -54,7 +54,6 @@ const Dashboard = () => {
       } else {
         setProfile(data.profile);
         setInvestments(data.investments || []);
-        setRecentTransactions(data.recent_transactions || []);
 
         const activeInvestments = (data.investments || []).filter(
           (investment: Investment) => investment.status === 'active'
@@ -381,41 +380,8 @@ const Dashboard = () => {
                 Live Feed
             </h2>
             <Card className="bg-slate-950/50 border border-white/5 shadow-xl h-[400px] md:h-[500px] overflow-hidden rounded-[2rem]">
-                <CardContent className="p-0">
-                    <div className="divide-y divide-white/5 overflow-y-auto h-full scrollbar-hide">
-                        {recentTransactions.map((tx, i) => (
-                            <div key={i} className="p-4 hover:bg-white/[0.02] transition-colors flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${
-                                        tx.type === 'deposit' ? 'bg-emerald-500/10 text-emerald-500' : 
-                                        tx.type === 'profit' ? 'bg-primary/10 text-primary' :
-                                        'bg-orange-500/10 text-orange-500'
-                                    }`}>
-                                        {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : 
-                                         tx.type === 'profit' ? <Coins className="h-3 w-3" /> :
-                                         <ArrowDownRight className="h-3 w-3" />}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] md:text-[11px] font-black uppercase italic truncate">{tx.type}</p>
-                                        <p className="text-[7px] md:text-[8px] text-muted-foreground font-bold uppercase">{new Date(tx.created_at || "").toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                    <p className={`text-xs md:text-sm font-black italic ${
-                                        (tx.type === 'deposit' || tx.type === 'profit') ? 'text-emerald-500' : 'text-orange-500'
-                                    }`}>
-                                        {(tx.type === 'deposit' || tx.type === 'profit') ? '+' : '-'}₦{tx.amount.toLocaleString()}
-                                    </p>
-                                    <Badge variant="outline" className="text-[6px] md:text-[7px] h-3 md:h-4 px-1 rounded uppercase font-black border-white/5">{tx.status}</Badge>
-                                </div>
-                            </div>
-                        ))}
-                        {recentTransactions.length === 0 && (
-                            <div className="py-20 text-center italic text-muted-foreground/30 font-black uppercase text-[8px] md:text-[10px] tracking-[0.2em]">
-                                Quiet Market...
-                            </div>
-                        )}
-                    </div>
+                <CardContent className="p-0 h-full">
+                    <LiveActivityFeed />
                 </CardContent>
             </Card>
         </div>

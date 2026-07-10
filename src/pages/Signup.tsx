@@ -84,8 +84,8 @@ const Signup = () => {
     if (error) {
       toast({ title: "Provisioning Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Verification Required", description: "Check your system email to authorize your access key." });
-      navigate("/login");
+      toast({ title: "Verification Required", description: "Please enter the verification code sent to your email." });
+      navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     }
   };
 

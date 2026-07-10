@@ -33,7 +33,7 @@ serve(async (req) => {
           <p>Welcome to <strong>TerrasInvestment</strong>. Your professional trading account has been successfully created and your identity is now active on our global hub.</p>
           <p>You can now start trading, manage your portfolio, and track your progress in real-time.</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://terrasinvestment.org/login" style="background: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Access Your Dashboard</a>
+            <a href="https://terrasinvestment.com/login" style="background: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Access Your Dashboard</a>
           </div>
           <p>If you have any questions, our support team is available 24/7 to assist you.</p>
           <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
@@ -42,13 +42,13 @@ serve(async (req) => {
       `;
     } else if (type === "verification") {
       // Keep existing verification logic if needed, or unify it
-      const verificationUrl = `https://terrasinvestment.org/verify-email?token=${payload.token}`;
+      const verificationUrl = `https://terrasinvestment.com/verify-email?token=${payload.token}`;
       subject = "Verify your email address";
       html = `Please click the following link to verify your email address: <a href="${verificationUrl}">${verificationUrl}</a>`;
     }
 
     const { data, error } = await resend.emails.send({
-      from: "TerrasInvestment <noreply@terrasinvestment.org>",
+      from: "TerrasInvestment <noreply@terrasinvestment.com>",
       to: [email],
       subject: subject,
       html: html,

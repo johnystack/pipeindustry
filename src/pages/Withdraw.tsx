@@ -28,6 +28,7 @@ import {
   Building2,
   ShieldCheck,
   Zap,
+  RefreshCcw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";

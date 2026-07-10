@@ -59,7 +59,7 @@ const assetPrices: Record<string, number> = {
   "Crude Oil": 50000,
   "Iron Ore": 50000,
   Lithium: 250000,
-  "Natural Gas": 100000,
+  "Natural Gas": 25000,
 };
 
 const Invest = () => {

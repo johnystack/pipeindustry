@@ -32,7 +32,7 @@ const ContactUs: React.FC = () => {
         {/* Contact Grid */}
         <section className="grid md:grid-cols-3 gap-8">
             {[
-                { icon: Mail, title: "Identity Auth", val: "terrasinvestment@gmail.com", label: "System Email" },
+                { icon: Mail, title: "Identity Auth", val: "support@terrasinvestment.com", label: "System Email" },
                 { icon: Phone, title: "Voice Uplink", val: "+1 (XXX) XXX-XXXX", label: "Priority Line" },
                 { icon: MapPin, title: "Global HQ", val: "123 Investment Blvd, FC 12345", label: "Physical Node" }
             ].map((item, i) => (
