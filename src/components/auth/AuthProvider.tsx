@@ -3,6 +3,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 
 export interface AuthContextType {
   session: Session | null;
@@ -104,7 +105,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <LoadingScreen />;
   }
 
   if (!user) {

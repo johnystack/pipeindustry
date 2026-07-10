@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -10,7 +11,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   const { role, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <LoadingScreen />;
   }
 
   if (role !== "admin") {

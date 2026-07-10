@@ -32,6 +32,7 @@ import { DashboardHeader } from "./DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "../../lib/supabaseClient";
 import { cn } from "@/lib/utils";
+import LoadingScreen from "@/components/ui/LoadingScreen";
 
 const DashboardSidebar = ({ role, isCollapsed, setIsCollapsed }: { role: string | null, isCollapsed: boolean, setIsCollapsed: (v: boolean) => void }) => {
   const location = useLocation();
@@ -149,11 +150,7 @@ export const DashboardLayout = () => {
   }, [role, loading, user, location.pathname, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
