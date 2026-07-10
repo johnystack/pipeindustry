@@ -38,9 +38,10 @@ const Login = () => {
       if (error.message === "Email not confirmed") {
         toast({
           title: "Verification Pending",
-          description: "Authorize your account via system email first.",
+          description: "Authorize your account via system email first. Redirecting to verification...",
           variant: "destructive",
         });
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       } else {
         toast({
           title: "Access Denied",

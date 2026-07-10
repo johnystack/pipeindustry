@@ -95,26 +95,34 @@ const VerifyEmail = () => {
     }
 
     setSubmitting(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email: email,
-      token: otp,
-      type: "signup",
-    });
-    setSubmitting(false);
+    try {
+      const { data, error } = await supabase.rpc("verify_signup_otp", {
+        p_email: email,
+        p_code: otp,
+      });
+      setSubmitting(false);
 
-    if (error) {
+      if (error || !data?.success) {
+        toast({
+          title: "Verification Failed",
+          description: error?.message || data?.message || "Invalid or expired code.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Identity Verified",
+          description: "Your account is active. Redirecting to access hub...",
+          variant: "success",
+        });
+        setTimeout(() => navigate("/login"), 2000);
+      }
+    } catch (err: any) {
+      setSubmitting(false);
       toast({
-        title: "Verification Failed",
-        description: error.message,
+        title: "Error",
+        description: err.message || "An unexpected error occurred during verification.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Identity Verified",
-        description: "Your account is active. Redirecting to dashboard...",
-        variant: "success",
-      });
-      navigate("/dashboard");
     }
   };
 
@@ -124,17 +132,29 @@ const VerifyEmail = () => {
       return;
     }
     setResending(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: email,
-    });
-    setResending(false);
+    try {
+      const { data, error } = await supabase.rpc("send_signup_otp", {
+        p_email: email,
+      });
+      setResending(false);
 
-    if (error) {
-      toast({ title: "Resend Failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Security Code Sent", description: "A new OTP code has been dispatched." });
-      setTimer(60);
+      if (error || !data?.success) {
+        toast({ 
+          title: "Resend Failed", 
+          description: error?.message || data?.message || "Failed to dispatch verification code.", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Security Code Sent", description: "A new 1-minute OTP code has been dispatched." });
+        setTimer(60);
+      }
+    } catch (err: any) {
+      setResending(false);
+      toast({
+        title: "Error",
+        description: err.message || "An unexpected error occurred during resending.",
+        variant: "destructive",
+      });
     }
   };
 

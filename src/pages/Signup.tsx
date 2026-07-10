@@ -63,29 +63,34 @@ const Signup = () => {
       return;
     }
 
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        data: {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          username: formData.username,
-          referral_code: formData.referralCode,
-          role: formData.role,
-          status: "pending",
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            username: formData.username,
+            referral_code: formData.referralCode,
+            role: formData.role,
+            status: "pending",
+          },
         },
-      },
-    });
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      toast({ title: "Provisioning Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Verification Required", description: "Please enter the verification code sent to your email." });
-      navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+      if (error) {
+        toast({ title: "Provisioning Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Verification Required", description: "Please enter the verification code sent to your email." });
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+      }
+    } catch (err: any) {
+      setLoading(false);
+      toast({ title: "Unexpected Error", description: err.message || "An unexpected error occurred.", variant: "destructive" });
     }
   };
 
