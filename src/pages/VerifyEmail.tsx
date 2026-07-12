@@ -132,6 +132,8 @@ const VerifyEmail = () => {
       return;
     }
     setResending(true);
+    // Clear current OTP input so user enters the fresh one
+    setOtp("");
     try {
       const { data, error } = await supabase.rpc("send_signup_otp", {
         p_email: email,
@@ -145,7 +147,7 @@ const VerifyEmail = () => {
           variant: "destructive" 
         });
       } else {
-        toast({ title: "Security Code Sent", description: "A new 1-minute OTP code has been dispatched." });
+        toast({ title: "New Code Sent", description: "A fresh 10-minute OTP code has been sent to your email." });
         setTimer(60);
       }
     } catch (err: any) {
@@ -191,7 +193,7 @@ const VerifyEmail = () => {
           </div>
           <CardTitle className="text-2xl font-black uppercase italic text-white tracking-tight">Identity Activation</CardTitle>
           <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            Confirm your signup verification token
+            Enter the 6-digit code sent to your email. Valid for 10 minutes.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8 pt-4 space-y-6">

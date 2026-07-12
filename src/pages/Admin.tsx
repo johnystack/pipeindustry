@@ -379,68 +379,237 @@ const Admin = () => {
           <TabsTrigger value="history" className="rounded-lg font-black text-[9px] tracking-widest data-[state=active]:bg-slate-700 h-full uppercase italic px-0">History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="investments" className="space-y-6 pt-2 outline-none">
-            <div className="bg-slate-950 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-                <div className="overflow-x-auto scrollbar-hide">
+        <TabsContent value="investments" className="space-y-4 pt-2 outline-none">
+            {/* Summary bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                    { label: 'Total', val: investments.length, color: 'text-white' },
+                    { label: 'Pending', val: investments.filter(i => i.status === 'pending').length, color: 'text-amber-400' },
+                    { label: 'Active', val: investments.filter(i => i.status === 'active').length, color: 'text-emerald-400' },
+                    { label: 'Awaiting Proof', val: investments.filter(i => i.status === 'awaiting_proof').length, color: 'text-blue-400' },
+                ].map((s, i) => (
+                    <div key={i} className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</span>
+                        <span className={cn("text-lg font-black", s.color)}>{s.val}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop table — hidden on mobile */}
+            <div className="hidden md:block bg-slate-950 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+                <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-white/[0.02] border-b border-white/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                <th className="px-4 py-3 text-left">Participant</th>
-                                <th className="px-4 py-3 text-left">Asset</th>
+                                <th className="px-4 py-3 text-left">Trader</th>
+                                <th className="px-4 py-3 text-left">Plan / Asset</th>
                                 <th className="px-4 py-3 text-left">Capital</th>
-                                <th className="px-4 py-3 text-left">Status/Date</th>
+                                <th className="px-4 py-3 text-left">Proof</th>
+                                <th className="px-4 py-3 text-left">Status</th>
+                                <th className="px-4 py-3 text-left">Date</th>
                                 <th className="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {investments.filter(inv => inv.profiles?.username?.toLowerCase().includes(searchTerm.toLowerCase()) || inv.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())).map((inv) => (
+                            {investments
+                                .filter(inv =>
+                                    inv.profiles?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    inv.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    inv.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    inv.plan_name?.toLowerCase().includes(searchTerm.toLowerCase())
+                                )
+                                .map((inv) => (
                                 <tr key={inv.id} className="group hover:bg-white/[0.01] transition-all">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs border border-white/5 uppercase italic">{inv.profiles?.first_name?.[0]}{inv.profiles?.last_name?.[0]}</div>
+                                            <div className="h-9 w-9 shrink-0 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs border border-white/5 uppercase italic">
+                                                {inv.profiles?.first_name?.[0]}{inv.profiles?.last_name?.[0]}
+                                            </div>
                                             <div className="min-w-0">
-                                                <h6 className="font-black text-xs uppercase italic truncate max-w-[140px]">{inv.profiles?.first_name} {inv.profiles?.last_name}</h6>
-                                                <p className="text-[8px] font-bold text-muted-foreground uppercase truncate max-w-[140px]">{inv.profiles?.email}</p>
+                                                <h6 className="font-black text-xs uppercase italic truncate">{inv.profiles?.first_name} {inv.profiles?.last_name}</h6>
+                                                <p className="text-[8px] font-bold text-muted-foreground truncate">{inv.profiles?.email}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                            <Gem className="h-3 w-3 text-primary/70" />
-                                            <span className="text-[10px] font-black uppercase italic truncate max-w-[100px]">{inv.plan_name}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <Gem className="h-3 w-3 shrink-0 text-primary/70" />
+                                            <span className="text-[10px] font-black uppercase italic truncate max-w-[120px]">{inv.plan_name || '—'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3"><span className="text-xs font-black">₦{inv.amount.toLocaleString()}</span></td>
                                     <td className="px-4 py-3">
-                                        <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-1.5 py-0", inv.status === 'pending' ? "border-amber-500/50 text-amber-500" : "border-emerald-500/50 text-emerald-500")}>{inv.status}</Badge>
+                                        <span className="text-xs font-black text-primary">₦{(inv.amount || 0).toLocaleString()}</span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {inv.payment_proof ? (
+                                            <Badge variant="outline" className="text-[7px] font-black uppercase border-emerald-500/40 text-emerald-400 px-1.5">
+                                                Uploaded
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-[7px] font-black uppercase border-amber-500/40 text-amber-400 px-1.5">
+                                                Pending
+                                            </Badge>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-1.5 py-0",
+                                            inv.status === 'pending' ? "border-amber-500/50 text-amber-500" :
+                                            inv.status === 'active' ? "border-emerald-500/50 text-emerald-500" :
+                                            inv.status === 'awaiting_proof' ? "border-blue-500/50 text-blue-400" :
+                                            inv.status === 'denied' ? "border-red-500/50 text-red-400" :
+                                            "border-white/20 text-white/50"
+                                        )}>
+                                            {inv.status === 'awaiting_proof' ? 'Awaiting' : inv.status}
+                                        </Badge>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="text-[8px] text-muted-foreground font-bold">
+                                            {new Date(inv.created_at).toLocaleDateString()}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex justify-end gap-1.5 items-center">
                                             {inv.payment_proof && (
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline" 
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
                                                     onClick={() => window.open(inv.payment_proof, '_blank')}
                                                     className="h-7 px-2 border-primary/20 text-primary hover:bg-primary/10 text-[8px] font-black uppercase"
                                                 >
-                                                    Receipt
+                                                    Proof
                                                 </Button>
                                             )}
-                                            {inv.status === 'pending' ? (
+                                            {inv.status === 'pending' && (
                                                 <>
-                                                    <Button size="sm" onClick={() => handleApprove(inv.id)} className="h-7 px-2 bg-emerald-600 hover:bg-emerald-500 text-[8px] font-black uppercase">Authorize</Button>
-                                                    <Button size="sm" variant="outline" onClick={() => handleReject(inv.id)} className="h-7 w-7 border-white/5 text-destructive hover:bg-destructive/10"><XCircle className="h-3.5 w-3.5" /></Button>
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={approveLoading === inv.id}
+                                                        onClick={() => handleApprove(inv.id)}
+                                                        className="h-7 px-2 bg-emerald-600 hover:bg-emerald-500 text-[8px] font-black uppercase"
+                                                    >
+                                                        {approveLoading === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Approve'}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={approveLoading === inv.id}
+                                                        onClick={() => handleReject(inv.id)}
+                                                        className="h-7 w-7 border-white/5 text-destructive hover:bg-destructive/10"
+                                                    >
+                                                        <XCircle className="h-3.5 w-3.5" />
+                                                    </Button>
                                                 </>
-                                            ) : (
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-20 hover:opacity-100"><ArrowUpRight className="h-4 w-4" /></Button>
                                             )}
                                         </div>
                                     </td>
                                 </tr>
                             ))}
+                            {investments.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-xs font-bold uppercase">
+                                        No investments found
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile cards — shown only on small screens */}
+            <div className="flex flex-col gap-3 md:hidden">
+                {investments
+                    .filter(inv =>
+                        inv.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        inv.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        inv.plan_name?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((inv) => (
+                    <div key={inv.id} className="bg-slate-950 border border-white/5 rounded-2xl p-4 space-y-3">
+                        {/* Header row */}
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-10 w-10 shrink-0 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center font-black text-sm uppercase italic">
+                                    {inv.profiles?.first_name?.[0]}{inv.profiles?.last_name?.[0]}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-black text-xs uppercase italic truncate">{inv.profiles?.first_name} {inv.profiles?.last_name}</p>
+                                    <p className="text-[9px] text-muted-foreground truncate">{inv.profiles?.email}</p>
+                                </div>
+                            </div>
+                            <Badge variant="outline" className={cn("shrink-0 text-[7px] font-black uppercase px-2 py-0.5",
+                                inv.status === 'pending' ? "border-amber-500/50 text-amber-500" :
+                                inv.status === 'active' ? "border-emerald-500/50 text-emerald-500" :
+                                inv.status === 'awaiting_proof' ? "border-blue-500/50 text-blue-400" :
+                                inv.status === 'denied' ? "border-red-500/50 text-red-400" :
+                                "border-white/20 text-white/50"
+                            )}>
+                                {inv.status === 'awaiting_proof' ? 'Awaiting' : inv.status}
+                            </Badge>
+                        </div>
+
+                        {/* Details grid */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-white/[0.02] rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Plan</p>
+                                <div className="flex items-center gap-1">
+                                    <Gem className="h-3 w-3 shrink-0 text-primary/70" />
+                                    <span className="text-[10px] font-black uppercase italic truncate">{inv.plan_name || '—'}</span>
+                                </div>
+                            </div>
+                            <div className="bg-white/[0.02] rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Capital</p>
+                                <p className="text-sm font-black text-primary">₦{(inv.amount || 0).toLocaleString()}</p>
+                            </div>
+                            <div className="bg-white/[0.02] rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Payment Proof</p>
+                                {inv.payment_proof ? (
+                                    <Badge variant="outline" className="text-[7px] font-black uppercase border-emerald-500/40 text-emerald-400">Uploaded</Badge>
+                                ) : (
+                                    <Badge variant="outline" className="text-[7px] font-black uppercase border-amber-500/40 text-amber-400">None Yet</Badge>
+                                )}
+                            </div>
+                            <div className="bg-white/[0.02] rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Date</p>
+                                <p className="text-[9px] font-bold">{new Date(inv.created_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+
+                        {/* Payment proof text if exists */}
+                        {inv.payment_proof && (
+                            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-primary mb-1">Payment Reference</p>
+                                <p className="text-[9px] font-mono break-all text-white/70">{inv.payment_proof}</p>
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        {inv.status === 'pending' && (
+                            <div className="flex gap-2 pt-1">
+                                <Button
+                                    onClick={() => handleApprove(inv.id)}
+                                    disabled={approveLoading === inv.id}
+                                    className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black uppercase rounded-xl"
+                                >
+                                    {approveLoading === inv.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle className="h-3.5 w-3.5 mr-1.5" />Approve</>}
+                                </Button>
+                                <Button
+                                    onClick={() => handleReject(inv.id)}
+                                    disabled={approveLoading === inv.id}
+                                    variant="outline"
+                                    className="flex-1 h-10 border-red-500/30 text-red-400 hover:bg-red-500/10 text-[10px] font-black uppercase rounded-xl"
+                                >
+                                    <XCircle className="h-3.5 w-3.5 mr-1.5" />Reject
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {investments.length === 0 && (
+                    <div className="text-center py-16 text-muted-foreground text-xs font-bold uppercase">
+                        No investments found
+                    </div>
+                )}
             </div>
         </TabsContent>
 
