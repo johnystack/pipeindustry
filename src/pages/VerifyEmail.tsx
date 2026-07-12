@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { sendOtp } from "../lib/sendOtp";
+import { sendOtp, sendWelcomeEmail } from "../lib/sendOtp";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -128,6 +128,8 @@ const VerifyEmail = () => {
     } else {
       setVerified(true);
       if (validityRef.current) clearInterval(validityRef.current);
+      // Send welcome email now that account is verified
+      sendWelcomeEmail(email.trim(), "");
       toast({ title: "Verified ✓", description: "Account activated. Redirecting to login..." });
       setTimeout(() => navigate("/login"), 2000);
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { sendInvestmentConfirmedEmail, sendWithdrawalApprovedEmail, sendWithdrawalRejectedEmail } from "@/lib/sendOtp";
 import {
   Card,
   CardContent,
@@ -198,10 +199,22 @@ const Admin = () => {
   const handleApprove = async (investmentId: string) => {
     setApproveLoading(investmentId);
     try {
-      const now = new Date().toISOString();
+      const now     = new Date().toISOString();
       const dueDate = new Date(Date.now() + 24 * 24 * 60 * 60 * 1000).toISOString();
       const { error } = await supabase.from("investments").update({ status: "active", approved_at: now, due_date: dueDate }).eq("id", investmentId);
       if (error) throw error;
+
+      // Send confirmation email to the trader
+      const inv = investments.find(i => i.id === investmentId);
+      if (inv?.profiles?.email) {
+        sendInvestmentConfirmedEmail(
+          inv.profiles.email,
+          inv.profiles.first_name || "",
+          inv.plan_name || "",
+          inv.amount
+        );
+      }
+
       toast({ title: "Trade Authorized", description: "Activated successfully." });
       await loadData();
     } catch (error: any) {
@@ -226,6 +239,19 @@ const Admin = () => {
     try {
       const { error } = await supabase.rpc('approve_withdrawal', { withdrawal_id: withdrawalId });
       if (error) throw error;
+
+      // Send confirmation email to the user
+      const w = withdrawals.find(w => w.id === withdrawalId);
+      if (w?.profiles?.email) {
+        sendWithdrawalApprovedEmail(
+          w.profiles.email,
+          w.profiles.first_name || "",
+          w.amount,
+          Number(w.fee || 0),
+          w.withdrawal_type === "to_bank" ? "Bank Transfer" : "Crypto"
+        );
+      }
+
       toast({ title: "Withdrawal Approved", description: "Assets liquidated successfully." });
       await loadData();
     } catch (error: any) {
@@ -238,6 +264,17 @@ const Admin = () => {
     try {
       const { error } = await supabase.rpc('reject_withdrawal', { withdrawal_id: withdrawalId });
       if (error) throw error;
+
+      // Notify user their withdrawal was rejected
+      const w = withdrawals.find(w => w.id === withdrawalId);
+      if (w?.profiles?.email) {
+        sendWithdrawalRejectedEmail(
+          w.profiles.email,
+          w.profiles.first_name || "",
+          w.amount
+        );
+      }
+
       toast({ title: "Withdrawal Rejected", description: "Request denied and balance refunded." });
       await loadData();
     } catch (error: any) {
