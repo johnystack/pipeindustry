@@ -36,10 +36,13 @@ const Login = () => {
 
     if (error) {
       if (error.message === "Email not confirmed") {
+        // Re-send OTP so user has a fresh code when they arrive at verify page
+        await supabase.rpc("send_signup_otp", {
+          p_email: email.trim().toLowerCase(),
+        });
         toast({
-          title: "Verification Pending",
-          description: "Authorize your account via system email first. Redirecting to verification...",
-          variant: "destructive",
+          title: "Verification Required",
+          description: "A new verification code has been sent to your email.",
         });
         navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       } else {
