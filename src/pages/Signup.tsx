@@ -15,6 +15,7 @@ import { TrendingUp, Loader2, ShieldCheck } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabaseClient";
+import { sendOtp } from "../lib/sendOtp";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -85,7 +86,13 @@ const Signup = () => {
       if (error) {
         toast({ title: "Provisioning Error", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Verification Required", description: "Please enter the verification code sent to your email." });
+        // Send OTP immediately via Edge Function
+        const otpResult = await sendOtp(formData.email);
+        if (!otpResult.success) {
+          // Still navigate — user can resend on verify page
+          console.warn("OTP send warning:", otpResult.message);
+        }
+        toast({ title: "Check Your Email", description: "A 6-digit verification code has been sent to your email." });
         navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
       }
     } catch (err: any) {

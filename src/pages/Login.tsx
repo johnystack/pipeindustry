@@ -13,6 +13,7 @@ import { TrendingUp, Loader2, Key } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabaseClient";
+import { sendOtp } from "../lib/sendOtp";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -36,10 +37,8 @@ const Login = () => {
 
     if (error) {
       if (error.message === "Email not confirmed") {
-        // Re-send OTP so user has a fresh code when they arrive at verify page
-        await supabase.rpc("send_signup_otp", {
-          p_email: email.trim().toLowerCase(),
-        });
+        // Send a fresh OTP then redirect
+        await sendOtp(email.trim());
         toast({
           title: "Verification Required",
           description: "A new verification code has been sent to your email.",

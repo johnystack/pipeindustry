@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { sendOtp } from "../lib/sendOtp";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -72,7 +73,7 @@ const VerifyEmail = () => {
     };
   }, []);
 
-  // ── Resend: calls DB function which sends email via Resend ──
+  // ── Resend: calls Edge Function which sends email + stores OTP ──
   const handleResend = async () => {
     if (!email.trim()) {
       toast({ title: "Email required", description: "Enter your registered email.", variant: "destructive" });
@@ -84,20 +85,17 @@ const VerifyEmail = () => {
     setErrorMsg("");
     setOtp("");
 
-    const { data, error } = await supabase.rpc("send_signup_otp", {
-      p_email: email.trim().toLowerCase(),
-    });
+    const result = await sendOtp(email.trim());
 
     setResending(false);
 
-    if (error || !data?.success) {
-      const msg = error?.message || data?.message || "Failed to send code. Try again.";
-      setErrorMsg(msg);
-      toast({ title: "Resend Failed", description: msg, variant: "destructive" });
+    if (!result.success) {
+      setErrorMsg(result.message);
+      toast({ title: "Resend Failed", description: result.message, variant: "destructive" });
     } else {
       toast({ title: "New Code Sent", description: "Check your email for the fresh 6-digit code." });
-      startValidityTimer();  // reset countdown
-      startCooldownTimer();  // prevent spam
+      startValidityTimer();
+      startCooldownTimer();
     }
   };
 
