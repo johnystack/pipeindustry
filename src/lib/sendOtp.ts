@@ -1,16 +1,35 @@
 import { supabase } from "./supabaseClient";
 
-// Generic helper — calls the Edge Function for all email types
 export const invokeEmail = async (
   type: string,
   email: string,
   payload: Record<string, any> = {}
 ): Promise<{ success: boolean; message: string }> => {
+  const cleanEmail = email.toLowerCase().trim();
+
+  // If OTP email, generate 6-digit code and store in DB table signup_otps
+  if (type === "signup_otp" || type === "password_reset") {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const { error: rpcErr } = await supabase.rpc("store_signup_otp", {
+      p_email: cleanEmail,
+      p_code: code,
+    });
+    if (rpcErr) {
+      console.warn("Could not store OTP code in DB:", rpcErr.message);
+    }
+    payload.code = code;
+  }
+
   const { data, error } = await supabase.functions.invoke("send-verification-email", {
-    body: { type, email: email.toLowerCase().trim(), payload },
+    body: { type, email: cleanEmail, payload },
   });
-  if (error) return { success: false, message: error.message };
-  if (!data?.success) return { success: false, message: data?.error || "Failed." };
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+  if (!data?.success) {
+    return { success: false, message: data?.error || "Failed to dispatch email." };
+  }
   return { success: true, message: data?.message || "Done." };
 };
 

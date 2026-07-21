@@ -166,7 +166,7 @@ const Dashboard = () => {
         </div>
         <div className="space-y-1 text-center md:text-left relative z-10">
           <h1 className="text-xl md:text-2xl font-black tracking-tight uppercase italic leading-none">
-            Welcome, <span className="text-primary">{profile?.first_name || "Chief"}</span>
+            Welcome, <span className="text-primary">{profile?.username || profile?.first_name || user?.user_metadata?.username || user?.email?.split('@')[0] || "User"}</span>
           </h1>
           <p className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">
             Market ID: {user?.id.slice(0, 8)} • System <span className="text-emerald-500">Live</span>

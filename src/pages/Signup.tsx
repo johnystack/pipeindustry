@@ -86,13 +86,17 @@ const Signup = () => {
       if (error) {
         toast({ title: "Provisioning Error", description: error.message, variant: "destructive" });
       } else {
-        // Send OTP immediately via Edge Function
+        // Send OTP immediately
         const otpResult = await sendOtp(formData.email);
         if (!otpResult.success) {
-          // Still navigate — user can resend on verify page
-          console.warn("OTP send warning:", otpResult.message);
+          toast({
+            title: "Verification Email Notice",
+            description: `Account created! Email delivery failed (${otpResult.message}). Please ensure your Resend API Key is active.`,
+            variant: "destructive"
+          });
+        } else {
+          toast({ title: "Check Your Email", description: "A 6-digit verification code has been sent to your email." });
         }
-        toast({ title: "Check Your Email", description: "A 6-digit verification code has been sent to your email." });
         navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
       }
     } catch (err: any) {
