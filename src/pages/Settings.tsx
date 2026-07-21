@@ -62,28 +62,33 @@ const Settings = () => {
     const fetchProfile = async () => {
       if (user) {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("first_name, last_name, username, bank_name, account_number, account_name, avatar_url")
-          .eq("id", user.id)
-          .single();
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("first_name, last_name, username, bank_name, account_number, account_name, avatar_url")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        if (error && error.code !== "PGRST116") {
-          console.error("Error fetching profile:", error);
-        } else if (data) {
-          setOriginalProfile(data);
-          setProfileData({
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            username: data.username || "",
-            email: user.email || "",
-            bank_name: data.bank_name || "",
-            account_number: data.account_number || "",
-            account_name: data.account_name || "",
-            avatar_url: data.avatar_url || "",
-          });
+          if (error) {
+            console.error("Error fetching profile:", error);
+          } else if (data) {
+            setOriginalProfile(data);
+            setProfileData({
+              first_name: data.first_name || "",
+              last_name: data.last_name || "",
+              username: data.username || "",
+              email: user.email || "",
+              bank_name: data.bank_name || "",
+              account_number: data.account_number || "",
+              account_name: data.account_name || "",
+              avatar_url: data.avatar_url || "",
+            });
+          }
+        } catch (err) {
+          console.error("Failed to fetch profile in Settings:", err);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     };
 
@@ -96,11 +101,11 @@ const Settings = () => {
       setUploading(true);
 
       const file = event.target.files[0];
-      const filePath = `avatars/${user.id}/${Date.now()}`;
+      const filePath = `${user.id}/${Date.now()}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 

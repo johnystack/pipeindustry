@@ -28,16 +28,21 @@ export const LiveActivityFeed = () => {
   const fetchActivities = async () => {
     try {
       const [
-        { data: signups },
-        { data: investments },
-        { data: transactions },
-        { data: plans }
-      ] = await Promise.all([
+        signupsRes,
+        investmentsRes,
+        transactionsRes,
+        plansRes
+      ] = await Promise.allSettled([
         supabase.from('profiles').select('id, username, created_at').order('created_at', { ascending: false }).limit(10),
         supabase.from('investments').select('id, amount, plan_name, profiles(username), created_at').eq('status', 'active').order('created_at', { ascending: false }).limit(10),
         supabase.from('transactions').select('id, type, amount, profiles(username), created_at').in('type', ['withdrawal', 'profit', 'referral']).order('created_at', { ascending: false }).limit(10),
         supabase.from('vendor_plans').select('id, name, asset_type, created_at').eq('status', 'active').eq('eligibility_status', 'approved').order('created_at', { ascending: false }).limit(5)
       ]);
+
+      const signups = signupsRes.status === 'fulfilled' && !signupsRes.value.error ? signupsRes.value.data : [];
+      const investments = investmentsRes.status === 'fulfilled' && !investmentsRes.value.error ? investmentsRes.value.data : [];
+      const transactions = transactionsRes.status === 'fulfilled' && !transactionsRes.value.error ? transactionsRes.value.data : [];
+      const plans = plansRes.status === 'fulfilled' && !plansRes.value.error ? plansRes.value.data : [];
 
       const combined: ActivityEvent[] = [];
 

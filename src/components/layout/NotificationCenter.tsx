@@ -36,16 +36,21 @@ export const NotificationCenter = () => {
 
             if (error) throw error;
 
-            // Get read statuses
-            const { data: reads, error: readsError } = await supabase
-                .from("notification_reads")
-                .select("notification_id")
-                .eq("user_id", user.id);
+            // Get read statuses safely
+            let readIds = new Set<string>();
+            try {
+              const { data: reads, error: readsError } = await supabase
+                  .from("notification_reads")
+                  .select("notification_id")
+                  .eq("user_id", user.id);
 
-            if (readsError) throw readsError;
+              if (!readsError && reads) {
+                readIds = new Set(reads.map(r => r.notification_id));
+              }
+            } catch (err) {
+              console.warn("Could not fetch notification_reads:", err);
+            }
 
-            const readIds = new Set(reads.map(r => r.notification_id));
-            
             const processedNotifs = (notifs || []).map(n => ({
                 ...n,
                 is_read: readIds.has(n.id)

@@ -31,17 +31,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role, avatar_url")
-          .eq("id", session.user.id)
-          .single();
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("role, avatar_url")
+            .eq("id", session.user.id)
+            .maybeSingle();
 
-        if (error) {
-          console.error("Error fetching user profile:", error);
-        } else {
-          setRole(data?.role || null);
-          setAvatarUrl(data?.avatar_url || null);
+          if (error) {
+            console.error("Error fetching user profile:", error);
+          } else if (data) {
+            setRole(data.role || "user");
+            setAvatarUrl(data.avatar_url || null);
+          }
+        } catch (err) {
+          console.error("Failed to fetch user profile:", err);
         }
       }
       setLoading(false);
@@ -55,17 +59,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           const fetchProfile = async () => {
-            const { data, error } = await supabase
-              .from("profiles")
-              .select("role, avatar_url")
-              .eq("id", session.user.id)
-              .single();
+            try {
+              const { data, error } = await supabase
+                .from("profiles")
+                .select("role, avatar_url")
+                .eq("id", session.user.id)
+                .maybeSingle();
 
-            if (error) {
-              console.error("Error fetching user profile:", error);
-            } else {
-              setRole(data?.role || null);
-              setAvatarUrl(data?.avatar_url || null);
+              if (error) {
+                console.error("Error fetching user profile:", error);
+              } else if (data) {
+                setRole(data.role || "user");
+                setAvatarUrl(data.avatar_url || null);
+              }
+            } catch (err) {
+              console.error("Failed to fetch user profile:", err);
             }
           };
           fetchProfile();
