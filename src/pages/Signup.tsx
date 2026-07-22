@@ -49,6 +49,8 @@ const Signup = () => {
   };
 
   const handleSignup = async () => {
+    if (loading) return;
+
     if (!formData.firstName || !formData.lastName || !formData.username || !formData.email || !formData.password) {
         toast({ title: "Required Fields", description: "Please complete all identity parameters.", variant: "destructive" });
         return;
@@ -64,41 +66,45 @@ const Signup = () => {
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
+      const cleanEmail = formData.email.trim().toLowerCase();
+
       const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
+        email: cleanEmail,
         password: formData.password,
         options: {
           data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            username: formData.username,
-            referral_code: formData.referralCode,
+            first_name: formData.firstName.trim(),
+            last_name: formData.lastName.trim(),
+            username: formData.username.trim(),
+            referral_code: formData.referralCode.trim(),
             role: formData.role,
             status: "pending",
           },
         },
       });
 
-      setLoading(false);
-
       if (error) {
-        toast({ title: "Provisioning Error", description: error.message, variant: "destructive" });
-      } else {
-        // Send OTP immediately
-        const otpResult = await sendOtp(formData.email);
-        if (!otpResult.success) {
-          toast({
-            title: "Verification Email Notice",
-            description: `Account created! Email delivery failed (${otpResult.message}). Please ensure your Resend API Key is active.`,
-            variant: "destructive"
-          });
-        } else {
-          toast({ title: "Check Your Email", description: "A 6-digit verification code has been sent to your email." });
-        }
-        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+        setLoading(false);
+        const isDuplicate = error.message?.toLowerCase().includes("already registered") || error.message?.toLowerCase().includes("already exists");
+        toast({
+          title: isDuplicate ? "Account Exists" : "Provisioning Error",
+          description: isDuplicate ? "An account with this email address already exists. Please sign in instead." : error.message,
+          variant: "destructive"
+        });
+        return;
       }
+
+      // Dispatch OTP in background so user transitions INSTANTLY to verification page
+      sendOtp(cleanEmail).catch((otpErr) => {
+        console.warn("Background OTP dispatch notice:", otpErr);
+      });
+
+      toast({ title: "Identity Provisioned", description: "Navigating to email verification..." });
+      navigate(`/verify-email?email=${encodeURIComponent(cleanEmail)}`);
+      // Keep loading = true during page transition to prevent duplicate clicks
     } catch (err: any) {
       setLoading(false);
       toast({ title: "Unexpected Error", description: err.message || "An unexpected error occurred.", variant: "destructive" });
