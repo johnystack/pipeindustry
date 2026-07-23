@@ -128,8 +128,14 @@ const VerifyEmail = () => {
     } else {
       setVerified(true);
       if (validityRef.current) clearInterval(validityRef.current);
-      // Send welcome email now that account is verified
-      sendWelcomeEmail(email.trim(), "");
+      // Send welcome email with actual username/first_name
+      supabase.auth.getUser().then(({ data: userData }) => {
+        const meta = userData?.user?.user_metadata;
+        const nameToUse = meta?.username || meta?.first_name || email.trim().split('@')[0];
+        sendWelcomeEmail(email.trim(), nameToUse, meta?.username);
+      }).catch(() => {
+        sendWelcomeEmail(email.trim(), email.trim().split('@')[0]);
+      });
       toast({ title: "Verified ✓", description: "Account activated. Redirecting to login..." });
       setTimeout(() => navigate("/login"), 2000);
     }

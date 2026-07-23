@@ -21,7 +21,7 @@ BEGIN
   IF p_type = 'welcome' THEN
     v_subject := 'Identity Provisioned - Welcome to TerrasInvestment';
     v_html := '<div style="font-family:sans-serif;padding:40px;border:1px solid #eee;border-radius:20px;text-align:center;max-width:600px;margin:0 auto;">' ||
-              '<h2 style="color:#059669;">Welcome, ' || COALESCE(p_payload->>'first_name', 'Chief') || '!</h2>' ||
+              '<h2 style="color:#059669;">Welcome, ' || COALESCE(NULLIF(p_payload->>'username', ''), NULLIF(p_payload->>'first_name', ''), split_part(p_email, '@', 1), 'Trader') || '!</h2>' ||
               '<p>Your professional trading identity has been successfully verified. You can now access the global hub and begin your trade cycles.</p>' ||
               '<br/><a href="https://terrasinvestment.com/login" style="background:#059669;color:white;padding:15px 30px;text-decoration:none;border-radius:10px;font-weight:bold;">Login to Dashboard</a></div>';
   ELSIF p_type = 'password_reset' THEN
@@ -43,7 +43,7 @@ BEGIN
               '<h2 style="color:#059669;margin-bottom:5px;">Investment Confirmed</h2>' ||
               '<p style="color:#666;font-size:14px;margin-top:0;">Your capital has successfully entered the market.</p>' ||
               '</div>' ||
-              '<p>Hello ' || COALESCE(p_payload->>'first_name', 'Chief') || ',</p>' ||
+              '<p>Hello ' || COALESCE(NULLIF(p_payload->>'username', ''), NULLIF(p_payload->>'first_name', ''), split_part(p_email, '@', 1), 'Trader') || ',</p>' ||
               '<p>This email confirms that your investment of <strong>' || COALESCE(v_amount_text, p_payload->>'amount', '0') || '</strong> in the <strong>' || COALESCE(p_payload->>'plan_name', 'Investment Plan') || '</strong> has been approved by our administrators and is now actively generating returns.</p>' ||
               '<div style="background:#f9f9f9;border:1px solid #eee;border-radius:10px;padding:20px;margin:20px 0;">' ||
               '<table style="width:100%;font-size:14px;border-collapse:collapse;">' ||
@@ -63,7 +63,7 @@ BEGIN
               '<h2 style="color:#d97706;margin-bottom:5px;">Withdrawal Approved</h2>' ||
               '<p style="color:#666;font-size:14px;margin-top:0;">Your withdrawal request has been processed successfully.</p>' ||
               '</div>' ||
-              '<p>Hello ' || COALESCE(p_payload->>'first_name', 'Chief') || ',</p>' ||
+              '<p>Hello ' || COALESCE(NULLIF(p_payload->>'username', ''), NULLIF(p_payload->>'first_name', ''), split_part(p_email, '@', 1), 'Trader') || ',</p>' ||
               '<p>We are writing to confirm that your withdrawal of <strong>' || COALESCE(p_payload->>'amount', '0') || ' ' || COALESCE(p_payload->>'crypto', '') || '</strong> has been fully processed and dispatched to your authorized destination address.</p>' ||
               '<div style="background:#f9f9f9;border:1px solid #eee;border-radius:10px;padding:20px;margin:20px 0;">' ||
               '<table style="width:100%;font-size:14px;border-collapse:collapse;">' ||

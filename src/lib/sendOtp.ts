@@ -37,8 +37,8 @@ export const invokeEmail = async (
 export const sendOtp = (email: string) => invokeEmail("signup_otp", email);
 
 // Shorthand for welcome email
-export const sendWelcomeEmail = (email: string, firstName: string) =>
-  invokeEmail("welcome", email, { first_name: firstName });
+export const sendWelcomeEmail = (email: string, firstName?: string, username?: string) =>
+  invokeEmail("welcome", email, { first_name: firstName, username: username || firstName });
 
 // Shorthand for investment confirmed
 export const sendInvestmentConfirmedEmail = (

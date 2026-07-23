@@ -38,6 +38,16 @@ const wrap = (content: string) => `
   ${content}
 </div></body></html>`;
 
+const getUserDisplayName = (p: any) => {
+  const name = p?.username || p?.first_name || p?.name;
+  if (name && String(name).trim().length > 0) return String(name).trim();
+  if (p?.email && typeof p.email === 'string' && p.email.includes('@')) {
+    const prefix = p.email.split('@')[0];
+    return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+  }
+  return "Trader";
+};
+
 const templates: Record<string, (p: any) => { subject: string; html: string }> = {
 
   signup_otp: (p) => ({
@@ -56,7 +66,7 @@ const templates: Record<string, (p: any) => { subject: string; html: string }> =
     subject: "Welcome to TerrasInvestment — Identity Provisioned",
     html: wrap(`
       <div style="width:56px;height:56px;background:#059669;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:28px;">✓</div>
-      <h2 style="margin:0 0 12px;font-size:22px;font-weight:900;color:#059669;">Welcome, ${p.first_name || "Chief"}!</h2>
+      <h2 style="margin:0 0 12px;font-size:22px;font-weight:900;color:#059669;">Welcome, ${getUserDisplayName(p)}!</h2>
       <p style="color:#94a3b8;font-size:14px;margin:0 0 28px;line-height:1.7;">
         Your trading identity is now active. You can log in and start managing your portfolio on TerrasInvestment.
       </p>
@@ -84,7 +94,7 @@ const templates: Record<string, (p: any) => { subject: string; html: string }> =
     html: wrap(`
       <div style="width:56px;height:56px;background:#059669;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:28px;">📈</div>
       <h2 style="margin:0 0 12px;font-size:22px;font-weight:900;color:#059669;">Investment Confirmed</h2>
-      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;">Hello ${p.first_name || "Chief"}, your investment is now active and generating returns.</p>
+      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;">Hello ${getUserDisplayName(p)}, your investment is now active and generating returns.</p>
       <div style="background:#0f172a;border-radius:14px;padding:20px;margin-bottom:24px;text-align:left;border:1px solid #1e3a2f;">
         <table style="width:100%;font-size:13px;border-collapse:collapse;color:#94a3b8;">
           <tr><td style="padding:8px 0;border-bottom:1px solid #1e293b;">Plan</td>
@@ -107,7 +117,7 @@ const templates: Record<string, (p: any) => { subject: string; html: string }> =
     html: wrap(`
       <div style="width:56px;height:56px;background:#d97706;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:28px;">💸</div>
       <h2 style="margin:0 0 12px;font-size:22px;font-weight:900;color:#d97706;">Withdrawal Dispatched</h2>
-      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;">Hello ${p.first_name || "Chief"}, your withdrawal has been processed.</p>
+      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;">Hello ${getUserDisplayName(p)}, your withdrawal has been processed.</p>
       <div style="background:#0f172a;border-radius:14px;padding:20px;margin-bottom:24px;text-align:left;border:1px solid #1e3a2f;">
         <table style="width:100%;font-size:13px;border-collapse:collapse;color:#94a3b8;">
           <tr><td style="padding:8px 0;border-bottom:1px solid #1e293b;">Amount</td>
@@ -131,11 +141,12 @@ const templates: Record<string, (p: any) => { subject: string; html: string }> =
     subject: "Withdrawal Update — TerrasInvestment",
     html: wrap(`
       <h2 style="margin:0 0 12px;font-size:22px;font-weight:900;color:#ef4444;">Withdrawal Rejected</h2>
-      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;">Hello ${p.first_name || "Chief"}, your withdrawal of <strong style="color:#fff;">₦${Number(p.amount || 0).toLocaleString()}</strong> has been rejected and the amount has been refunded to your balance.</p>
+      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;">Hello ${getUserDisplayName(p)}, your withdrawal of <strong style="color:#fff;">₦${Number(p.amount || 0).toLocaleString()}</strong> has been rejected and the amount has been refunded to your balance.</p>
       <p style="color:#64748b;font-size:12px;">Please contact support if you have any questions.</p>
     `),
   }),
 };
+
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 serve(async (req) => {
