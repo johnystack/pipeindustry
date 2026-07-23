@@ -51,7 +51,7 @@ BEGIN
     PERFORM net.http_post(
         url     := 'https://api.resend.com/emails',
         headers := jsonb_build_object(
-            'Authorization', 'Bearer re_YGiQ6jYV_7vdyWCYUJcRY1AQ6zpEgUBvg',
+            'Authorization', 'Bearer ' || COALESCE(nullif(current_setting('app.settings.resend_api_key', true), ''), 're_YOUR_RESEND_API_KEY'),
             'Content-Type',  'application/json'
         ),
         body    := json_build_object(

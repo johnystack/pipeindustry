@@ -9,7 +9,7 @@ DROP FUNCTION IF EXISTS public.send_verification_email_pg_net;
 CREATE OR REPLACE FUNCTION public.send_email_dispatch(p_email TEXT, p_type TEXT, p_payload JSONB)
 RETURNS VOID AS $$
 DECLARE
-  v_resend_key TEXT := 're_jMGntAbs_BhRjy8y7oPHnGTG41VKieR2t'; -- Your API Key
+  v_resend_key TEXT := COALESCE(nullif(current_setting('app.settings.resend_api_key', true), ''), 're_YOUR_RESEND_API_KEY');
   v_subject TEXT;
   v_html TEXT;
 BEGIN

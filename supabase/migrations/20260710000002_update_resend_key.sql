@@ -3,7 +3,7 @@
 CREATE OR REPLACE FUNCTION public.send_email_dispatch(p_email TEXT, p_type TEXT, p_payload JSONB)
 RETURNS VOID AS $$
 DECLARE
-  v_resend_key TEXT := 're_YGiQ6jYV_7vdyWCYUJcRY1AQ6zpEgUBvg'; -- Updated with active API Key from .env
+  v_resend_key TEXT := COALESCE(nullif(current_setting('app.settings.resend_api_key', true), ''), 're_YOUR_RESEND_API_KEY');
   v_subject TEXT;
   v_html TEXT;
   v_amount_text TEXT;
