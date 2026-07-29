@@ -788,7 +788,189 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6 pt-2 outline-none">
-            {/* ... users content ... */}
+            {/* User Statistics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                    { label: 'Total Users', val: profiles.length, color: 'text-purple-400' },
+                    { label: 'Traders', val: profiles.filter(u => u.role === 'trader' || !u.role || u.role === 'user').length, color: 'text-blue-400' },
+                    { label: 'Vendors', val: profiles.filter(u => u.role === 'vendor').length, color: 'text-emerald-400' },
+                    { label: 'Active Investors', val: profiles.filter(u => u.has_invested).length, color: 'text-amber-400' },
+                ].map((s, i) => (
+                    <div key={i} className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</span>
+                        <span className={cn("text-lg font-black", s.color)}>{s.val}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop Users Table */}
+            <div className="hidden md:block bg-slate-950 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+                <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="bg-white/[0.02] border-b border-white/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+                                <th className="px-4 py-3 text-left">User</th>
+                                <th className="px-4 py-3 text-left">Role</th>
+                                <th className="px-4 py-3 text-left">Withdrawable Balance</th>
+                                <th className="px-4 py-3 text-left">Referral Earnings</th>
+                                <th className="px-4 py-3 text-left">Investor Status</th>
+                                <th className="px-4 py-3 text-left">Joined</th>
+                                <th className="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {profiles
+                                .filter(u =>
+                                    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    u.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    u.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    u.role?.toLowerCase().includes(searchTerm.toLowerCase())
+                                )
+                                .map((user) => (
+                                    <tr key={user.id} className="group hover:bg-white/[0.01] transition-all">
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-9 w-9 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xs uppercase italic shrink-0">
+                                                    {user.first_name?.[0] || user.username?.[0] || 'U'}{user.last_name?.[0] || ''}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h6 className="font-black text-xs uppercase italic truncate max-w-[150px]">
+                                                        {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (user.username || 'Anonymous')}
+                                                    </h6>
+                                                    <p className="text-[8px] font-bold text-muted-foreground truncate max-w-[150px]">{user.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-2 py-0.5",
+                                                user.role === 'admin' ? "border-red-500/50 text-red-400 bg-red-500/10" :
+                                                user.role === 'vendor' ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10" :
+                                                "border-purple-500/50 text-purple-400 bg-purple-500/10"
+                                            )}>
+                                                {user.role || 'user'}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className="text-xs font-black text-white">₦{(user.withdrawable_balance || 0).toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className="text-xs font-black text-emerald-400">₦{(user.referral_earnings || 0).toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-1.5 py-0",
+                                                user.has_invested ? "border-emerald-500/50 text-emerald-400" : "border-white/10 text-white/40"
+                                            )}>
+                                                {user.has_invested ? 'Investor' : 'No Deposit'}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className="text-[8px] text-muted-foreground font-bold">
+                                                {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex justify-end gap-1.5 items-center">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => { setSelectedUser(user); setGiveBonusOpen(true); }}
+                                                    className="h-7 px-2 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 text-[8px] font-black uppercase italic"
+                                                >
+                                                    Bonus
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => { setSelectedUser(user); setDeductBalanceOpen(true); }}
+                                                    className="h-7 px-2 border-red-500/20 text-red-400 hover:bg-red-500/10 text-[8px] font-black uppercase italic"
+                                                >
+                                                    Deduct
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            {profiles.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-xs font-bold uppercase">
+                                        No registered users found
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Mobile Cards for Users */}
+            <div className="flex flex-col gap-3 md:hidden">
+                {profiles
+                    .filter(u =>
+                        u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        u.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        u.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        u.username?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((user) => (
+                        <div key={user.id} className="bg-slate-950 border border-white/5 rounded-2xl p-4 space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="h-10 w-10 shrink-0 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-black text-sm uppercase italic">
+                                        {user.first_name?.[0] || user.username?.[0] || 'U'}{user.last_name?.[0] || ''}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="font-black text-xs uppercase italic truncate">
+                                            {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (user.username || 'Anonymous')}
+                                        </p>
+                                        <p className="text-[9px] text-muted-foreground truncate">{user.email}</p>
+                                    </div>
+                                </div>
+                                <Badge variant="outline" className={cn("shrink-0 text-[7px] font-black uppercase px-2 py-0.5",
+                                    user.role === 'admin' ? "border-red-500/50 text-red-400" :
+                                    user.role === 'vendor' ? "border-emerald-500/50 text-emerald-400" :
+                                    "border-purple-500/50 text-purple-400"
+                                )}>
+                                    {user.role || 'user'}
+                                </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-white/[0.02] rounded-xl p-3">
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Balance</p>
+                                    <p className="text-xs font-black text-white">₦{(user.withdrawable_balance || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-white/[0.02] rounded-xl p-3">
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Referral ROI</p>
+                                    <p className="text-xs font-black text-emerald-400">₦{(user.referral_earnings || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-1">
+                                <Button
+                                    onClick={() => { setSelectedUser(user); setGiveBonusOpen(true); }}
+                                    size="sm"
+                                    className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-[9px] font-black uppercase rounded-xl"
+                                >
+                                    Give Bonus
+                                </Button>
+                                <Button
+                                    onClick={() => { setSelectedUser(user); setDeductBalanceOpen(true); }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 h-9 border-red-500/30 text-red-400 hover:bg-red-500/10 text-[9px] font-black uppercase rounded-xl"
+                                >
+                                    Deduct
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                {profiles.length === 0 && (
+                    <div className="text-center py-16 text-muted-foreground text-xs font-bold uppercase">
+                        No registered users found
+                    </div>
+                )}
+            </div>
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-8 pt-2 outline-none">
