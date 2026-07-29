@@ -7,8 +7,8 @@ export const invokeEmail = async (
 ): Promise<{ success: boolean; message: string }> => {
   const cleanEmail = email.toLowerCase().trim();
 
-  // If OTP email, generate 6-digit code and store in DB table signup_otps
-  if (type === "signup_otp" || type === "password_reset") {
+  // If signup_otp email and no code provided yet, generate code and store in DB
+  if (type === "signup_otp" && !payload.code) {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const { error: rpcErr } = await supabase.rpc("store_signup_otp", {
       p_email: cleanEmail,

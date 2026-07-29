@@ -39,17 +39,20 @@ const ForgotPassword = () => {
 
   // Generate code → send email via edge function → store in DB
   const requestOtp = async (targetEmail: string) => {
+    const cleanEmail = targetEmail.toLowerCase().trim();
     const code = String(Math.floor(100000 + Math.random() * 900000));
 
-    const emailResult = await invokeEmail("password_reset", targetEmail, { code });
-    if (!emailResult.success) throw new Error(emailResult.message);
-
+    // 1. Store in DB first (validates account existence)
     const { data, error } = await supabase.rpc("store_password_reset_otp", {
-      p_email: targetEmail.toLowerCase().trim(),
+      p_email: cleanEmail,
       p_code:  code,
     });
     if (error) throw new Error(error.message);
     if (!data?.success) throw new Error(data?.message || "Failed to save code.");
+
+    // 2. Dispatch email with the matching code
+    const emailResult = await invokeEmail("password_reset", cleanEmail, { code });
+    if (!emailResult.success) throw new Error(emailResult.message);
   };
 
   const handleRequestOTP = async () => {
@@ -71,21 +74,23 @@ const ForgotPassword = () => {
   };
 
   const handleVerifyOTP = async () => {
-    if (otp.length !== 6) {
+    const cleanOtp = otp.trim();
+    const cleanEmail = email.toLowerCase().trim();
+    if (cleanOtp.length !== 6) {
       toast({ title: "Incomplete Code", description: "Enter all 6 digits.", variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("verify_password_reset_otp", {
-        p_email: email.toLowerCase().trim(),
-        p_code:  otp,
+        p_email: cleanEmail,
+        p_code:  cleanOtp,
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.message || "Verification failed.");
 
       toast({ title: "Identity Verified", description: "Set your new password." });
-      navigate("/reset-password", { state: { email, otp_id: data.otp_id } });
+      navigate("/reset-password", { state: { email: cleanEmail, otp_id: data.otp_id } });
     } catch (err: any) {
       toast({ title: "Verification Failed", description: err.message, variant: "destructive" });
     } finally {
