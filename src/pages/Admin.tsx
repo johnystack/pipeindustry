@@ -58,6 +58,7 @@ import EditVendorWalletModal from "@/components/admin/EditVendorWalletModal";
 import { cn } from "@/lib/utils";
 import { Investment, User, VendorPlan, Crypto as Cryptocurrency, Transaction, VendorPaymentWallet } from "@/lib/types";
 import ViewReceiptModal from "@/components/receipts/ViewReceiptModal";
+import ReviewVendorPlanModal from "@/components/admin/ReviewVendorPlanModal";
 
 const Admin = () => {
   const { toast } = useToast();
@@ -108,6 +109,11 @@ const Admin = () => {
   // Receipt Modal State
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+
+  // Vendor Plan Review State
+  const [selectedVendorPlan, setSelectedVendorPlan] = useState<(VendorPlan & { profiles: any }) | null>(null);
+  const [reviewPlanOpen, setReviewPlanOpen] = useState(false);
+  const [planActionLoading, setPlanActionLoading] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -280,6 +286,82 @@ const Admin = () => {
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally { setApproveLoading(null); }
+  };
+
+  const handleApproveVendorPlan = async (planId: string) => {
+    setPlanActionLoading(planId);
+    try {
+      const { error } = await supabase
+        .from("vendor_plans")
+        .update({
+          eligibility_status: "approved",
+          status: "active",
+        })
+        .eq("id", planId);
+
+      if (error) throw error;
+
+      // Send in-app notification to vendor
+      const plan = vendorPlans.find((p) => p.id === planId);
+      if (plan?.vendor_id) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: plan.vendor_id,
+            title: "Investment Plan Approved",
+            message: `Your investment plan "${plan.name}" has been accepted and is now active for investors.`,
+            type: "success",
+          },
+        ]);
+      }
+
+      toast({ title: "Plan Accepted", description: "Vendor investment plan is now active." });
+      await loadData();
+      if (selectedVendorPlan?.id === planId) {
+        setSelectedVendorPlan((prev) => (prev ? { ...prev, eligibility_status: "approved", status: "active" } : null));
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setPlanActionLoading(null);
+    }
+  };
+
+  const handleRejectVendorPlan = async (planId: string) => {
+    setPlanActionLoading(planId);
+    try {
+      const { error } = await supabase
+        .from("vendor_plans")
+        .update({
+          eligibility_status: "rejected",
+          status: "inactive",
+        })
+        .eq("id", planId);
+
+      if (error) throw error;
+
+      // Send in-app notification to vendor
+      const plan = vendorPlans.find((p) => p.id === planId);
+      if (plan?.vendor_id) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: plan.vendor_id,
+            title: "Investment Plan Rejected",
+            message: `Your investment plan "${plan.name}" has been rejected. Please review verification details or contact support.`,
+            type: "error",
+          },
+        ]);
+      }
+
+      toast({ title: "Plan Rejected", description: "Vendor investment plan has been rejected." });
+      await loadData();
+      if (selectedVendorPlan?.id === planId) {
+        setSelectedVendorPlan((prev) => (prev ? { ...prev, eligibility_status: "rejected", status: "inactive" } : null));
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setPlanActionLoading(null);
+    }
   };
 
   const handleDeleteVendorWallet = async (id: string) => {
@@ -732,7 +814,23 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-6 pt-2 outline-none">
-            <div className="bg-slate-950 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Vendor Plans Statistics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                    { label: 'Total Plans', val: vendorPlans.length, color: 'text-white' },
+                    { label: 'Pending Review', val: vendorPlans.filter(p => p.eligibility_status === 'pending').length, color: 'text-amber-400' },
+                    { label: 'Approved & Active', val: vendorPlans.filter(p => p.eligibility_status === 'approved').length, color: 'text-emerald-400' },
+                    { label: 'Rejected', val: vendorPlans.filter(p => p.eligibility_status === 'rejected').length, color: 'text-red-400' },
+                ].map((s, i) => (
+                    <div key={i} className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</span>
+                        <span className={cn("text-lg font-black", s.color)}>{s.val}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-slate-950 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto scrollbar-hide">
                     <table className="w-full border-collapse">
                         <thead>
@@ -741,15 +839,26 @@ const Admin = () => {
                                 <th className="px-4 py-3 text-left">Origin</th>
                                 <th className="px-4 py-3 text-left">Entry/Yield</th>
                                 <th className="px-4 py-3 text-left">Occupancy</th>
+                                <th className="px-4 py-3 text-left">Status</th>
                                 <th className="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {vendorPlans.filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((plan) => (
+                            {vendorPlans
+                                .filter(p =>
+                                    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    p.asset_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    p.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    p.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    p.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                                )
+                                .map((plan) => (
                                 <tr key={plan.id} className="group hover:bg-white/[0.01] transition-all">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center"><Store className="h-5 w-5" /></div>
+                                            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
+                                                <Store className="h-5 w-5" />
+                                            </div>
                                             <div className="min-w-0">
                                                 <h6 className="font-black text-xs uppercase italic truncate max-w-[120px]">{plan.name}</h6>
                                                 <Badge variant="outline" className="text-[7px] font-black uppercase border-white/10 opacity-60 px-1.5 py-0">{plan.asset_type}</Badge>
@@ -770,20 +879,213 @@ const Admin = () => {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="space-y-1">
-                                            <div className="flex items-center gap-1.5 text-[10px] font-black italic">{plan.current_traders}/{plan.max_traders}</div>
+                                            <div className="flex items-center gap-1.5 text-[10px] font-black italic">{plan.current_traders || 0}/{plan.max_traders || 10}</div>
                                             <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                <div className="h-full bg-emerald-500" style={{ width: `${(plan.current_traders / plan.max_traders) * 100}%` }} />
+                                                <div className="h-full bg-emerald-500" style={{ width: `${((plan.current_traders || 0) / (plan.max_traders || 10)) * 100}%` }} />
                                             </div>
                                         </div>
                                     </td>
+                                    <td className="px-4 py-3">
+                                        <Badge
+                                            variant="outline"
+                                            className={cn(
+                                                "text-[7px] font-black uppercase px-2 py-0.5",
+                                                plan.eligibility_status === 'approved'
+                                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                                                    : plan.eligibility_status === 'rejected'
+                                                    ? "border-red-500/30 bg-red-500/10 text-red-400"
+                                                    : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                            )}
+                                        >
+                                            {plan.eligibility_status === 'approved' ? 'Approved' : plan.eligibility_status === 'rejected' ? 'Rejected' : 'Pending'}
+                                        </Badge>
+                                    </td>
                                     <td className="px-4 py-3 text-right">
-                                        <Button size="sm" className="h-7 px-3 bg-white text-black hover:bg-emerald-600 hover:text-white text-[8px] font-black uppercase rounded-lg italic transition-all">Review</Button>
+                                        <div className="flex justify-end items-center gap-1.5">
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedVendorPlan(plan);
+                                                    setReviewPlanOpen(true);
+                                                }}
+                                                className="h-7 px-2.5 bg-white text-black hover:bg-emerald-600 hover:text-white text-[8px] font-black uppercase rounded-lg italic transition-all flex items-center gap-1"
+                                            >
+                                                <Eye className="h-3 w-3" />
+                                                Review
+                                            </Button>
+
+                                            {plan.eligibility_status === 'pending' ? (
+                                                <>
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={planActionLoading === plan.id}
+                                                        onClick={() => handleApproveVendorPlan(plan.id)}
+                                                        className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] font-black uppercase italic transition-all"
+                                                        title="Accept Plan"
+                                                    >
+                                                        {planActionLoading === plan.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Accept'}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled={planActionLoading === plan.id}
+                                                        onClick={() => handleRejectVendorPlan(plan.id)}
+                                                        className="h-7 w-7 border-white/5 text-destructive hover:bg-destructive/10"
+                                                        title="Reject Plan"
+                                                    >
+                                                        <XCircle className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </>
+                                            ) : plan.eligibility_status === 'approved' ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={planActionLoading === plan.id}
+                                                    onClick={() => handleRejectVendorPlan(plan.id)}
+                                                    className="h-7 px-2 border-red-500/20 text-red-400 hover:bg-red-500/10 text-[8px] font-black uppercase italic transition-all"
+                                                    title="Reject Plan"
+                                                >
+                                                    {planActionLoading === plan.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Reject'}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    disabled={planActionLoading === plan.id}
+                                                    onClick={() => handleApproveVendorPlan(plan.id)}
+                                                    className="h-7 px-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] font-black uppercase italic transition-all"
+                                                    title="Accept Plan"
+                                                >
+                                                    {planActionLoading === plan.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Accept'}
+                                                </Button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
+                            {vendorPlans.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-xs font-bold uppercase">
+                                        No vendor investment plans found
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile Vendor Plans Cards */}
+            <div className="flex flex-col gap-3 md:hidden">
+                {vendorPlans
+                    .filter(p =>
+                        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.asset_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((plan) => (
+                    <div key={plan.id} className="bg-slate-950 border border-white/5 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-10 w-10 shrink-0 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                                    <Store className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h6 className="font-black text-xs uppercase italic truncate">{plan.name}</h6>
+                                    <p className="text-[9px] text-muted-foreground truncate">{plan.profiles?.email || 'No email'}</p>
+                                </div>
+                            </div>
+                            <Badge
+                                variant="outline"
+                                className={cn(
+                                    "shrink-0 text-[7px] font-black uppercase px-2 py-0.5",
+                                    plan.eligibility_status === 'approved'
+                                        ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                                        : plan.eligibility_status === 'rejected'
+                                        ? "border-red-500/50 text-red-400 bg-red-500/10"
+                                        : "border-amber-500/50 text-amber-400 bg-amber-500/10"
+                                )}
+                            >
+                                {plan.eligibility_status === 'approved' ? 'Approved' : plan.eligibility_status === 'rejected' ? 'Rejected' : 'Pending'}
+                            </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-white/[0.02] rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Asset & Yield</p>
+                                <p className="text-xs font-black text-emerald-400">{plan.asset_type} • {plan.daily_return_percent}% ROI</p>
+                            </div>
+                            <div className="bg-white/[0.02] rounded-xl p-3">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Entry Price</p>
+                                <p className="text-sm font-black text-white">₦{plan.min_investment?.toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        {plan.eligibility_tx && (
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-2.5">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-emerald-400 mb-1">Verification TX</p>
+                                <p className="text-[9px] font-mono break-all text-white/70">{plan.eligibility_tx}</p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 pt-1">
+                            <Button
+                                onClick={() => {
+                                    setSelectedVendorPlan(plan);
+                                    setReviewPlanOpen(true);
+                                }}
+                                className="flex-1 h-9 bg-white text-black hover:bg-emerald-600 hover:text-white text-[9px] font-black uppercase rounded-xl italic transition-all flex items-center justify-center gap-1"
+                            >
+                                <Eye className="h-3.5 w-3.5" />
+                                Review
+                            </Button>
+
+                            {plan.eligibility_status === 'pending' ? (
+                                <>
+                                    <Button
+                                        onClick={() => handleApproveVendorPlan(plan.id)}
+                                        disabled={planActionLoading === plan.id}
+                                        className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase rounded-xl italic transition-all flex items-center justify-center gap-1"
+                                    >
+                                        {planActionLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Check className="h-3.5 w-3.5 mr-1" />Accept</>}
+                                    </Button>
+                                    <Button
+                                        onClick={() => handleRejectVendorPlan(plan.id)}
+                                        disabled={planActionLoading === plan.id}
+                                        variant="outline"
+                                        className="h-9 w-9 border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl flex items-center justify-center"
+                                        title="Reject Plan"
+                                    >
+                                        <XCircle className="h-4 w-4" />
+                                    </Button>
+                                </>
+                            ) : plan.eligibility_status === 'approved' ? (
+                                <Button
+                                    onClick={() => handleRejectVendorPlan(plan.id)}
+                                    disabled={planActionLoading === plan.id}
+                                    variant="outline"
+                                    className="flex-1 h-9 border-red-500/30 text-red-400 hover:bg-red-500/10 text-[9px] font-black uppercase rounded-xl italic transition-all flex items-center justify-center gap-1"
+                                >
+                                    {planActionLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><X className="h-3.5 w-3.5 mr-1" />Reject</>}
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={() => handleApproveVendorPlan(plan.id)}
+                                    disabled={planActionLoading === plan.id}
+                                    className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase rounded-xl italic transition-all flex items-center justify-center gap-1"
+                                >
+                                    {planActionLoading === plan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Check className="h-3.5 w-3.5 mr-1" />Accept</>}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                {vendorPlans.length === 0 && (
+                    <div className="text-center py-16 text-muted-foreground text-xs font-bold uppercase">
+                        No vendor investment plans found
+                    </div>
+                )}
             </div>
         </TabsContent>
 
@@ -1283,6 +1585,15 @@ const Admin = () => {
         transactionId={receiptId} 
         isOpen={isReceiptOpen} 
         onClose={() => setIsReceiptOpen(false)} 
+      />
+
+      <ReviewVendorPlanModal
+        plan={selectedVendorPlan}
+        isOpen={reviewPlanOpen}
+        onClose={() => setReviewPlanOpen(false)}
+        onApprove={handleApproveVendorPlan}
+        onReject={handleRejectVendorPlan}
+        loading={planActionLoading === selectedVendorPlan?.id}
       />
     </div>
   );
