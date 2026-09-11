@@ -62,14 +62,14 @@ const InvestNow = () => {
     try {
       const { data: planData } = await supabase
         .from("vendor_plans")
-        .select(`*, profiles(username, first_name, last_name)`)
+        .select(`*`)
         .eq("status", "active")
         .eq("eligibility_status", "approved")
         .order("created_at", { ascending: false });
 
       const mappedPlans = planData?.map((plan: any) => ({
         ...plan,
-        vendor_name: plan.profiles?.username || `${plan.profiles?.first_name} ${plan.profiles?.last_name}`.trim() || "Vendor"
+        vendor_name: "Terras"
       })) || [];
       setVendorPlans(mappedPlans);
       if (mappedPlans.length > 0 && !selectedPlanId) setSelectedPlanId(mappedPlans[0].id);
@@ -303,8 +303,8 @@ const InvestNow = () => {
                     <>
                       <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10 space-y-3">
                           <div className="space-y-1">
-                              <p className="text-[8px] font-black text-emerald-600/70 uppercase">Certified Vendor</p>
-                              <p className="font-black text-base">{selectedPlanData.vendor_name}</p>
+                              <p className="text-[8px] font-black text-emerald-600/70 uppercase">Certified Agent</p>
+                              <p className="font-black text-base">Terras</p>
                           </div>
                           <div className="space-y-1">
                               <p className="text-[8px] font-black text-emerald-600/70 uppercase">Detail</p>

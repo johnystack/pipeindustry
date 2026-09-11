@@ -74,10 +74,7 @@ const Invest = () => {
     const fetchVendorPlans = async () => {
       const { data, error } = await supabase
         .from("vendor_plans")
-        .select(`
-          *,
-          profiles(username, first_name, last_name)
-        `)
+        .select(`*`)
         .eq("status", "active")
         .eq("eligibility_status", "approved")
         .order("created_at", { ascending: false });
@@ -87,7 +84,7 @@ const Invest = () => {
       } else {
         const mappedPlans = data?.map((plan: any) => ({
           ...plan,
-          vendor_name: plan.profiles?.username || `${plan.profiles?.first_name} ${plan.profiles?.last_name}`.trim() || "Unknown Vendor"
+          vendor_name: "Terras"
         })) || [];
         setVendorPlans(mappedPlans);
         if (mappedPlans.length > 0) {
