@@ -27,6 +27,18 @@ import teamExperts from "@/assets/team-experts.jpg";
 import successfulInvestor from "@/assets/successful-investor.jpg";
 import happyInvestors from "@/assets/happy-investors.jpg";
 
+const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.414z" />
+  </svg>
+);
+
 const Home = () => {
   const features = [
     {
@@ -112,12 +124,26 @@ const Home = () => {
                 The premier destination for high-stakes commodity wealth. 
                 Invest in verified assets with fixed-price entry.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2.5 md:gap-3">
                 <Link to="/signup" className="w-full sm:w-auto">
-                  <Button className="w-full h-10 md:h-14 px-4 md:px-10 rounded-lg md:rounded-xl bg-primary text-primary-foreground font-black text-[10px] md:text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
-                    Start Trading <ArrowRight className="ml-2 h-3 w-3 md:h-4 md:w-4" />
+                  <Button className="w-full h-9 md:h-14 px-3 md:px-8 rounded-lg md:rounded-xl bg-primary text-primary-foreground font-black text-[9px] md:text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
+                    Start Trading <ArrowRight className="ml-1.5 md:ml-2 h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </Link>
+                <a
+                  href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto"
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full h-9 md:h-14 px-3 md:px-6 rounded-lg md:rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-black text-[9px] md:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 md:gap-2 transition-all hover:scale-105"
+                  >
+                    <WhatsAppIcon className="h-3.5 w-3.5 md:h-4 md:w-4 fill-emerald-400" />
+                    Join Community
+                  </Button>
+                </a>
               </div>
               
               <div className="flex flex-wrap items-center gap-1 md:gap-3 pt-2">
@@ -221,6 +247,70 @@ const Home = () => {
         </div>
       </section>
 
+      {/* WhatsApp Community Section */}
+      <section className="py-8 md:py-16 px-4 md:px-6">
+        <div className="container mx-auto">
+          <div className="relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-slate-900/80 to-slate-950 p-6 md:p-14 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
+            {/* Background Ambient Glows */}
+            <div className="absolute top-0 right-0 -mr-20 -mt-20 h-72 w-72 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-12">
+              <div className="space-y-4 md:space-y-6 text-left max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Official WhatsApp Community
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-[1.05]">
+                  CONNECT WITH OUR <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
+                    TRADING NETWORK
+                  </span>
+                </h2>
+
+                <p className="text-xs md:text-base text-slate-300 font-medium leading-relaxed">
+                  Join our official WhatsApp group to get live trading signals, real-time commodity insights, instant platform updates, and interact directly with fellow investors and administrators.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 pt-1 text-slate-400 text-[9px] md:text-xs font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Real-Time Market Updates
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Direct Admin Support
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Verified Traders Network
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center sm:items-end justify-center w-full lg:w-auto shrink-0">
+                <a
+                  href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto group"
+                >
+                  <Button className="w-full sm:w-auto h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest shadow-2xl shadow-emerald-500/25 group-hover:scale-105 transition-all flex items-center justify-center gap-3">
+                    <WhatsAppIcon className="h-5 w-5 md:h-6 md:w-6 fill-slate-950" />
+                    <span>Join WhatsApp Group</span>
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </a>
+                <p className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-2 text-center sm:text-right">
+                  Free Access • Instant Community Entry
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section id="testimonials" className="py-12 md:py-24">
         <div className="container mx-auto px-6">
@@ -259,11 +349,20 @@ const Home = () => {
               </div>
               <span className="text-base md:text-xl font-black tracking-tighter uppercase italic text-white">TERRASINVESTMENT</span>
           </div>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-10 text-[7px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-10 text-[7px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link to="/support" className="hover:text-white transition-colors">Support</Link>
             <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
+            <a
+              href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+            >
+              <WhatsAppIcon className="h-3 w-3 fill-emerald-500" />
+              WhatsApp Group
+            </a>
           </div>
           <p className="text-slate-600 text-[7px] md:text-[10px] font-bold uppercase tracking-widest">© 2026 TERRASINVESTMENT. TERRAS STATUS SECURED.</p>
         </div>
