@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { sendInvestmentConfirmedEmail } from "@/lib/sendOtp";
 import { User, Investment } from "@/lib/types";
 import {
   Card,
@@ -63,6 +64,32 @@ const UserInvestmentDetails = () => {
       }
       const { error } = await supabase.from("investments").update(updateData).eq("id", id);
       if (error) throw error;
+
+      const inv = investments.find(i => i.id === id);
+      const recipientUserId = inv?.user_id || userId;
+
+      if (inv && status === 'active' && user?.email) {
+        sendInvestmentConfirmedEmail(
+          user.email,
+          user.first_name || "",
+          inv.plan_name || "",
+          inv.amount
+        );
+      }
+
+      if (recipientUserId) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: recipientUserId,
+            title: status === 'active' ? "Investment Approved" : "Investment Rejected",
+            message: status === 'active'
+              ? `Your investment of ₦${Number(inv?.amount || 0).toLocaleString()} in "${inv?.plan_name || 'your plan'}" has been approved and is now active.`
+              : `Your investment of ₦${Number(inv?.amount || 0).toLocaleString()} in "${inv?.plan_name || 'your plan'}" was rejected. Please review payment details or contact support.`,
+            type: status === 'active' ? "success" : "error",
+          },
+        ]);
+      }
+
       toast({ title: status === 'active' ? "Trade Authorized" : "Trade Discarded" });
       fetchData();
     } catch (error: any) {

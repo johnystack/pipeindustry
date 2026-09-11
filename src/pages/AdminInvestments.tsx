@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { sendInvestmentConfirmedEmail } from "@/lib/sendOtp";
 import {
   Card,
   CardContent,
@@ -95,6 +96,33 @@ const AdminInvestments = () => {
         .eq("id", id);
 
       if (error) throw error;
+
+      const inv = investments.find(i => i.id === id);
+      if (inv) {
+        // Send confirmation email if approved
+        if (status === 'active' && inv.profiles?.email) {
+          sendInvestmentConfirmedEmail(
+            inv.profiles.email,
+            inv.profiles.first_name || "",
+            inv.plan_name || "",
+            inv.amount
+          );
+        }
+
+        // Send in-app notification to the user
+        if (inv.user_id) {
+          await supabase.from("notifications").insert([
+            {
+              user_id: inv.user_id,
+              title: status === 'active' ? "Investment Approved" : "Investment Rejected",
+              message: status === 'active'
+                ? `Your investment of ₦${Number(inv.amount).toLocaleString()} in "${inv.plan_name}" has been approved and is now active.`
+                : `Your investment of ₦${Number(inv.amount).toLocaleString()} in "${inv.plan_name}" was rejected. Please review payment details or contact support.`,
+              type: status === 'active' ? "success" : "error",
+            },
+          ]);
+        }
+      }
 
       toast({ 
         title: status === 'active' ? "Trade Activated" : "Trade Rejected",

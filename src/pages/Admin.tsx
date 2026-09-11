@@ -221,6 +221,18 @@ const Admin = () => {
         );
       }
 
+      // Send in-app notification to the user
+      if (inv?.user_id) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: inv.user_id,
+            title: "Investment Approved",
+            message: `Your investment of ₦${Number(inv.amount).toLocaleString()} in "${inv.plan_name}" has been approved and is now active.`,
+            type: "success",
+          },
+        ]);
+      }
+
       toast({ title: "Trade Authorized", description: "Activated successfully." });
       await loadData();
     } catch (error: any) {
@@ -233,6 +245,20 @@ const Admin = () => {
     try {
       const { error } = await supabase.from("investments").update({ status: "denied" }).eq("id", investmentId);
       if (error) throw error;
+
+      // Send in-app notification to the user
+      const inv = investments.find(i => i.id === investmentId);
+      if (inv?.user_id) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: inv.user_id,
+            title: "Investment Rejected",
+            message: `Your investment of ₦${Number(inv.amount).toLocaleString()} in "${inv.plan_name}" was rejected. Please review payment details or contact support.`,
+            type: "error",
+          },
+        ]);
+      }
+
       toast({ title: "Trade Discarded", description: "Denied successfully." });
       await loadData();
     } catch (error: any) {
@@ -258,6 +284,18 @@ const Admin = () => {
         );
       }
 
+      // Send in-app notification to the user
+      if (w?.user_id) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: w.user_id,
+            title: "Withdrawal Approved",
+            message: `Your withdrawal request of ₦${Number(w.amount).toLocaleString()} has been approved and processed.`,
+            type: "success",
+          },
+        ]);
+      }
+
       toast({ title: "Withdrawal Approved", description: "Assets liquidated successfully." });
       await loadData();
     } catch (error: any) {
@@ -279,6 +317,18 @@ const Admin = () => {
           w.profiles.first_name || "",
           w.amount
         );
+      }
+
+      // Send in-app notification to the user
+      if (w?.user_id) {
+        await supabase.from("notifications").insert([
+          {
+            user_id: w.user_id,
+            title: "Withdrawal Rejected",
+            message: `Your withdrawal request of ₦${Number(w.amount).toLocaleString()} was rejected and the balance refunded to your account.`,
+            type: "error",
+          },
+        ]);
       }
 
       toast({ title: "Withdrawal Rejected", description: "Request denied and balance refunded." });

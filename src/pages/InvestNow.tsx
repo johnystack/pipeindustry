@@ -278,7 +278,7 @@ const InvestNow = () => {
                         ) : (
                             <>
                                 <Upload className="h-5 w-5 text-muted-foreground opacity-30" />
-                                <p className="text-[10px] font-bold uppercase tracking-tighter">SELECT FILE</p>
+                                <p className="text-[10px] font-bold uppercase tracking-tighter">UPLOAD RECEIPT</p>
                             </>
                         )}
                     </div>
