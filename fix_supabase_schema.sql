@@ -151,11 +151,13 @@ CREATE TABLE IF NOT EXISTS public.notification_reads (
 CREATE OR REPLACE FUNCTION public.update_due_investments()
 RETURNS void AS $$
 BEGIN
+  -- Multi-stage 6-claim investment logic:
+  -- Investments must only be marked completed once all 6 claim stages (150% total ROI) are claimed.
+  -- Never prematurely conclude investments based on days elapsed while claims remain.
   UPDATE public.investments
   SET status = 'completed'
   WHERE status = 'active'
-  AND approved_at IS NOT NULL
-  AND approved_at <= now() - interval '7 days';
+  AND COALESCE(claimed_amount, 0) >= (amount * 1.5);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
