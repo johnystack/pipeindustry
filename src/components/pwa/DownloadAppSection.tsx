@@ -2,7 +2,6 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Download,
   Smartphone,
   Zap,
   ShieldCheck,
@@ -13,16 +12,23 @@ import {
   Wallet,
   Sparkles,
   ArrowDownToLine,
+  HelpCircle,
 } from "lucide-react";
 
 interface DownloadAppSectionProps {
   onInstallClick: () => void;
   isInstalled: boolean;
+  isMobile?: boolean;
+  isAndroid?: boolean;
+  isIos?: boolean;
 }
 
 export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
   onInstallClick,
   isInstalled,
+  isMobile = false,
+  isAndroid = false,
+  isIos = false,
 }) => {
   return (
     <section id="download-app" className="py-12 md:py-20 px-4 md:px-6 relative overflow-hidden">
@@ -40,18 +46,18 @@ export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
             <div className="lg:col-span-7 space-y-6 text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[8px] md:text-xs font-black uppercase tracking-[0.2em]">
                 <Smartphone className="h-3.5 w-3.5" />
-                Mobile Application
+                Mobile Application (Android & iOS)
               </div>
 
               <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-[1.05]">
-                INSTALL THE OFFICIAL <br />
+                DOWNLOAD & INSTALL <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-primary">
                   TERRAS MOBILE APP
                 </span>
               </h2>
 
               <p className="text-xs md:text-base text-slate-300 font-medium leading-relaxed max-w-xl">
-                Get the full power of the Terras Commodity Platform on your phone. Install in one tap directly from your browser—no app store sign-in, zero storage lag, and ultra-fast trade updates.
+                Get the verified Terras Commodity Platform installed directly on your Android or iPhone. Fast, lightweight, runs in full native mode with instant claim notifications and zero app store waiting.
               </p>
 
               {/* Feature highlights */}
@@ -104,19 +110,27 @@ export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
                   className="h-12 md:h-14 px-8 rounded-xl bg-primary hover:bg-emerald-500 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105 flex items-center gap-3"
                 >
                   <ArrowDownToLine className="h-5 w-5" />
-                  <span>{isInstalled ? "Open Mobile App" : "Download & Install App"}</span>
+                  <span>
+                    {isInstalled
+                      ? "Open Mobile App"
+                      : isAndroid
+                      ? "Install on Android Phone"
+                      : isIos
+                      ? "Install on iPhone / iPad"
+                      : "Download & Install App"}
+                  </span>
                 </Button>
 
                 <div className="flex items-center gap-3 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="h-3.5 w-3.5 text-primary" /> Android
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <CheckCircle className="h-3.5 w-3.5" /> Android Phone
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="h-3.5 w-3.5 text-primary" /> iOS / iPhone
+                  <span>-</span>
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <CheckCircle className="h-3.5 w-3.5" /> iPhone / iPad
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1.5">
+                  <span>-</span>
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     <CheckCircle className="h-3.5 w-3.5 text-primary" /> Desktop
                   </span>
                 </div>
@@ -151,7 +165,7 @@ export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
                   {/* Portfolio Card */}
                   <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white space-y-1 shadow-lg">
                     <p className="text-[7px] font-black uppercase tracking-widest text-emerald-100/70">Liquid Assets</p>
-                    <p className="text-base font-black italic tracking-tight">?1,250,000</p>
+                    <p className="text-base font-black italic tracking-tight">$1,250,000</p>
                     <div className="pt-1 flex items-center justify-between text-[7px] font-bold text-emerald-100/90">
                       <span>Ready to Claim</span>
                       <span className="bg-white/20 px-1.5 py-0.5 rounded uppercase font-black">Stage 1/6</span>
@@ -170,13 +184,13 @@ export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
                       <div className="bg-primary h-full w-1/3 rounded-full" />
                     </div>
                     <p className="text-[7px] text-slate-400 font-bold uppercase tracking-wider">
-                      Cycle: Day 4/24 • Next Claim: 0 Days
+                      Cycle: Day 4/24 - Next Claim: 0 Days
                     </p>
                   </div>
 
                   {/* Claim Button Simulation */}
                   <div className="w-full py-2 bg-primary text-slate-950 rounded-lg text-center font-black text-[9px] uppercase tracking-wider shadow-md">
-                    Claim ?250,000 Now
+                    Claim $250,000 Now
                   </div>
                 </div>
 
@@ -191,7 +205,7 @@ export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
                 </div>
                 <div>
                   <p className="text-[9px] font-black uppercase text-white">Direct Mobile App</p>
-                  <p className="text-[8px] text-primary font-bold">100% Free • One Click</p>
+                  <p className="text-[8px] text-primary font-bold">100% Free - Works on Android & iOS</p>
                 </div>
               </div>
             </div>

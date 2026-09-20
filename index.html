@@ -30,6 +30,14 @@
     <meta name="twitter:site" content="" />
     <meta name="twitter:image" content="/imem.png" />
     <script>
+      // Early capture of beforeinstallprompt to ensure mobile devices never miss the event
+      window.__pwaDeferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.__pwaDeferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+      });
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').catch((err) => {

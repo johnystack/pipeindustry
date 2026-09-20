@@ -29,7 +29,6 @@ import teamExperts from "@/assets/team-experts.jpg";
 import successfulInvestor from "@/assets/successful-investor.jpg";
 import happyInvestors from "@/assets/happy-investors.jpg";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
-import { InstallAppModal } from "@/components/pwa/InstallAppModal";
 import { DownloadAppSection } from "@/components/pwa/DownloadAppSection";
 
 const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
@@ -49,6 +48,8 @@ const Home = () => {
     canInstall,
     isInstalled,
     isIos,
+    isAndroid,
+    isMobile,
     hasNativePrompt,
     isModalOpen,
     setIsModalOpen,
@@ -150,8 +151,8 @@ const Home = () => {
                   variant="outline"
                   className="w-full sm:w-auto h-9 md:h-14 px-3 md:px-6 rounded-lg md:rounded-xl border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-black text-[9px] md:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 md:gap-2 transition-all hover:scale-105"
                 >
-                  <Smartphone className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
-                  Install App
+                  <Download className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  {isInstalled ? "Open App" : "Download App"}
                 </Button>
                 <a
                   href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
@@ -335,7 +336,13 @@ const Home = () => {
       </section>
 
       {/* Download Mobile App Showcase Section */}
-      <DownloadAppSection onInstallClick={promptInstall} isInstalled={isInstalled} />
+      <DownloadAppSection
+        onInstallClick={promptInstall}
+        isInstalled={isInstalled}
+        isMobile={isMobile}
+        isAndroid={isAndroid}
+        isIos={isIos}
+      />
 
       {/* Testimonials */}
       <section id="testimonials" className="py-12 md:py-24">
@@ -393,15 +400,6 @@ const Home = () => {
           <p className="text-slate-600 text-[7px] md:text-[10px] font-bold uppercase tracking-widest">© 2026 TERRASINVESTMENT. TERRAS STATUS SECURED.</p>
         </div>
       </footer>
-
-      <InstallAppModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        promptInstall={promptInstall}
-        hasNativePrompt={hasNativePrompt}
-        isIos={isIos}
-        isInstalled={isInstalled}
-      />
     </div>
   );
 };

@@ -16,6 +16,10 @@ const Header = () => {
     canInstall,
     isInstalled,
     isIos,
+    isAndroid,
+    isMobile,
+    isInAppBrowser,
+    browserName,
     hasNativePrompt,
     isModalOpen,
     setIsModalOpen,
@@ -192,6 +196,10 @@ const Header = () => {
         promptInstall={promptInstall}
         hasNativePrompt={hasNativePrompt}
         isIos={isIos}
+        isAndroid={isAndroid}
+        isMobile={isMobile}
+        isInAppBrowser={isInAppBrowser}
+        browserName={browserName}
         isInstalled={isInstalled}
       />
     </header>
