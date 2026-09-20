@@ -50,15 +50,15 @@ const assetColors: Record<string, string> = {
 const assetPrices: Record<string, number> = {
   Gold: 1000000,
   Bitcoin: 1000000,
-  Palladium: 1000000,
+  Palladium: 10000,
   Platinum: 500000,
   Silver: 500000,
   Nickel: 250000,
   Copper: 250000,
   Aluminum: 100000,
   "Crude Oil": 50000,
-  "Iron Ore": 50000,
-  Lithium: 250000,
+  "Iron Ore": 10000,
+  Lithium: 100000,
   "Natural Gas": 25000,
 };
 

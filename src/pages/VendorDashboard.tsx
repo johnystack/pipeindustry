@@ -39,15 +39,15 @@ const assetIcons: Record<string, any> = {
 const assetPrices: Record<string, number> = {
     Gold: 1000000,
     Bitcoin: 1000000,
-    Palladium: 1000000,
+    Palladium: 10000,
     Platinum: 500000,
     Silver: 500000,
     Nickel: 250000,
     Copper: 250000,
     Aluminum: 100000,
     "Crude Oil": 50000,
-    "Iron Ore": 50000,
-    Lithium: 250000, // Default for those not specified
+    "Iron Ore": 10000,
+    Lithium: 100000,
     "Natural Gas": 25000,
 };
 
@@ -458,16 +458,16 @@ const VendorDashboard = () => {
                             <SelectContent className="rounded-xl">
                                 <SelectItem value="Gold">Gold (₦1,000,000)</SelectItem>
                                 <SelectItem value="Bitcoin">Bitcoin (₦1,000,000)</SelectItem>
-                                <SelectItem value="Palladium">Palladium (₦1,000,000)</SelectItem>
                                 <SelectItem value="Platinum">Platinum (₦500,000)</SelectItem>
                                 <SelectItem value="Silver">Silver (₦500,000)</SelectItem>
                                 <SelectItem value="Nickel">Nickel (₦250,000)</SelectItem>
                                 <SelectItem value="Copper">Copper (₦250,000)</SelectItem>
-                                <SelectItem value="Lithium">Lithium (₦250,000)</SelectItem>
-                                <SelectItem value="Natural Gas">Natural Gas (₦25,000)</SelectItem>
+                                <SelectItem value="Lithium">Lithium (₦100,000)</SelectItem>
                                 <SelectItem value="Aluminum">Aluminum (₦100,000)</SelectItem>
                                 <SelectItem value="Crude Oil">Crude Oil (₦50,000)</SelectItem>
-                                <SelectItem value="Iron Ore">Iron Ore (₦50,000)</SelectItem>
+                                <SelectItem value="Natural Gas">Natural Gas (₦25,000)</SelectItem>
+                                <SelectItem value="Palladium">Palladium (₦10,000)</SelectItem>
+                                <SelectItem value="Iron Ore">Iron Ore (₦10,000)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
