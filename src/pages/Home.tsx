@@ -21,11 +21,16 @@ import {
   Lock,
   Coins,
   ThermometerSnowflake,
+  Smartphone,
+  Download,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import teamExperts from "@/assets/team-experts.jpg";
 import successfulInvestor from "@/assets/successful-investor.jpg";
 import happyInvestors from "@/assets/happy-investors.jpg";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { InstallAppModal } from "@/components/pwa/InstallAppModal";
+import { DownloadAppSection } from "@/components/pwa/DownloadAppSection";
 
 const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg
@@ -40,6 +45,16 @@ const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
 );
 
 const Home = () => {
+  const {
+    canInstall,
+    isInstalled,
+    isIos,
+    hasNativePrompt,
+    isModalOpen,
+    setIsModalOpen,
+    promptInstall,
+  } = usePwaInstall();
+
   const features = [
     {
       icon: Gem,
@@ -130,6 +145,14 @@ const Home = () => {
                     Start Trading <ArrowRight className="ml-1.5 md:ml-2 h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 </Link>
+                <Button
+                  onClick={promptInstall}
+                  variant="outline"
+                  className="w-full sm:w-auto h-9 md:h-14 px-3 md:px-6 rounded-lg md:rounded-xl border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-black text-[9px] md:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 md:gap-2 transition-all hover:scale-105"
+                >
+                  <Smartphone className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  Install App
+                </Button>
                 <a
                   href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
                   target="_blank"
@@ -138,7 +161,7 @@ const Home = () => {
                 >
                   <Button
                     variant="outline"
-                    className="w-full h-9 md:h-14 px-3 md:px-6 rounded-lg md:rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-black text-[9px] md:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 md:gap-2 transition-all hover:scale-105"
+                    className="w-full h-9 md:h-14 px-3 md:px-6 rounded-lg md:rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[9px] md:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 md:gap-2 transition-all hover:scale-105"
                   >
                     <WhatsAppIcon className="h-3.5 w-3.5 md:h-4 md:w-4 fill-emerald-400" />
                     Join Community
@@ -311,6 +334,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Download Mobile App Showcase Section */}
+      <DownloadAppSection onInstallClick={promptInstall} isInstalled={isInstalled} />
+
       {/* Testimonials */}
       <section id="testimonials" className="py-12 md:py-24">
         <div className="container mx-auto px-6">
@@ -367,6 +393,15 @@ const Home = () => {
           <p className="text-slate-600 text-[7px] md:text-[10px] font-bold uppercase tracking-widest">© 2026 TERRASINVESTMENT. TERRAS STATUS SECURED.</p>
         </div>
       </footer>
+
+      <InstallAppModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        promptInstall={promptInstall}
+        hasNativePrompt={hasNativePrompt}
+        isIos={isIos}
+        isInstalled={isInstalled}
+      />
     </div>
   );
 };

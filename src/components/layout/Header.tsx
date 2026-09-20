@@ -1,15 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, TrendingUp, User, LogOut } from "lucide-react";
+import { Menu, TrendingUp, User, LogOut, Download, Smartphone } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { InstallAppModal } from "@/components/pwa/InstallAppModal";
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, avatar_url } = useAuth();
+  const {
+    canInstall,
+    isInstalled,
+    isIos,
+    hasNativePrompt,
+    isModalOpen,
+    setIsModalOpen,
+    promptInstall,
+  } = usePwaInstall();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -42,7 +53,7 @@ const Header = () => {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-7">
           {currentNav.map((item) => (
             <Link
               key={item.name}
@@ -56,6 +67,16 @@ const Header = () => {
               {item.name}
             </Link>
           ))}
+
+          {/* Download App Nav Button */}
+          <button
+            onClick={promptInstall}
+            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-all bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/20 shadow-sm hover:scale-105"
+            title="Download & Install Terras Mobile App"
+          >
+            <Download className="h-3 w-3" />
+            <span>Download App</span>
+          </button>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -116,6 +137,20 @@ const Header = () => {
                     </Link>
                   ))}
 
+                  {/* Download App Mobile Nav Link */}
+                  <button
+                    onClick={() => {
+                      promptInstall();
+                    }}
+                    className="flex items-center justify-between px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-left"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Smartphone className="h-4 w-4" />
+                      Download App
+                    </span>
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+
                   {!user ? (
                     <div className="mt-4 pt-4 border-t border-white/5 space-y-3 px-2">
                       <Link to="/login">
@@ -150,6 +185,15 @@ const Header = () => {
           </Sheet>
         </div>
       </div>
+
+      <InstallAppModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        promptInstall={promptInstall}
+        hasNativePrompt={hasNativePrompt}
+        isIos={isIos}
+        isInstalled={isInstalled}
+      />
     </header>
   );
 };
