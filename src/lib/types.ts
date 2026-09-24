@@ -138,7 +138,7 @@ export interface Referral {
   name: string;
   email: string;
   joinDate: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Pending' | 'Pending Approval' | 'Not Invested';
   invested: string;
   commission: string;
 }

@@ -38,6 +38,8 @@ const Referrals = () => {
   const [referralStats, setReferralStats] = useState({
     total_referrals: 0,
     active_referrals: 0,
+    pending_referrals: 0,
+    total_signups: 0,
     total_earned: 0,
     currentLevel: "Level 0",
     currentPercent: 0,
@@ -171,26 +173,32 @@ const Referrals = () => {
             <Users className="h-12 w-12 text-blue-500" />
           </div>
           <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5">
-            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground tracking-widest truncate">Total Referrals</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 md:px-5 pb-4 md:pb-5">
-            <div className="text-xl md:text-3xl font-black tracking-tighter italic">
-              {referralStats.total_referrals || 0}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-900/50 border border-white/5 shadow-lg rounded-2xl overflow-hidden relative group hover:bg-white/[0.02] transition-all">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform hidden sm:block">
-            <TrendingUp className="h-12 w-12 text-emerald-500" />
-          </div>
-          <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5">
-            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground tracking-widest truncate">Active Referrals</CardTitle>
+            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground tracking-widest truncate">Qualified Referrals</CardTitle>
           </CardHeader>
           <CardContent className="px-4 md:px-5 pb-4 md:pb-5">
             <div className="text-xl md:text-3xl font-black tracking-tighter italic">
               {referralStats.active_referrals || 0}
             </div>
+            <p className="text-[8px] md:text-[9px] font-bold text-emerald-400/80 uppercase tracking-tight mt-0.5">
+              Invested & Approved
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/50 border border-white/5 shadow-lg rounded-2xl overflow-hidden relative group hover:bg-white/[0.02] transition-all">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform hidden sm:block">
+            <TrendingUp className="h-12 w-12 text-amber-500" />
+          </div>
+          <CardHeader className="pb-1 px-4 md:px-5 pt-4 md:pt-5">
+            <CardTitle className="text-[7px] md:text-[9px] uppercase font-black text-muted-foreground tracking-widest truncate">Pending Signups</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 md:px-5 pb-4 md:pb-5">
+            <div className="text-xl md:text-3xl font-black tracking-tighter italic">
+              {(referralStats.pending_referrals ?? Math.max(0, (referralStats.total_referrals || 0) - (referralStats.active_referrals || 0))) || 0}
+            </div>
+            <p className="text-[8px] md:text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tight mt-0.5">
+              Awaiting Investment
+            </p>
           </CardContent>
         </Card>
 
@@ -386,14 +394,18 @@ const Referrals = () => {
                       <Badge
                         className={cn(
                           "font-black px-2.5 py-0.5 text-[8px] tracking-widest uppercase italic",
-                          referral.status === "Active" ? "bg-emerald-500 text-white" : "bg-slate-800 text-muted-foreground"
+                          referral.status === "Active"
+                            ? "bg-emerald-500 text-white"
+                            : referral.status === "Pending Approval"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            : "bg-slate-800 text-muted-foreground border border-white/5"
                         )}
                       >
                         {referral.status}
                       </Badge>
                       <div className="text-[9px] md:text-[10px] font-black italic space-x-3">
-                        <span className="opacity-40 uppercase tracking-tighter">Vol: {referral.invested}</span>
-                        <span className="text-emerald-500">Yield: {referral.commission}</span>
+                        <span className="opacity-40 uppercase tracking-tighter">Vol: ₦{Number(referral.invested || 0).toLocaleString()}</span>
+                        <span className="text-emerald-500">Yield: ₦{Number(referral.commission || 0).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>

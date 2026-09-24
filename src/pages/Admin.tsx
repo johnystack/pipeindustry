@@ -49,9 +49,9 @@ import {
   X,
   CreditCard,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { DeductBalanceModal } from "@/components/admin/DeductBalanceModal";
-import GiveBonusModal from "@/components/admin/GiveBonusModal";
+import UserInvestmentModal from "@/components/admin/UserInvestmentModal";
 import EditCryptoModal from "@/components/admin/EditCryptoModal";
 import CreateVendorWalletModal from "@/components/admin/CreateVendorWalletModal";
 import EditVendorWalletModal from "@/components/admin/EditVendorWalletModal";
@@ -102,8 +102,7 @@ const Admin = () => {
   const [editVendorWalletOpen, setEditVendorWalletOpen] = useState(false);
   const [createVendorWalletOpen, setCreateVendorWalletOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [giveBonusOpen, setGiveBonusOpen] = useState(false);
-  const [deductBalanceOpen, setDeductBalanceOpen] = useState(false);
+  const [userInvestmentModalOpen, setUserInvestmentModalOpen] = useState(false);
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
 
   // Receipt Modal State
@@ -1144,9 +1143,9 @@ const Admin = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                     { label: 'Total Users', val: profiles.length, color: 'text-purple-400' },
-                    { label: 'Traders', val: profiles.filter(u => u.role === 'trader' || !u.role || u.role === 'user').length, color: 'text-blue-400' },
-                    { label: 'Vendors', val: profiles.filter(u => u.role === 'vendor').length, color: 'text-emerald-400' },
-                    { label: 'Active Investors', val: profiles.filter(u => u.has_invested).length, color: 'text-amber-400' },
+                    { label: 'Active Investors', val: profiles.filter(u => u.has_invested || investments.some(i => i.user_id === u.id && i.status === 'active')).length, color: 'text-emerald-400' },
+                    { label: 'Active Capital', val: `₦${investments.filter(i => i.status === 'active').reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()}`, color: 'text-white' },
+                    { label: 'Total Paid Out', val: `₦${investments.reduce((sum, i) => sum + (Number(i.claimed_amount) || 0), 0).toLocaleString()}`, color: 'text-amber-400' },
                 ].map((s, i) => (
                     <div key={i} className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 flex items-center justify-between">
                         <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</span>
@@ -1162,11 +1161,11 @@ const Admin = () => {
                         <thead>
                             <tr className="bg-white/[0.02] border-b border-white/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
                                 <th className="px-4 py-3 text-left">User</th>
-                                <th className="px-4 py-3 text-left">Role</th>
-                                <th className="px-4 py-3 text-left">Withdrawable Balance</th>
-                                <th className="px-4 py-3 text-left">Referral Earnings</th>
-                                <th className="px-4 py-3 text-left">Investor Status</th>
-                                <th className="px-4 py-3 text-left">Joined</th>
+                                <th className="px-4 py-3 text-left">Role / Status</th>
+                                <th className="px-4 py-3 text-left">Invested Capital</th>
+                                <th className="px-4 py-3 text-left">Total Withdrawn</th>
+                                <th className="px-4 py-3 text-left">Left On Execution</th>
+                                <th className="px-4 py-3 text-left">Wallet Balance</th>
                                 <th className="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -1179,70 +1178,126 @@ const Admin = () => {
                                     u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                     u.role?.toLowerCase().includes(searchTerm.toLowerCase())
                                 )
-                                .map((user) => (
-                                    <tr key={user.id} className="group hover:bg-white/[0.01] transition-all">
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-9 w-9 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xs uppercase italic shrink-0">
-                                                    {user.first_name?.[0] || user.username?.[0] || 'U'}{user.last_name?.[0] || ''}
+                                .map((user) => {
+                                    const userInvs = investments.filter(i => i.user_id === user.id);
+                                    const activeInvs = userInvs.filter(i => i.status === 'active');
+                                    const completedInvs = userInvs.filter(i => i.status === 'completed' || i.status === 'withdrawn');
+                                    
+                                    // 1. What they invested
+                                    const activeInvested = activeInvs.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+                                    const lifetimeInvested = userInvs
+                                        .filter(i => ['active', 'completed', 'withdrawn'].includes(i.status))
+                                        .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+                                    
+                                    // 2. How much withdrawn
+                                    const totalClaimed = userInvs.reduce((sum, i) => sum + (Number(i.claimed_amount) || 0), 0);
+                                    const userWiths = withdrawals.filter(w => w.user_id === user.id);
+                                    const completedBankWithdrawn = userWiths
+                                        .filter(w => w.status === 'completed')
+                                        .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+                                    const pendingBankWithdrawn = userWiths
+                                        .filter(w => w.status === 'pending')
+                                        .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+                                    
+                                    // 3. Left on plan execution
+                                    const totalActiveTarget = activeInvs.reduce((sum, i) => sum + (Number(i.amount) || 0) * 1.5, 0);
+                                    const totalActiveClaimed = activeInvs.reduce((sum, i) => sum + (Number(i.claimed_amount) || 0), 0);
+                                    const totalLeftOnPlan = Math.max(0, totalActiveTarget - totalActiveClaimed);
+                                    const progressPercent = totalActiveTarget > 0 
+                                        ? Math.min(100, Math.round((totalActiveClaimed / totalActiveTarget) * 100)) 
+                                        : (activeInvs.length === 0 && completedInvs.length > 0 ? 100 : 0);
+
+                                    return (
+                                        <tr key={user.id} className="group hover:bg-white/[0.01] transition-all">
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-9 w-9 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xs uppercase italic shrink-0">
+                                                        {user.first_name?.[0] || user.username?.[0] || 'U'}{user.last_name?.[0] || ''}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h6 className="font-black text-xs uppercase italic truncate max-w-[150px]">
+                                                            {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (user.username || 'Anonymous')}
+                                                        </h6>
+                                                        <p className="text-[8px] font-bold text-muted-foreground truncate max-w-[150px]">{user.email}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <h6 className="font-black text-xs uppercase italic truncate max-w-[150px]">
-                                                        {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (user.username || 'Anonymous')}
-                                                    </h6>
-                                                    <p className="text-[8px] font-bold text-muted-foreground truncate max-w-[150px]">{user.email}</p>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-2 py-0.5",
+                                                        user.role === 'admin' ? "border-red-500/50 text-red-400 bg-red-500/10" :
+                                                        user.role === 'vendor' ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10" :
+                                                        "border-purple-500/50 text-purple-400 bg-purple-500/10"
+                                                    )}>
+                                                        {user.role || 'user'}
+                                                    </Badge>
+                                                    {activeInvs.length > 0 ? (
+                                                        <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[6.5px] font-black uppercase px-1.5 py-0">
+                                                            Active Investor
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="border-white/10 text-white/40 text-[6.5px] font-black uppercase px-1.5 py-0">
+                                                            {completedInvs.length > 0 ? 'Completed' : 'No Deposit'}
+                                                        </Badge>
+                                                    )}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-2 py-0.5",
-                                                user.role === 'admin' ? "border-red-500/50 text-red-400 bg-red-500/10" :
-                                                user.role === 'vendor' ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10" :
-                                                "border-purple-500/50 text-purple-400 bg-purple-500/10"
-                                            )}>
-                                                {user.role || 'user'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-xs font-black text-white">₦{(user.withdrawable_balance || 0).toLocaleString()}</span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-xs font-black text-emerald-400">₦{(user.referral_earnings || 0).toLocaleString()}</span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-1.5 py-0",
-                                                user.has_invested ? "border-emerald-500/50 text-emerald-400" : "border-white/10 text-white/40"
-                                            )}>
-                                                {user.has_invested ? 'Investor' : 'No Deposit'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-[8px] text-muted-foreground font-bold">
-                                                {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1.5 items-center">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => { setSelectedUser(user); setGiveBonusOpen(true); }}
-                                                    className="h-7 px-2 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 text-[8px] font-black uppercase italic"
-                                                >
-                                                    Bonus
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => { setSelectedUser(user); setDeductBalanceOpen(true); }}
-                                                    className="h-7 px-2 border-red-500/20 text-red-400 hover:bg-red-500/10 text-[8px] font-black uppercase italic"
-                                                >
-                                                    Deduct
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-black text-white italic">₦{activeInvested.toLocaleString()}</span>
+                                                    <p className="text-[7.5px] text-muted-foreground font-bold">
+                                                        {activeInvs.length > 0
+                                                            ? `${activeInvs.length} Active Plan${activeInvs.length > 1 ? 's' : ''}`
+                                                            : (lifetimeInvested > 0 ? `Past: ₦${lifetimeInvested.toLocaleString()}` : 'None')}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-black text-emerald-400 italic">₦{totalClaimed.toLocaleString()}</span>
+                                                    <p className="text-[7.5px] text-muted-foreground font-bold">
+                                                        Bank: ₦{completedBankWithdrawn.toLocaleString()}
+                                                        {pendingBankWithdrawn > 0 && <span className="text-amber-400"> (₦{pendingBankWithdrawn.toLocaleString()} pend)</span>}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-black text-amber-400 italic">₦{totalLeftOnPlan.toLocaleString()}</span>
+                                                    {activeInvs.length > 0 ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Progress value={progressPercent} className="h-1 w-12 bg-slate-900" />
+                                                            <span className="text-[7.5px] font-bold text-muted-foreground">{progressPercent}%</span>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[7.5px] text-muted-foreground font-bold">
+                                                            {completedInvs.length > 0 ? '100% Executed' : 'No Active Plan'}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-black text-cyan-400 italic">₦{(user.withdrawable_balance || 0).toLocaleString()}</span>
+                                                    <p className="text-[7.5px] text-muted-foreground font-bold">ROI: ₦{(user.referral_earnings || 0).toLocaleString()}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <div className="flex justify-end gap-1.5 items-center">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => { setSelectedUser(user); setUserInvestmentModalOpen(true); }}
+                                                        className="h-7 px-2.5 border-primary/30 text-primary hover:bg-primary/10 text-[8px] font-black uppercase italic flex items-center gap-1.5 rounded-lg"
+                                                    >
+                                                        <Eye className="h-3 w-3" />
+                                                        <span>Details</span>
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             {profiles.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-xs font-bold uppercase">
@@ -1264,59 +1319,108 @@ const Admin = () => {
                         u.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         u.username?.toLowerCase().includes(searchTerm.toLowerCase())
                     )
-                    .map((user) => (
-                        <div key={user.id} className="bg-slate-950 border border-white/5 rounded-2xl p-4 space-y-3">
-                            <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="h-10 w-10 shrink-0 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-black text-sm uppercase italic">
-                                        {user.first_name?.[0] || user.username?.[0] || 'U'}{user.last_name?.[0] || ''}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="font-black text-xs uppercase italic truncate">
-                                            {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (user.username || 'Anonymous')}
-                                        </p>
-                                        <p className="text-[9px] text-muted-foreground truncate">{user.email}</p>
-                                    </div>
-                                </div>
-                                <Badge variant="outline" className={cn("shrink-0 text-[7px] font-black uppercase px-2 py-0.5",
-                                    user.role === 'admin' ? "border-red-500/50 text-red-400" :
-                                    user.role === 'vendor' ? "border-emerald-500/50 text-emerald-400" :
-                                    "border-purple-500/50 text-purple-400"
-                                )}>
-                                    {user.role || 'user'}
-                                </Badge>
-                            </div>
+                    .map((user) => {
+                        const userInvs = investments.filter(i => i.user_id === user.id);
+                        const activeInvs = userInvs.filter(i => i.status === 'active');
+                        const completedInvs = userInvs.filter(i => i.status === 'completed' || i.status === 'withdrawn');
+                        
+                        // 1. What they invested
+                        const activeInvested = activeInvs.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+                        const lifetimeInvested = userInvs
+                            .filter(i => ['active', 'completed', 'withdrawn'].includes(i.status))
+                            .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+                        
+                        // 2. How much withdrawn
+                        const totalClaimed = userInvs.reduce((sum, i) => sum + (Number(i.claimed_amount) || 0), 0);
+                        const userWiths = withdrawals.filter(w => w.user_id === user.id);
+                        const completedBankWithdrawn = userWiths
+                            .filter(w => w.status === 'completed')
+                            .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+                        
+                        // 3. Left on plan execution
+                        const totalActiveTarget = activeInvs.reduce((sum, i) => sum + (Number(i.amount) || 0) * 1.5, 0);
+                        const totalActiveClaimed = activeInvs.reduce((sum, i) => sum + (Number(i.claimed_amount) || 0), 0);
+                        const totalLeftOnPlan = Math.max(0, totalActiveTarget - totalActiveClaimed);
+                        const progressPercent = totalActiveTarget > 0 
+                            ? Math.min(100, Math.round((totalActiveClaimed / totalActiveTarget) * 100)) 
+                            : (activeInvs.length === 0 && completedInvs.length > 0 ? 100 : 0);
 
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-white/[0.02] rounded-xl p-3">
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Balance</p>
-                                    <p className="text-xs font-black text-white">₦{(user.withdrawable_balance || 0).toLocaleString()}</p>
+                        return (
+                            <div key={user.id} className="bg-slate-950 border border-white/5 rounded-2xl p-4 space-y-3">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="h-10 w-10 shrink-0 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-black text-sm uppercase italic">
+                                            {user.first_name?.[0] || user.username?.[0] || 'U'}{user.last_name?.[0] || ''}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-black text-xs uppercase italic truncate">
+                                                {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (user.username || 'Anonymous')}
+                                            </p>
+                                            <p className="text-[9px] text-muted-foreground truncate">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1 shrink-0">
+                                        <Badge variant="outline" className={cn("text-[7px] font-black uppercase px-2 py-0.5",
+                                            user.role === 'admin' ? "border-red-500/50 text-red-400" :
+                                            user.role === 'vendor' ? "border-emerald-500/50 text-emerald-400" :
+                                            "border-purple-500/50 text-purple-400"
+                                        )}>
+                                            {user.role || 'user'}
+                                        </Badge>
+                                        {activeInvs.length > 0 && (
+                                            <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[6.5px] font-black uppercase px-1.5 py-0">
+                                                Active
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="bg-white/[0.02] rounded-xl p-3">
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Referral ROI</p>
-                                    <p className="text-xs font-black text-emerald-400">₦{(user.referral_earnings || 0).toLocaleString()}</p>
-                                </div>
-                            </div>
 
-                            <div className="flex gap-2 pt-1">
-                                <Button
-                                    onClick={() => { setSelectedUser(user); setGiveBonusOpen(true); }}
-                                    size="sm"
-                                    className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-[9px] font-black uppercase rounded-xl"
-                                >
-                                    Give Bonus
-                                </Button>
-                                <Button
-                                    onClick={() => { setSelectedUser(user); setDeductBalanceOpen(true); }}
-                                    size="sm"
-                                    variant="outline"
-                                    className="flex-1 h-9 border-red-500/30 text-red-400 hover:bg-red-500/10 text-[9px] font-black uppercase rounded-xl"
-                                >
-                                    Deduct
-                                </Button>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Invested Capital</p>
+                                        <p className="text-xs font-black text-white italic">₦{activeInvested.toLocaleString()}</p>
+                                        <p className="text-[7px] text-muted-foreground font-bold mt-0.5">{activeInvs.length} active</p>
+                                    </div>
+                                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Total Withdrawn</p>
+                                        <p className="text-xs font-black text-emerald-400 italic">₦{totalClaimed.toLocaleString()}</p>
+                                        <p className="text-[7px] text-muted-foreground font-bold mt-0.5">Bank: ₦{completedBankWithdrawn.toLocaleString()}</p>
+                                    </div>
+                                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Left On Plan</p>
+                                        <p className="text-xs font-black text-amber-400 italic">₦{totalLeftOnPlan.toLocaleString()}</p>
+                                        <p className="text-[7px] text-muted-foreground font-bold mt-0.5">{progressPercent}% executed</p>
+                                    </div>
+                                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1">Wallet Balance</p>
+                                        <p className="text-xs font-black text-cyan-400 italic">₦{(user.withdrawable_balance || 0).toLocaleString()}</p>
+                                        <p className="text-[7px] text-muted-foreground font-bold mt-0.5">Ref: ₦{(user.referral_earnings || 0).toLocaleString()}</p>
+                                    </div>
+                                </div>
+
+                                {activeInvs.length > 0 && (
+                                    <div className="space-y-1 bg-white/[0.01] p-2.5 rounded-xl border border-white/5">
+                                        <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest text-muted-foreground">
+                                            <span>Execution Progress</span>
+                                            <span className="text-amber-400 font-bold">{progressPercent}%</span>
+                                        </div>
+                                        <Progress value={progressPercent} className="h-1 bg-slate-900" />
+                                    </div>
+                                )}
+
+                                <div className="pt-1">
+                                    <Button
+                                        onClick={() => { setSelectedUser(user); setUserInvestmentModalOpen(true); }}
+                                        size="sm"
+                                        className="w-full h-9 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-[9px] font-black uppercase rounded-xl flex items-center justify-center gap-1.5"
+                                    >
+                                        <Eye className="h-3.5 w-3.5" />
+                                        <span>View Investment Details ({userInvs.length})</span>
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 {profiles.length === 0 && (
                     <div className="text-center py-16 text-muted-foreground text-xs font-bold uppercase">
                         No registered users found
@@ -1611,10 +1715,19 @@ const Admin = () => {
       </Tabs>
 
       <EditCryptoModal crypto={selectedCrypto} isOpen={editCryptoOpen} onClose={() => setEditCryptoOpen(false)} onSave={crypto => { setCryptos(cryptos.map(c => c.id === crypto.id ? crypto : c)); setEditCryptoOpen(false); }} />
-      <GiveBonusModal isOpen={giveBonusOpen} onClose={() => setGiveBonusOpen(false)} user={selectedUser} onBonusAdded={() => { loadData(); setGiveBonusOpen(false); }} />
-      {selectedUser && (
-        <DeductBalanceModal userId={selectedUser.id} isOpen={deductBalanceOpen} onClose={() => { setDeductBalanceOpen(false); loadData(); }} onOpenChange={setDeductBalanceOpen} />
-      )}
+      <UserInvestmentModal
+        user={selectedUser}
+        isOpen={userInvestmentModalOpen}
+        onClose={() => setUserInvestmentModalOpen(false)}
+        investments={investments}
+        withdrawals={withdrawals}
+        onApproveInvestment={handleApprove}
+        onRejectInvestment={handleReject}
+        onViewReceipt={(invId) => {
+          setReceiptId(invId);
+          setIsReceiptOpen(true);
+        }}
+      />
 
       {/* Vendor Wallet Modals */}
       <CreateVendorWalletModal 
