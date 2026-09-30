@@ -27,6 +27,46 @@ export const LiveActivityFeed = () => {
 
   const fetchActivities = async () => {
     try {
+      // 1. Try secure aggregated RPC function first
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_live_activity_feed');
+      if (!rpcError && rpcData) {
+        const combinedRpc: ActivityEvent[] = [];
+        (rpcData.signups || []).forEach((s: any) => combinedRpc.push({
+          id: `reg-${s.id}`,
+          type: 'registration',
+          user_name: s.username || 'Anonymous',
+          timestamp: s.created_at
+        }));
+        (rpcData.investments || []).forEach((i: any) => combinedRpc.push({
+          id: `inv-${i.id}`,
+          type: 'investment',
+          user_name: i.username || 'Anonymous',
+          amount: i.amount,
+          plan_name: i.plan_name,
+          timestamp: i.created_at
+        }));
+        (rpcData.transactions || []).forEach((t: any) => combinedRpc.push({
+          id: `tx-${t.id}`,
+          type: t.type === 'withdrawal' ? 'cashout' : 'claim',
+          user_name: t.username || 'Anonymous',
+          amount: t.amount,
+          timestamp: t.created_at
+        }));
+        (rpcData.plans || []).forEach((p: any) => combinedRpc.push({
+          id: `plan-${p.id}`,
+          type: 'vendor_plan',
+          user_name: 'Vendor',
+          plan_name: p.name,
+          timestamp: p.created_at
+        }));
+        combinedRpc.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        if (combinedRpc.length > 0) {
+          setActivities(combinedRpc.slice(0, 30));
+          return;
+        }
+      }
+
+      // 2. Fallback to direct queries
       const [
         signupsRes,
         investmentsRes,

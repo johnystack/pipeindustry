@@ -72,6 +72,7 @@ const Signup = () => {
 
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
+      const safeRole = formData.role === "vendor" ? "vendor" : "trader";
 
       const { data, error } = await supabase.auth.signUp({
         email: cleanEmail,
@@ -82,7 +83,7 @@ const Signup = () => {
             last_name: formData.lastName.trim(),
             username: formData.username.trim(),
             referral_code: formData.referralCode.trim(),
-            role: formData.role,
+            role: safeRole,
             status: "pending",
           },
         },

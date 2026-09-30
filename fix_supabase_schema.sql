@@ -148,6 +148,89 @@ CREATE TABLE IF NOT EXISTS public.notification_reads (
   UNIQUE(notification_id, user_id)
 );
 
+-- 5b. FIX CRYPTOCURRENCIES TABLE
+CREATE TABLE IF NOT EXISTS public.cryptocurrencies (
+  id TEXT PRIMARY KEY,
+  symbol TEXT NOT NULL,
+  name TEXT NOT NULL,
+  color TEXT,
+  network TEXT,
+  fee NUMERIC DEFAULT 0,
+  min_withdraw NUMERIC DEFAULT 0,
+  address TEXT DEFAULT ''
+);
+
+ALTER TABLE public.cryptocurrencies 
+  ADD COLUMN IF NOT EXISTS address TEXT DEFAULT '';
+
+INSERT INTO public.cryptocurrencies (id, symbol, name, color, network, fee, min_withdraw, address) VALUES
+('bitcoin', 'BTC', 'Bitcoin', 'text-orange-400', 'Bitcoin', 0.0002, 0.001, ''),
+('ethereum', 'ETH', 'Ethereum', 'text-gray-400', 'ERC20', 0.001, 0.01, ''),
+('tether', 'USDT', 'Tether', 'text-green-400', 'TRC20', 1, 10, '')
+ON CONFLICT (id) DO NOTHING;
+
+-- 5c. FIX VENDOR PAYMENT WALLETS TABLE
+CREATE TABLE IF NOT EXISTS public.vendor_payment_wallets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  address TEXT NOT NULL,
+  network TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO public.vendor_payment_wallets (name, symbol, address, network)
+SELECT 'Bitcoin', 'BTC', 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', 'Bitcoin'
+WHERE NOT EXISTS (SELECT 1 FROM public.vendor_payment_wallets WHERE symbol = 'BTC');
+
+INSERT INTO public.vendor_payment_wallets (name, symbol, address, network)
+SELECT 'Ethereum', 'ETH', '0x742d35Cc6634C0532925a3b8D4C9db96590b5c8e', 'Ethereum'
+WHERE NOT EXISTS (SELECT 1 FROM public.vendor_payment_wallets WHERE symbol = 'ETH');
+
+INSERT INTO public.vendor_payment_wallets (name, symbol, address, network)
+SELECT 'Tether USDT', 'USDT', 'TQn9Y2khEsLJW1ChVWFMSMeRDow5oREqjK', 'Tron TRC20'
+WHERE NOT EXISTS (SELECT 1 FROM public.vendor_payment_wallets WHERE symbol = 'USDT');
+
+INSERT INTO public.vendor_payment_wallets (name, symbol, address, network)
+SELECT 'USDC', 'USDC', '0x742d35Cc6634C0532925a3b8D4C9db96590b5c8e', 'Ethereum ERC20'
+WHERE NOT EXISTS (SELECT 1 FROM public.vendor_payment_wallets WHERE symbol = 'USDC');
+
+-- 5d. FIX SETTINGS TABLE
+CREATE TABLE IF NOT EXISTS public.settings (
+  id BIGINT PRIMARY KEY DEFAULT 1,
+  min_withdrawal_amount NUMERIC DEFAULT 50,
+  max_withdrawal_amount NUMERIC DEFAULT 10000,
+  withdrawal_fee_percent NUMERIC DEFAULT 2,
+  level1_commission_percent NUMERIC DEFAULT 10,
+  level2_commission_percent NUMERIC DEFAULT 5,
+  level3_commission_percent NUMERIC DEFAULT 2
+);
+
+INSERT INTO public.settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- 5e. FIX OTP TABLES
+CREATE TABLE IF NOT EXISTS public.signup_otps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  verified BOOLEAN DEFAULT FALSE
+);
+CREATE INDEX IF NOT EXISTS idx_signup_otps_email ON public.signup_otps(LOWER(email));
+
+CREATE TABLE IF NOT EXISTS public.password_reset_otps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  verified BOOLEAN DEFAULT FALSE
+);
+CREATE INDEX IF NOT EXISTS idx_password_reset_otps_email ON public.password_reset_otps(LOWER(email));
+
 -- 6. FIX RPC FUNCTIONS
 CREATE OR REPLACE FUNCTION public.update_due_investments()
 RETURNS void AS $$
@@ -346,6 +429,10 @@ RETURNS JSONB AS $$
 DECLARE
   v_earnings NUMERIC;
 BEGIN
+  IF auth.uid() IS NULL OR (auth.uid() != p_user_id AND NOT public.is_admin(auth.uid())) THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Unauthorized.');
+  END IF;
+
   SELECT referral_earnings INTO v_earnings
   FROM public.profiles
   WHERE id = p_user_id
@@ -388,7 +475,65 @@ SET has_invested = EXISTS (
     WHERE i.user_id = p.id AND i.status IN ('active', 'completed')
 );
 
--- 7. ENABLE ROW LEVEL SECURITY AND POLICIES
+-- 7. SECURITY: ADMINISTRATOR VERIFICATION & FIELD PROTECTION
+CREATE OR REPLACE FUNCTION public.is_admin(p_user_id UUID DEFAULT auth.uid())
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT role INTO v_role
+  FROM public.profiles
+  WHERE id = p_user_id;
+
+  RETURN (v_role = 'admin');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO anon, authenticated, service_role;
+
+-- Prevent non-admins from changing role, balances, or status directly
+CREATE OR REPLACE FUNCTION public.protect_profile_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF public.is_admin(auth.uid()) OR current_user IN ('postgres', 'service_role') THEN
+        RETURN NEW;
+    END IF;
+
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+        RAISE EXCEPTION 'Security Violation: Modifying user role is strictly prohibited.';
+    END IF;
+
+    IF NEW.withdrawable_balance IS DISTINCT FROM OLD.withdrawable_balance THEN
+        RAISE EXCEPTION 'Security Violation: Direct modification of account balance is prohibited.';
+    END IF;
+
+    IF NEW.referral_earnings IS DISTINCT FROM OLD.referral_earnings THEN
+        RAISE EXCEPTION 'Security Violation: Direct modification of referral earnings is prohibited.';
+    END IF;
+
+    IF NEW.has_invested IS DISTINCT FROM OLD.has_invested THEN
+        RAISE EXCEPTION 'Security Violation: Direct modification of investment status is prohibited.';
+    END IF;
+
+    IF NEW.vendor_verification_status = 'approved' AND OLD.vendor_verification_status IS DISTINCT FROM 'approved' THEN
+        RAISE EXCEPTION 'Security Violation: Vendor status can only be approved by an administrator.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_fields ON public.profiles;
+CREATE TRIGGER trg_protect_profile_fields
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.protect_profile_fields();
+
+-- 8. ENABLE ROW LEVEL SECURITY AND HARDENED POLICIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.investments ENABLE ROW LEVEL SECURITY;
@@ -398,30 +543,115 @@ ALTER TABLE public.notification_reads ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
-
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view own profile or admin view all" ON public.profiles;
+
+CREATE POLICY "Users can view own profile or admin view all" ON public.profiles 
+    FOR SELECT USING (auth.uid() = id OR public.is_admin(auth.uid()));
+
+CREATE POLICY "Users can update own profile" ON public.profiles 
+    FOR UPDATE USING (auth.uid() = id OR public.is_admin(auth.uid()));
 
 -- Vendor Plans Policies
 DROP POLICY IF EXISTS "Vendor plans are viewable by everyone" ON public.vendor_plans;
-CREATE POLICY "Vendor plans are viewable by everyone" ON public.vendor_plans FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Vendor plans select policy" ON public.vendor_plans;
+CREATE POLICY "Vendor plans select policy" ON public.vendor_plans 
+    FOR SELECT USING (
+        (status = 'active' AND eligibility_status = 'approved') 
+        OR auth.uid() = vendor_id 
+        OR public.is_admin(auth.uid())
+    );
 
 -- Investments Policies
 DROP POLICY IF EXISTS "Users can view own investments" ON public.investments;
-CREATE POLICY "Users can view own investments" ON public.investments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Investments select policy" ON public.investments;
+DROP POLICY IF EXISTS "Users can insert pending investment" ON public.investments;
+DROP POLICY IF EXISTS "Admins can update investments" ON public.investments;
+
+CREATE POLICY "Investments select policy" ON public.investments 
+    FOR SELECT USING (
+        auth.uid() = user_id 
+        OR public.is_admin(auth.uid())
+        OR EXISTS (
+            SELECT 1 FROM public.vendor_plans vp 
+            WHERE vp.id = investments.plan_id AND vp.vendor_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can insert pending investment" ON public.investments
+    FOR INSERT WITH CHECK (auth.uid() = user_id AND status = 'pending');
+
+CREATE POLICY "Admins can update investments" ON public.investments
+    FOR UPDATE USING (public.is_admin(auth.uid()));
 
 -- Transactions Policies
 DROP POLICY IF EXISTS "Users can view own transactions" ON public.transactions;
-CREATE POLICY "Users can view own transactions" ON public.transactions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Transactions select policy" ON public.transactions;
+DROP POLICY IF EXISTS "Users can insert pending transactions" ON public.transactions;
+DROP POLICY IF EXISTS "Admins can update transactions" ON public.transactions;
+
+CREATE POLICY "Transactions select policy" ON public.transactions 
+    FOR SELECT USING (auth.uid() = user_id OR public.is_admin(auth.uid()));
+
+CREATE POLICY "Users can insert pending transactions" ON public.transactions
+    FOR INSERT WITH CHECK (auth.uid() = user_id AND status = 'pending');
+
+CREATE POLICY "Admins can update transactions" ON public.transactions
+    FOR UPDATE USING (public.is_admin(auth.uid()));
 
 -- Notifications Policies
 DROP POLICY IF EXISTS "Users can view notifications" ON public.notifications;
-CREATE POLICY "Users can view notifications" ON public.notifications FOR SELECT USING (user_id IS NULL OR user_id = auth.uid());
+CREATE POLICY "Users can view notifications" ON public.notifications 
+    FOR SELECT USING (user_id IS NULL OR user_id = auth.uid() OR public.is_admin(auth.uid()));
 
 -- Notification Reads Policies
 DROP POLICY IF EXISTS "Users can manage read status" ON public.notification_reads;
-CREATE POLICY "Users can manage read status" ON public.notification_reads FOR ALL USING (user_id = auth.uid());
+CREATE POLICY "Users can manage read status" ON public.notification_reads 
+    FOR ALL USING (user_id = auth.uid());
+
+-- Vendor Payment Wallets Policies
+ALTER TABLE public.vendor_payment_wallets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "View vendor payment wallets" ON public.vendor_payment_wallets;
+DROP POLICY IF EXISTS "Admins manage vendor payment wallets" ON public.vendor_payment_wallets;
+
+CREATE POLICY "View vendor payment wallets" ON public.vendor_payment_wallets
+    FOR SELECT USING (is_active = true OR public.is_admin(auth.uid()));
+
+CREATE POLICY "Admins manage vendor payment wallets" ON public.vendor_payment_wallets
+    FOR ALL USING (public.is_admin(auth.uid()));
+
+-- Cryptocurrencies Policies
+ALTER TABLE public.cryptocurrencies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view cryptocurrencies" ON public.cryptocurrencies;
+DROP POLICY IF EXISTS "Admins can manage cryptocurrencies" ON public.cryptocurrencies;
+
+CREATE POLICY "Anyone can view cryptocurrencies" ON public.cryptocurrencies
+    FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage cryptocurrencies" ON public.cryptocurrencies
+    FOR ALL USING (public.is_admin(auth.uid()));
+
+-- Settings Policies
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated users view settings" ON public.settings;
+DROP POLICY IF EXISTS "Admins can manage settings" ON public.settings;
+
+CREATE POLICY "Authenticated users view settings" ON public.settings
+    FOR SELECT USING (auth.role() = 'authenticated' OR public.is_admin(auth.uid()));
+
+CREATE POLICY "Admins can manage settings" ON public.settings
+    FOR ALL USING (public.is_admin(auth.uid()));
+
+-- OTP Tables Hardening (revoke direct access)
+ALTER TABLE public.signup_otps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.password_reset_otps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow anon & auth access to signup_otps" ON public.signup_otps;
+DROP POLICY IF EXISTS "Allow anon & auth access to password_reset_otps" ON public.password_reset_otps;
+REVOKE ALL ON public.signup_otps FROM anon, authenticated;
+REVOKE ALL ON public.password_reset_otps FROM anon, authenticated;
 
 -- Force PostgREST schema cache reload
 NOTIFY pgrst, 'reload schema';
