@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/lib/supabaseClient";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
+  AlertCircle,
 } from "lucide-react";
 import { User, Investment, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -52,6 +54,20 @@ export const UserInvestmentModal = ({
   onViewReceipt,
 }: UserInvestmentModalProps) => {
   const [activeTab, setActiveTab] = useState<"plans" | "withdrawals">("plans");
+  const [activeReferralsCount, setActiveReferralsCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase.rpc("get_active_referrals_count", { p_user_id: user.id })
+        .then(({ data, error }) => {
+          if (!error && data !== null && data !== undefined) {
+            setActiveReferralsCount(Number(data));
+          } else {
+            setActiveReferralsCount(0);
+          }
+        });
+    }
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -142,6 +158,14 @@ export const UserInvestmentModal = ({
                       {completedInvestments.length > 0 ? "Completed Cycle" : "No Active Plans"}
                     </Badge>
                   )}
+                  <Badge variant="outline" className={cn(
+                    "text-[8px] font-black uppercase",
+                    activeReferralsCount > 0 
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" 
+                      : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                  )}>
+                    {activeReferralsCount} Active Referral{activeReferralsCount === 1 ? '' : 's'}
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium flex items-center gap-2 truncate">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
@@ -269,7 +293,8 @@ export const UserInvestmentModal = ({
                   const targetReturn = Number(inv.amount || 0) * 1.5;
                   const claimedAmount = Number(inv.claimed_amount || 0);
                   const leftOnPlan = Math.max(0, targetReturn - claimedAmount);
-                  const stage = Math.min(6, Math.floor(claimedAmount / (inv.amount * 0.25)));
+                  const stage = Math.min(6, Math.round(claimedAmount / (inv.amount * 0.25)));
+                  const isRestricted = activeReferralsCount === 0 && stage >= 5 && inv.status === 'active';
 
                   // Compute days passed
                   let daysPassed = 0;
@@ -297,8 +322,16 @@ export const UserInvestmentModal = ({
                                 {inv.plan_name || "Standard Commodity Plan"}
                               </h4>
                               {inv.status === "active" && (
-                                <Badge variant="outline" className="text-[7px] font-black uppercase border-primary/30 text-primary">
-                                  Stage {stage}/6
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-[7px] font-black uppercase",
+                                    isRestricted 
+                                      ? "border-amber-500/40 text-amber-400 bg-amber-500/10" 
+                                      : "border-primary/30 text-primary"
+                                  )}
+                                >
+                                  Stage {stage}/6{isRestricted ? " (Referral Required)" : ""}
                                 </Badge>
                               )}
                             </div>
@@ -367,9 +400,23 @@ export const UserInvestmentModal = ({
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-muted-foreground">
                             <span>Execution Progress: {percentExecuted}%</span>
-                            <span className="text-primary">{daysPassed}/24 Cycle Days • Stage {stage}/6</span>
+                            <span className={cn(
+                              "font-bold",
+                              isRestricted ? "text-amber-400" : "text-primary"
+                            )}>
+                              {daysPassed}/24 Cycle Days • Stage {stage}/6{isRestricted ? " (Stage 6 Locked)" : ""}
+                            </span>
                           </div>
                           <Progress value={percentExecuted} className="h-1.5 bg-slate-950" />
+                        </div>
+                      )}
+
+                      {isRestricted && (
+                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-amber-400/90 font-bold leading-relaxed">
+                            User has withdrawn capital and half profit (Stage 5/6). Stage 6 profit is locked until at least 1 active referral with an approved investment is registered.
+                          </p>
                         </div>
                       )}
 

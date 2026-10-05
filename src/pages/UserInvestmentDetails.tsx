@@ -30,6 +30,7 @@ import {
   ArrowDownLeft,
   Clock,
   Wallet,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ const UserInvestmentDetails = () => {
   const [user, setUser] = useState<User | null>(null);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [withdrawals, setWithdrawals] = useState<Transaction[]>([]);
+  const [activeReferralsCount, setActiveReferralsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -49,14 +51,17 @@ const UserInvestmentDetails = () => {
         { data: userData },
         { data: investmentData },
         { data: transactionData },
+        { data: activeCountData },
       ] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).single(),
         supabase.from("investments").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("transactions").select("*").eq("user_id", userId).eq("type", "withdrawal").order("created_at", { ascending: false }),
+        supabase.rpc("get_active_referrals_count", { p_user_id: userId }),
       ]);
       setUser(userData);
       setInvestments(investmentData || []);
       setWithdrawals(transactionData || []);
+      setActiveReferralsCount(Number(activeCountData) || 0);
     } catch (error) {
       console.error(error);
     } finally {
@@ -164,6 +169,14 @@ const UserInvestmentDetails = () => {
                     {completedInvestments.length > 0 ? "CYCLE COMPLETED" : "NO ACTIVE POSITIONS"}
                   </Badge>
                 )}
+                <Badge variant="outline" className={cn(
+                  "font-black px-3 py-0.5 rounded-lg text-[10px] tracking-widest",
+                  activeReferralsCount > 0 
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" 
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                )}>
+                  {activeReferralsCount} ACTIVE REFERRAL{activeReferralsCount === 1 ? '' : 'S'}
+                </Badge>
             </div>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" /> {user.email}
@@ -251,8 +264,9 @@ const UserInvestmentDetails = () => {
             const targetReturn = Number(inv.amount || 0) * 1.5;
             const claimed = Number(inv.claimed_amount || 0);
             const leftOnPlan = Math.max(0, targetReturn - claimed);
-            const stage = Math.min(6, Math.floor(claimed / (inv.amount * 0.25)));
+            const stage = Math.min(6, Math.round(claimed / (inv.amount * 0.25)));
             const percentExecuted = targetReturn > 0 ? Math.min(100, Math.round((claimed / targetReturn) * 100)) : 0;
+            const isRestricted = activeReferralsCount === 0 && stage >= 5 && inv.status === 'active';
 
             return (
               <Card key={inv.id} className="group overflow-hidden border-2 border-white/5 bg-slate-900/40 rounded-[2.5rem] backdrop-blur-xl animate-in slide-in-from-bottom-8 duration-700" style={{ animationDelay: `${i * 100}ms` }}>
@@ -267,8 +281,16 @@ const UserInvestmentDetails = () => {
                               <div className="flex items-center gap-2">
                                 <h3 className="text-2xl font-black tracking-tighter uppercase italic">{inv.plan_name}</h3>
                                 {inv.status === 'active' && (
-                                  <Badge variant="outline" className="border-primary/30 text-primary text-[8px] font-black uppercase">
-                                    Stage {stage}/6
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(
+                                      "text-[8px] font-black uppercase",
+                                      isRestricted 
+                                        ? "border-amber-500/40 text-amber-400 bg-amber-500/10" 
+                                        : "border-primary/30 text-primary"
+                                    )}
+                                  >
+                                    Stage {stage}/6{isRestricted ? " (Referral Required)" : ""}
                                   </Badge>
                                 )}
                               </div>
@@ -312,9 +334,26 @@ const UserInvestmentDetails = () => {
                       <div className="space-y-2 bg-slate-950/30 p-4 rounded-2xl border border-white/5">
                         <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                           <span>Execution Progress: {percentExecuted}%</span>
-                          <span className="text-primary font-bold">Stage {stage}/6 Claimed</span>
+                          <span className={cn(
+                            "font-bold",
+                            isRestricted ? "text-amber-400" : "text-primary"
+                          )}>
+                            Stage {stage}/6 Claimed{isRestricted ? " (Stage 6 Locked)" : ""}
+                          </span>
                         </div>
                         <Progress value={percentExecuted} className="h-1.5 bg-slate-950" />
+                      </div>
+                    )}
+
+                    {isRestricted && (
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-1">
+                        <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          <span>Stage 6 Profit Locked (Active Referral Required)</span>
+                        </div>
+                        <p className="text-[11px] text-amber-400/80 font-medium leading-relaxed">
+                          User has withdrawn capital and half profit (Stage 5/6). The remaining 50% profit is withheld until this user acquires at least 1 active referral with an approved investment.
+                        </p>
                       </div>
                     )}
 

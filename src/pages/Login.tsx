@@ -46,9 +46,15 @@ const Login = () => {
         });
         navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       } else {
+        const errorMsg = (error.message || "").toLowerCase();
+        const isBannedOrSuspended = 
+          errorMsg.includes("ban") || 
+          errorMsg.includes("suspend") || 
+          (error as any).code === "user_banned";
+
         toast({
           title: "Access Denied",
-          description: error.message,
+          description: isBannedOrSuspended ? "Invalid login credentials" : error.message,
           variant: "destructive",
         });
       }

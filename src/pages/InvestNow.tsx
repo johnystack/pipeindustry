@@ -35,7 +35,9 @@ import {
   CircleDollarSign,
   Calendar,
   History,
+  AlertCircle,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +57,7 @@ const InvestNow = () => {
   const [submitting, setSubmitting] = useState(false);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [activeReferralsCount, setActiveReferralsCount] = useState<number>(0);
 
   const fetchData = async () => {
     if (!user) return;
@@ -90,6 +93,32 @@ const InvestNow = () => {
         .order("created_at", { ascending: false })
         .limit(10);
       setRecentTransactions(transactionData as any || []);
+
+      // Fetch Active Referrals Count
+      try {
+        const { data: activeCount, error: countErr } = await supabase.rpc('get_active_referrals_count', { p_user_id: user.id });
+        if (!countErr && activeCount !== null && activeCount !== undefined) {
+          setActiveReferralsCount(Number(activeCount) || 0);
+        } else {
+          const { data: refUsers } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('referred_by', user.id);
+          if (refUsers && refUsers.length > 0) {
+            const userIds = refUsers.map((u: any) => u.id);
+            const { count } = await supabase
+              .from('investments')
+              .select('user_id', { count: 'exact', head: true })
+              .in('status', ['active', 'completed'])
+              .in('user_id', userIds);
+            setActiveReferralsCount(count || 0);
+          } else {
+            setActiveReferralsCount(0);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching active referrals count in InvestNow:', err);
+      }
 
     } finally {
       setLoading(false);
@@ -174,7 +203,10 @@ const InvestNow = () => {
       accumulated: 0,
       claimable: 0,
       nextClaimDays: 4,
-      claimStage: 0
+      claimStage: 0,
+      isRestricted: false,
+      maxAllowedStages: activeReferralsCount > 0 ? 6 : 5,
+      pendingStages: 0,
     };
 
     const start = new Date(inv.approved_at).getTime();
@@ -186,15 +218,20 @@ const InvestNow = () => {
     const totalExpectedReturn = inv.amount * 1.5;
     const accumulatedValue = (totalExpectedReturn * (daysPassed / 24));
     
-    const claimBlocksAvailable = Math.floor(daysPassed / 4);
-    const totalPossibleClaimed = claimBlocksAvailable * (inv.amount * 0.25);
-    const currentClaimed = inv.claimed_amount || 0;
-    const claimable = Math.max(0, totalPossibleClaimed - currentClaimed);
-    
-    const nextClaimDays = 4 - (daysPassed % 4);
+    // Milestones at Day 4, 8, 12, 16, 20, 24 (6 stages total)
+    const milestonesReached = Math.min(6, Math.floor(daysPassed / 4));
+    const stagesActuallyClaimed = Math.round((inv.claimed_amount || 0) / (inv.amount * 0.25));
 
-    // Each block claimed is 1/6 of the cycle
-    const claimStage = Math.round(currentClaimed / (inv.amount * 0.25));
+    // Referral restriction: users with 0 active referrals can only claim up to Stage 5 (100% capital + half of profit)
+    const maxAllowedStages = activeReferralsCount > 0 ? 6 : 5;
+    const availableMilestones = Math.min(milestonesReached, maxAllowedStages);
+    const pendingStages = Math.max(0, availableMilestones - stagesActuallyClaimed);
+    const claimable = pendingStages * (inv.amount * 0.25);
+
+    const isRestricted = activeReferralsCount === 0 && stagesActuallyClaimed >= 5;
+
+    const nextMilestoneDay = (stagesActuallyClaimed + 1) * 4;
+    const nextClaimDays = nextMilestoneDay > 24 ? 0 : Math.max(0, nextMilestoneDay - daysPassed);
 
     return {
       daysPassed,
@@ -202,8 +239,11 @@ const InvestNow = () => {
       totalValue: totalExpectedReturn,
       accumulated: accumulatedValue,
       claimable,
-      nextClaimDays: daysPassed >= 24 ? 0 : nextClaimDays,
-      claimStage: Math.min(6, claimStage)
+      nextClaimDays: claimable > 0 ? 0 : nextClaimDays,
+      claimStage: Math.min(6, stagesActuallyClaimed),
+      isRestricted,
+      maxAllowedStages,
+      pendingStages,
     };
   };
 
@@ -348,7 +388,17 @@ const InvestNow = () => {
                                 <div className="flex justify-between items-start">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-[7px] font-black uppercase border-primary/20 text-primary px-1.5 py-0">Stage {stats.claimStage}/6</Badge>
+                                            <Badge 
+                                                variant="outline" 
+                                                className={cn(
+                                                    "text-[7px] font-black uppercase px-1.5 py-0",
+                                                    stats.isRestricted 
+                                                        ? "border-amber-500/40 text-amber-400 bg-amber-500/10" 
+                                                        : "border-primary/20 text-primary"
+                                                )}
+                                            >
+                                                Stage {stats.claimStage}/6{stats.isRestricted ? " (Referral Required)" : ""}
+                                            </Badge>
                                             <h3 className="text-lg font-black uppercase tracking-tighter italic">{inv.plan_name}</h3>
                                         </div>
                                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
@@ -401,34 +451,66 @@ const InvestNow = () => {
                                                 <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Cycle Progress</p>
                                                 <p className="text-[10px] font-black italic">{stats.daysPassed}/24 DAYS ELAPSED</p>
                                             </div>
-                                            {stats.nextClaimDays > 0 && (
+                                            {stats.nextClaimDays > 0 && !stats.isRestricted && (
                                                 <p className="text-[7px] font-black uppercase text-primary/50">Next Claim Window: {stats.nextClaimDays} Days</p>
+                                            )}
+                                            {stats.isRestricted && (
+                                                <p className="text-[7px] font-black uppercase text-amber-500 italic">Stage 6 Locked</p>
                                             )}
                                         </div>
                                         <Progress value={stats.progress} className="h-1.5 bg-slate-950" />
                                     </div>
                                 )}
 
+                                {stats.isRestricted && (
+                                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1.5 animate-in fade-in duration-300">
+                                        <div className="flex items-center gap-1.5 text-amber-500 font-black text-[9px] uppercase tracking-wider">
+                                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                            <span>Active Referral Required</span>
+                                        </div>
+                                        <p className="text-[8px] text-amber-400/90 leading-relaxed font-bold">
+                                            You have claimed your capital and half of your profit (Stage 5/6). To unlock and withdraw the remaining 50% profit (Stage 6), an active referral with an approved investment is required.
+                                        </p>
+                                        <Link to="/referrals" className="inline-flex items-center gap-1 text-[8px] font-black uppercase text-primary hover:underline pt-0.5">
+                                            <span>Invite an Active Referral</span> &rarr;
+                                        </Link>
+                                    </div>
+                                )}
+
                                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                                    <Button 
-                                        onClick={() => handleClaim(inv.id)}
-                                        disabled={stats.claimable <= 0 || !!claiming}
-                                        className={cn(
-                                            "flex-1 h-12 font-black text-[10px] tracking-[0.2em] rounded-xl uppercase italic shadow-xl transition-all",
-                                            stats.claimable > 0 
-                                                ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20" 
-                                                : "bg-slate-800 opacity-50 cursor-not-allowed"
-                                        )}
-                                    >
-                                        {claiming === inv.id ? (
-                                            <RefreshCcw className="h-4 w-4 animate-spin" />
+                                    {inv.status === 'active' && (
+                                        stats.isRestricted ? (
+                                            <Button 
+                                                disabled
+                                                className="flex-1 h-12 font-black text-[9px] tracking-[0.1em] rounded-xl uppercase italic bg-amber-500/10 text-amber-500 border border-amber-500/30 cursor-not-allowed"
+                                            >
+                                                <AlertCircle className="h-4 w-4 mr-2 text-amber-500 shrink-0" />
+                                                Active Referral Required to Unlock Stage 6
+                                            </Button>
                                         ) : (
-                                            <>
-                                                <CircleDollarSign className="h-4 w-4 mr-2" />
-                                                {stats.claimable > 0 ? `CLAIM ₦${stats.claimable.toLocaleString()}` : "NO ASSETS READY"}
-                                            </>
-                                        )}
-                                    </Button>
+                                            <Button 
+                                                onClick={() => handleClaim(inv.id)}
+                                                disabled={stats.claimable <= 0 || !!claiming}
+                                                className={cn(
+                                                    "flex-1 h-12 font-black text-[10px] tracking-[0.2em] rounded-xl uppercase italic shadow-xl transition-all",
+                                                    stats.claimable > 0 
+                                                        ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20" 
+                                                        : "bg-slate-800 opacity-50 cursor-not-allowed"
+                                                )}
+                                            >
+                                                {claiming === inv.id ? (
+                                                    <RefreshCcw className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <CircleDollarSign className="h-4 w-4 mr-2" />
+                                                        {stats.claimable > 0 
+                                                            ? `CLAIM ₦${stats.claimable.toLocaleString()}${stats.pendingStages > 1 ? ` (${stats.pendingStages} Stages)` : ''}` 
+                                                            : "NO ASSETS READY"}
+                                                    </>
+                                                )}
+                                            </Button>
+                                        )
+                                    )}
 
                                     {inv.payment_proof && (
                                         <Button 

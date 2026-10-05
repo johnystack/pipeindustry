@@ -26,6 +26,7 @@ import {
   Award,
   Wallet,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 const Referrals = () => {
@@ -162,6 +163,21 @@ const Referrals = () => {
           <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase italic">Referral Program</h1>
           <p className="text-muted-foreground text-[10px] md:text-sm font-bold opacity-60 uppercase tracking-wide">
             Earn tiered commissions based on your network of direct referrals.
+          </p>
+        </div>
+      </div>
+
+      {/* Withdrawal Policy Info Banner */}
+      <div className="p-4 md:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center gap-3 shadow-lg">
+        <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        <div className="space-y-0.5">
+          <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-amber-400">
+            Active Referral Requirement for Stage 6 Profit
+          </h3>
+          <p className="text-[10px] md:text-xs text-amber-400/80 font-bold leading-relaxed">
+            To withdraw 100% of your commodity trading profits (Stage 6), at least 1 active referral with an approved investment is required. Without an active referral, withdrawals conclude at Stage 5 (100% capital + 50% profit).
           </p>
         </div>
       </div>

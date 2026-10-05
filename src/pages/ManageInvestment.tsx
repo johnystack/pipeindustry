@@ -9,14 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, TrendingUp, Gem, Coins, DollarSign, Wallet, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, TrendingUp, Gem, Coins, DollarSign, Wallet, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ManageInvestment = () => {
@@ -27,6 +27,20 @@ const ManageInvestment = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [reinvestAmount, setReinvestAmount] = useState("");
+  const [activeReferralsCount, setActiveReferralsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      supabase.rpc('get_active_referrals_count', { p_user_id: user.id })
+        .then(({ data, error }) => {
+          if (!error && data !== null && data !== undefined) {
+            setActiveReferralsCount(Number(data));
+          } else {
+            setActiveReferralsCount(0);
+          }
+        });
+    }
+  }, [user]);
 
   const handleReinvest = async (reinvestAll = false) => {
     if (!user) {
@@ -107,7 +121,7 @@ const ManageInvestment = () => {
       if (data.success) {
         toast({
           title: "Withdrawal successful",
-          description: `Your funds of ₦${totalReturn.toLocaleString()} have been added to your withdrawable balance.`,
+          description: data.message || `Funds have been added to your withdrawable balance.`,
         });
         navigate("/dashboard");
       } else {
@@ -255,18 +269,28 @@ const ManageInvestment = () => {
                         </div>
 
                         <div className="p-8 bg-emerald-500/[0.03] rounded-[2rem] border-2 border-emerald-500/10 flex flex-col justify-between">
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 <h4 className="text-lg font-black text-white uppercase tracking-tight">Full Withdrawal</h4>
                                 <p className="text-sm text-muted-foreground leading-relaxed">
-                                    Withdraw your entire capital, profit, and bonus directly to your main wallet balance.
+                                    {activeReferralsCount === 0 
+                                      ? "Withdraw your full capital and half of your profit (Stage 5/6). The remaining 50% profit will unlock upon obtaining an active referral."
+                                      : "Withdraw your entire capital, profit, and bonus directly to your main wallet balance."}
                                 </p>
+                                {activeReferralsCount === 0 && (
+                                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2">
+                                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-amber-400 font-bold leading-tight">
+                                      Stage 6 profit requires at least 1 active referral with an approved investment.
+                                    </p>
+                                  </div>
+                                )}
                             </div>
                             <Button
                                 onClick={handleWithdraw}
                                 className="h-16 mt-8 rounded-2xl font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20"
                             >
                                 <Wallet className="h-5 w-5 mr-2" />
-                                Withdraw All to Balance
+                                {activeReferralsCount === 0 ? "Withdraw Capital & Half Profit" : "Withdraw All to Balance"}
                             </Button>
                         </div>
                     </div>
