@@ -140,7 +140,7 @@ const Settings = () => {
           .single();
 
         if (existing) {
-          toast({ title: "Username Taken", description: "Choose another unique alias.", variant: "destructive" });
+          toast({ title: "Username Taken", description: "Choose another unique username.", variant: "destructive" });
           setSaving(false);
           return;
         }
@@ -268,11 +268,10 @@ const Settings = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">Global Alias</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">Username</Label>
                   <Input 
                     value={profileData.username} 
                     onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                    placeholder="Set unique alias"
                     className="bg-slate-950/50 border-white/10 h-11 px-4 font-bold rounded-xl focus:border-primary transition-all uppercase text-sm"
                   />
                 </div>

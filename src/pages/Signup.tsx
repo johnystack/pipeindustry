@@ -145,12 +145,12 @@ const Signup = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="username" className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-1">Global Alias</Label>
-              <Input id="username" value={formData.username} onChange={handleChange} className="bg-slate-950/50 border-white/10 h-11 rounded-xl focus:border-primary text-xs font-bold" placeholder="unique_id" />
+              <Label htmlFor="username" className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-1">Username</Label>
+              <Input id="username" value={formData.username} onChange={handleChange} className="bg-slate-950/50 border-white/10 h-11 rounded-xl focus:border-primary text-xs font-bold" />
             </div>
             <div className="space-y-1.5">
                 <Label htmlFor="referralCode" className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-1">Referral Code</Label>
-                <Input id="referralCode" value={formData.referralCode} onChange={handleChange} className="bg-slate-950/50 border-white/10 h-11 rounded-xl focus:border-primary text-xs font-bold" placeholder="Optional" />
+                <Input id="referralCode" value={formData.referralCode} onChange={handleChange} className="bg-slate-950/50 border-white/10 h-11 rounded-xl focus:border-primary text-xs font-bold" />
             </div>
           </div>
 
