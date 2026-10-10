@@ -26,11 +26,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { ExternalLink, RotateCcw } from "lucide-react";
 
 interface InstallAppModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   promptInstall: () => void;
+  resetInstalledStatus?: () => void;
   hasNativePrompt: boolean;
   isIos: boolean;
   isAndroid?: boolean;
@@ -44,6 +47,7 @@ export const InstallAppModal: React.FC<InstallAppModalProps> = ({
   open,
   onOpenChange,
   promptInstall,
+  resetInstalledStatus,
   hasNativePrompt,
   isIos,
   isAndroid = false,
@@ -51,6 +55,7 @@ export const InstallAppModal: React.FC<InstallAppModalProps> = ({
   browserName = "Browser",
   isInstalled,
 }) => {
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   
   // Set default tab based on platform
@@ -170,14 +175,45 @@ export const InstallAppModal: React.FC<InstallAppModalProps> = ({
 
           {/* Conditional Content */}
           {isInstalled ? (
-            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
+            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-4">
               <CheckCircle className="h-10 w-10 text-emerald-400 mx-auto" />
-              <p className="text-sm font-black uppercase tracking-widest text-emerald-400">
-                Terras App is Already Installed!
-              </p>
-              <p className="text-xs text-slate-300">
-                You can launch it anytime directly from your phone home screen or app drawer.
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm font-black uppercase tracking-widest text-emerald-400">
+                  Terras App is Already Installed!
+                </p>
+                <p className="text-xs text-slate-300">
+                  The verified Terras app is active on your device. You can launch it anytime directly from your phone's app menu, home screen, or jump directly into your dashboard below.
+                </p>
+              </div>
+
+              <div className="pt-2 space-y-2.5">
+                <Button
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate("/dashboard");
+                  }}
+                  className="w-full h-12 rounded-xl bg-primary hover:bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/25 transition-all flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Open App Dashboard</span>
+                </Button>
+
+                {resetInstalledStatus && (
+                  <button
+                    onClick={() => {
+                      resetInstalledStatus();
+                      toast({
+                        title: "App Status Reset",
+                        description: "You can now trigger installation again.",
+                      });
+                    }}
+                    className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 hover:text-slate-300 font-bold uppercase tracking-wider mx-auto transition-colors pt-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span>Need to reinstall? Tap to reset</span>
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

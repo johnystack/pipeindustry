@@ -15,7 +15,9 @@ declare global {
   }
 }
 
-// Global variable to capture event
+const STORAGE_KEY = "terras_pwa_installed";
+
+// Global variable to capture event early
 let globalDeferredPrompt: BeforeInstallPromptEvent | null =
   typeof window !== "undefined" && window.__pwaDeferredPrompt
     ? window.__pwaDeferredPrompt
@@ -39,11 +41,42 @@ if (typeof window !== "undefined") {
   });
 }
 
+const checkIsInstalledInitial = (): boolean => {
+  if (typeof window === "undefined") return false;
+
+  // 1. Standalone display mode (PWA window)
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.matchMedia("(display-mode: minimal-ui)").matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.includes("android-app://");
+
+  if (isStandalone) return true;
+
+  // 2. Launched via PWA start_url parameter
+  if (
+    window.location.search.includes("source=pwa") ||
+    window.location.search.includes("mode=pwa")
+  ) {
+    return true;
+  }
+
+  // 3. Persistent flag from previous installation
+  try {
+    if (localStorage.getItem(STORAGE_KEY) === "true") {
+      return true;
+    }
+  } catch (_) {}
+
+  return false;
+};
+
 export const usePwaInstall = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
     () => (typeof window !== "undefined" ? window.__pwaDeferredPrompt || globalDeferredPrompt : null)
   );
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState<boolean>(checkIsInstalledInitial);
   const [isModalOpen, setLocalModalOpen] = useState(globalModalOpen);
   const [isIos, setIsIos] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
@@ -51,7 +84,7 @@ export const usePwaInstall = () => {
   const [isInAppBrowser, setIsInAppBrowser] = useState(false);
   const [browserName, setBrowserName] = useState("Browser");
 
-  // Sync modal state
+  // Sync modal state across multiple component instances
   const setIsModalOpen = useCallback((open: boolean) => {
     setGlobalModalOpen(open);
   }, []);
@@ -64,13 +97,44 @@ export const usePwaInstall = () => {
   }, []);
 
   useEffect(() => {
-    // Check standalone mode / installed
+    // Check initial installation indicators
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      window.matchMedia("(display-mode: minimal-ui)").matches ||
       (window.navigator as any).standalone === true ||
-      document.referrer.includes("android-app://");
+      document.referrer.includes("android-app://") ||
+      window.location.search.includes("source=pwa") ||
+      window.location.search.includes("mode=pwa");
 
-    setIsInstalled(isStandalone);
+    let storedInstalled = false;
+    try {
+      storedInstalled = localStorage.getItem(STORAGE_KEY) === "true";
+    } catch (_) {}
+
+    if (isStandalone || storedInstalled) {
+      setIsInstalled(true);
+      try {
+        localStorage.setItem(STORAGE_KEY, "true");
+      } catch (_) {}
+    }
+
+    // Query navigator.getInstalledRelatedApps (supported on Chromium / Android)
+    if (typeof navigator !== "undefined" && "getInstalledRelatedApps" in navigator) {
+      try {
+        (navigator as any)
+          .getInstalledRelatedApps()
+          .then((relatedApps: any[]) => {
+            if (Array.isArray(relatedApps) && relatedApps.length > 0) {
+              setIsInstalled(true);
+              try {
+                localStorage.setItem(STORAGE_KEY, "true");
+              } catch (_) {}
+            }
+          })
+          .catch(() => {});
+      } catch (_) {}
+    }
 
     // Device and Browser detection
     const ua = window.navigator.userAgent || "";
@@ -120,6 +184,9 @@ export const usePwaInstall = () => {
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
+      try {
+        localStorage.setItem(STORAGE_KEY, "true");
+      } catch (_) {}
       setDeferredPrompt(null);
       globalDeferredPrompt = null;
       if (typeof window !== "undefined") {
@@ -128,16 +195,39 @@ export const usePwaInstall = () => {
       setIsModalOpen(false);
     };
 
+    // Watch for display-mode changes
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setIsInstalled(true);
+        try {
+          localStorage.setItem(STORAGE_KEY, "true");
+        } catch (_) {}
+      }
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleMediaChange);
+    }
+
     window.addEventListener("pwa-prompt-ready", handlePromptReady);
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleMediaChange);
+      }
       window.removeEventListener("pwa-prompt-ready", handlePromptReady);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, [setIsModalOpen]);
 
   const promptInstall = async () => {
+    // If already installed, open modal showing installed status with open option
+    if (isInstalled) {
+      setIsModalOpen(true);
+      return;
+    }
+
     const activePrompt = deferredPrompt || window.__pwaDeferredPrompt || globalDeferredPrompt;
 
     // If we have native browser prompt (Android Chrome, Edge, etc.)
@@ -147,6 +237,9 @@ export const usePwaInstall = () => {
         const choiceResult = await activePrompt.userChoice;
         if (choiceResult.outcome === "accepted") {
           setIsInstalled(true);
+          try {
+            localStorage.setItem(STORAGE_KEY, "true");
+          } catch (_) {}
           setIsModalOpen(false);
         }
         setDeferredPrompt(null);
@@ -159,9 +252,16 @@ export const usePwaInstall = () => {
         setIsModalOpen(true);
       }
     } else {
-      // If iOS, unsupported, or beforeinstallprompt pending heuristics
+      // If iOS, in-app browser, or beforeinstallprompt pending heuristics
       setIsModalOpen(true);
     }
+  };
+
+  const resetInstalledStatus = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (_) {}
+    setIsInstalled(false);
   };
 
   return {
@@ -176,5 +276,6 @@ export const usePwaInstall = () => {
     isModalOpen,
     setIsModalOpen,
     promptInstall,
+    resetInstalledStatus,
   };
 };

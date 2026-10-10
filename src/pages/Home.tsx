@@ -24,7 +24,7 @@ import {
   Smartphone,
   Download,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import teamExperts from "@/assets/team-experts.jpg";
 import successfulInvestor from "@/assets/successful-investor.jpg";
 import happyInvestors from "@/assets/happy-investors.jpg";
@@ -44,6 +44,7 @@ const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
 );
 
 const Home = () => {
+  const navigate = useNavigate();
   const {
     canInstall,
     isInstalled,
@@ -147,11 +148,15 @@ const Home = () => {
                   </Button>
                 </Link>
                 <Button
-                  onClick={promptInstall}
+                  onClick={isInstalled ? () => navigate("/dashboard") : promptInstall}
                   variant="outline"
                   className="w-full sm:w-auto h-9 md:h-14 px-3 md:px-6 rounded-lg md:rounded-xl border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-black text-[9px] md:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 md:gap-2 transition-all hover:scale-105"
                 >
-                  <Download className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  {isInstalled ? (
+                    <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400" />
+                  )}
                   {isInstalled ? "Open App" : "Download App"}
                 </Button>
                 <a

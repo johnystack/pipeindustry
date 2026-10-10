@@ -109,10 +109,14 @@ export const DownloadAppSection: React.FC<DownloadAppSectionProps> = ({
                   onClick={onInstallClick}
                   className="h-12 md:h-14 px-8 rounded-xl bg-primary hover:bg-emerald-500 text-slate-950 font-black text-xs md:text-sm uppercase tracking-widest shadow-2xl shadow-primary/30 transition-all hover:scale-105 flex items-center gap-3"
                 >
-                  <ArrowDownToLine className="h-5 w-5" />
+                  {isInstalled ? (
+                    <CheckCircle className="h-5 w-5 text-slate-950" />
+                  ) : (
+                    <ArrowDownToLine className="h-5 w-5" />
+                  )}
                   <span>
                     {isInstalled
-                      ? "Open Mobile App"
+                      ? "Terras App Installed • Open App"
                       : isAndroid
                       ? "Install on Android Phone"
                       : isIos

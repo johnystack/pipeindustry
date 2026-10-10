@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, TrendingUp, User, LogOut, Download, Smartphone } from "lucide-react";
+import { Menu, TrendingUp, User, LogOut, Download, Smartphone, CheckCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
@@ -24,6 +24,7 @@ const Header = () => {
     isModalOpen,
     setIsModalOpen,
     promptInstall,
+    resetInstalledStatus,
   } = usePwaInstall();
 
   const handleLogout = async () => {
@@ -72,14 +73,27 @@ const Header = () => {
             </Link>
           ))}
 
-          {/* Download App Nav Button */}
+          {/* App Status / Download App Nav Button */}
           <button
             onClick={promptInstall}
-            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-all bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/20 shadow-sm hover:scale-105"
-            title="Download & Install Terras Mobile App"
+            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-xl border shadow-sm hover:scale-105 ${
+              isInstalled
+                ? "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border-emerald-500/30"
+                : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
+            }`}
+            title={isInstalled ? "Terras Mobile App Installed" : "Download & Install Terras Mobile App"}
           >
-            <Download className="h-3 w-3" />
-            <span>Download App</span>
+            {isInstalled ? (
+              <>
+                <CheckCircle className="h-3 w-3 text-emerald-400" />
+                <span>App Installed</span>
+              </>
+            ) : (
+              <>
+                <Download className="h-3 w-3" />
+                <span>Download App</span>
+              </>
+            )}
           </button>
         </nav>
 
@@ -141,18 +155,35 @@ const Header = () => {
                     </Link>
                   ))}
 
-                  {/* Download App Mobile Nav Link */}
+                  {/* App Status / Download App Mobile Nav Link */}
                   <button
                     onClick={() => {
                       promptInstall();
                     }}
-                    className="flex items-center justify-between px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-left"
+                    className={`flex items-center justify-between px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all border text-left ${
+                      isInstalled
+                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25"
+                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                    }`}
                   >
                     <span className="flex items-center gap-2.5">
-                      <Smartphone className="h-4 w-4" />
-                      Download App
+                      {isInstalled ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 text-emerald-400" />
+                          App Installed
+                        </>
+                      ) : (
+                        <>
+                          <Smartphone className="h-4 w-4" />
+                          Download App
+                        </>
+                      )}
                     </span>
-                    <Download className="h-3.5 w-3.5" />
+                    {isInstalled ? (
+                      <Smartphone className="h-3.5 w-3.5" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
                   </button>
 
                   {!user ? (
@@ -194,6 +225,7 @@ const Header = () => {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         promptInstall={promptInstall}
+        resetInstalledStatus={resetInstalledStatus}
         hasNativePrompt={hasNativePrompt}
         isIos={isIos}
         isAndroid={isAndroid}
