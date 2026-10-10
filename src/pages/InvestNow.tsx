@@ -303,67 +303,190 @@ const InvestNow = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Payment Receipt</Label>
-                    <div className={cn(
+                  {/* Settlement / Payment Option (Step 2 - Pay Before Uploading Receipt) */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Wallet className="h-3.5 w-3.5 text-emerald-400" /> Settlement & Payment Details
+                      </Label>
+                      {selectedPlanData && (
+                        <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                          Step 2: Transfer ₦{selectedPlanData.min_investment.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+
+                    {selectedPlanData ? (
+                      <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-emerald-500/10">
+                          <div>
+                            <p className="text-[8px] font-black text-emerald-600/80 uppercase tracking-wider">Certified Agent</p>
+                            <p className="font-black text-sm text-white">{selectedPlanData.vendor_name || "Terras"}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[8px] font-black text-emerald-600/80 uppercase tracking-wider">Transfer Exactly</p>
+                            <p className="font-black text-sm text-primary">₦{selectedPlanData.min_investment.toLocaleString()}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[8px] font-black text-emerald-600/80 uppercase tracking-wider">Payment Account / Address</p>
+                            <span className="text-[8px] text-slate-400 font-bold">Tap icon to copy</span>
+                          </div>
+                          <div className="bg-slate-950 p-3 rounded-lg border border-emerald-500/15 relative group">
+                            <p className="whitespace-pre-wrap font-mono text-[11px] break-all leading-relaxed font-bold text-slate-200 select-all pr-8">
+                              {selectedPlanData.payment_details}
+                            </p>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              type="button"
+                              className="absolute top-1.5 right-1.5 h-7 w-7 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300"
+                              onClick={() => {
+                                navigator.clipboard.writeText(selectedPlanData.payment_details || "");
+                                toast({ title: "Payment Details Copied!", description: "Paste into your banking app to transfer." });
+                              }}
+                              title="Copy Payment Details"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
+                          Please transfer the exact capital amount to the settlement account above. Once transferred, upload your payment receipt below to activate your position.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-slate-950/40 rounded-xl border border-white/5 text-center text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                        Select a plan above to view settlement details
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment Receipt Upload (Step 3 - Upload Proof After Payment) */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Upload className="h-3.5 w-3.5 text-primary" /> Payment Receipt Proof
+                      </Label>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Step 3: Attach Proof
+                      </span>
+                    </div>
+
+                    <div
+                      className={cn(
                         "p-6 border border-dashed rounded-xl bg-slate-950/30 flex flex-col items-center justify-center gap-2 text-center transition-all cursor-pointer hover:bg-slate-950/50",
                         selectedFile ? "border-emerald-500/40 bg-emerald-500/5" : "border-white/10"
-                    )} onClick={() => document.getElementById('proof-upload')?.click()}>
-                        <input type="file" id="proof-upload" className="hidden" accept="image/*,.pdf" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-                        {selectedFile ? (
-                            <div className="flex flex-col items-center gap-1">
-                                <CheckCircle className="h-5 w-5 text-emerald-500" />
-                                <p className="text-[10px] font-bold truncate max-w-[150px]">{selectedFile.name}</p>
-                            </div>
-                        ) : (
-                            <>
-                                <Upload className="h-5 w-5 text-muted-foreground opacity-30" />
-                                <p className="text-[10px] font-bold uppercase tracking-tighter">UPLOAD RECEIPT</p>
-                            </>
-                        )}
+                      )}
+                      onClick={() => document.getElementById('proof-upload')?.click()}
+                    >
+                      <input
+                        type="file"
+                        id="proof-upload"
+                        className="hidden"
+                        accept="image/*,.pdf"
+                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      />
+                      {selectedFile ? (
+                        <div className="flex flex-col items-center gap-1.5">
+                          <CheckCircle className="h-6 w-6 text-emerald-400" />
+                          <p className="text-[11px] font-bold text-emerald-300 truncate max-w-[220px]">{selectedFile.name}</p>
+                          <span className="text-[8px] text-emerald-400/70 font-bold uppercase tracking-wider">Tap to change file</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="h-6 w-6 text-muted-foreground opacity-40" />
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-300">CLICK OR TAP TO UPLOAD RECEIPT</p>
+                          <p className="text-[8px] text-slate-500 font-bold uppercase">PNG, JPG, PDF up to 10MB</p>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  <Button className="w-full h-12 text-xs font-black rounded-lg shadow-lg shadow-primary/20" onClick={handleInvest} disabled={submitting}>
-                    {submitting ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "CONFIRM POSITION"}
+                  <Button
+                    className="w-full h-12 text-xs font-black rounded-lg shadow-lg shadow-primary/20 uppercase tracking-widest"
+                    onClick={handleInvest}
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <span className="flex items-center gap-2">
+                        <RefreshCcw className="h-4 w-4 animate-spin" /> Verifying & Submitting...
+                      </span>
+                    ) : (
+                      "CONFIRM & ACTIVATE POSITION"
+                    )}
                   </Button>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="lg:col-span-5">
+            {/* Right Column: Position Summary & Cycle Schedule */}
+            <div className="lg:col-span-5 space-y-4">
               <Card className="bg-slate-900/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl">
-                <CardHeader className="p-5 pb-2">
-                  <CardTitle className="text-[10px] font-black flex items-center gap-2 uppercase tracking-widest opacity-50">
-                      <Wallet className="h-3 w-3" /> Settlement
+                <CardHeader className="p-5 pb-3 border-b border-white/5">
+                  <CardTitle className="text-xs font-black flex items-center justify-between uppercase tracking-wider">
+                    <span className="flex items-center gap-2 text-white">
+                      <ShieldCheck className="h-4 w-4 text-emerald-400" /> Trade Terms & Schedule
+                    </span>
+                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[8px] font-black uppercase">
+                      24-Day Cycle
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-5 pt-0 space-y-4">
+                <CardContent className="p-5 space-y-4">
                   {selectedPlanData ? (
                     <>
-                      <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10 space-y-3">
-                          <div className="space-y-1">
-                              <p className="text-[8px] font-black text-emerald-600/70 uppercase">Certified Agent</p>
-                              <p className="font-black text-base">Terras</p>
-                          </div>
-                          <div className="space-y-1">
-                              <p className="text-[8px] font-black text-emerald-600/70 uppercase">Detail</p>
-                              <div className="bg-slate-950 p-3 rounded-lg border border-emerald-500/10 relative group">
-                                  <p className="whitespace-pre-wrap font-mono text-[10px] break-all leading-relaxed font-bold">
-                                      {selectedPlanData.payment_details}
-                                  </p>
-                                  <Button size="icon" variant="ghost" className="absolute top-1 right-1 h-6 w-6 hover:bg-emerald-500/10" onClick={() => { navigator.clipboard.writeText(selectedPlanData.payment_details || ""); toast({ title: "Copied" }); }}>
-                                      <Copy className="h-3 w-3 text-emerald-600" />
-                                  </Button>
-                              </div>
-                          </div>
+                      <div className="p-3.5 bg-slate-950/60 rounded-xl border border-white/5 space-y-2.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-400 font-bold text-[10px] uppercase">Plan Target</span>
+                          <span className="font-black text-white">{selectedPlanData.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-400 font-bold text-[10px] uppercase">Total Expected Return</span>
+                          <span className="font-black text-emerald-400">₦{(selectedPlanData.min_investment * 1.5).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-400 font-bold text-[10px] uppercase">Net Profit (+50%)</span>
+                          <span className="font-black text-primary">₦{(selectedPlanData.min_investment * 0.5).toLocaleString()}</span>
+                        </div>
                       </div>
-                      <div className="p-3 bg-slate-950/50 rounded-lg border border-white/5 text-center">
-                        <span className="text-sm font-black text-primary tracking-tight">₦{selectedPlanData.min_investment.toLocaleString()}</span>
+
+                      {/* Milestone Schedule Preview */}
+                      <div className="space-y-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Claim Milestone Schedule (Every 4 Days)</p>
+                        <div className="grid grid-cols-3 gap-1.5 text-center">
+                          {[
+                            { stage: "Stage 1", day: "Day 4", pct: "25%" },
+                            { stage: "Stage 2", day: "Day 8", pct: "50%" },
+                            { stage: "Stage 3", day: "Day 12", pct: "75%" },
+                            { stage: "Stage 4", day: "Day 16", pct: "100%" },
+                            { stage: "Stage 5", day: "Day 20", pct: "125%" },
+                            { stage: "Stage 6", day: "Day 24", pct: "150%" },
+                          ].map((m, idx) => (
+                            <div key={idx} className="p-2 rounded-lg bg-white/[0.02] border border-white/5 space-y-0.5">
+                              <p className="text-[7px] font-bold text-slate-500 uppercase">{m.stage}</p>
+                              <p className="text-[9px] font-black text-white">{m.day}</p>
+                              <p className="text-[8px] font-bold text-emerald-400">{m.pct}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Security Note */}
+                      <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-start gap-2.5">
+                        <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <p className="text-[9px] text-slate-300 leading-relaxed font-medium">
+                          All positions are verified directly by certified Terras desk managers. Your trade begins counting down immediately upon admin confirmation.
+                        </p>
                       </div>
                     </>
                   ) : (
-                    <div className="text-center py-12 opacity-30 italic text-[10px] font-black uppercase tracking-widest">Select Plan</div>
+                    <div className="text-center py-12 opacity-40 italic text-[10px] font-black uppercase tracking-widest">
+                      Select a plan on the left to see trade terms
+                    </div>
                   )}
                 </CardContent>
               </Card>
