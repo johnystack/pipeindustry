@@ -133,16 +133,28 @@ const Settings = () => {
 
     try {
       if (profileData.username && profileData.username !== originalProfile?.username) {
-        const { data: existing } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("username", profileData.username)
-          .single();
+        const { data: isAvailable, error: rpcErr } = await supabase.rpc("check_username_available", {
+          p_username: profileData.username,
+        });
 
-        if (existing) {
+        if (!rpcErr && isAvailable === false) {
           toast({ title: "Username Taken", description: "Choose another unique username.", variant: "destructive" });
           setSaving(false);
           return;
+        }
+
+        if (rpcErr) {
+          const { data: existing } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("username", profileData.username)
+            .single();
+
+          if (existing) {
+            toast({ title: "Username Taken", description: "Choose another unique username.", variant: "destructive" });
+            setSaving(false);
+            return;
+          }
         }
       }
 

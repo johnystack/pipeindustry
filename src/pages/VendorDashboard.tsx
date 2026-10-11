@@ -126,6 +126,18 @@ const VendorDashboard = () => {
 
   const fetchInvestments = async () => {
     if (!user) return;
+
+    // 1. Try secure RPC function
+    const { data: rpcData, error: rpcError } = await supabase.rpc("get_vendor_dashboard_investments", {
+      p_vendor_id: user.id,
+    });
+
+    if (!rpcError && rpcData) {
+      setInvestments(rpcData);
+      return;
+    }
+
+    // 2. Fallback to direct query
     const { data, error } = await supabase
       .from("investments")
       .select("*, vendor_plans!inner(*), profiles(*)")
