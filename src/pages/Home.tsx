@@ -160,7 +160,7 @@ const Home = () => {
                   {isInstalled ? "Open App" : "Download App"}
                 </Button>
                 <a
-                  href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
+                  href="https://chat.whatsapp.com/C5p7oDAY6opKvXbAAxdU5M?s=cl&p=a&mlu=4&ilr=4&iam=2"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto"
@@ -320,7 +320,7 @@ const Home = () => {
 
               <div className="flex flex-col items-center sm:items-end justify-center w-full lg:w-auto shrink-0">
                 <a
-                  href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
+                  href="https://chat.whatsapp.com/C5p7oDAY6opKvXbAAxdU5M?s=cl&p=a&mlu=4&ilr=4&iam=2"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto group"
@@ -393,7 +393,7 @@ const Home = () => {
             <Link to="/support" className="hover:text-white transition-colors">Support</Link>
             <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
             <a
-              href="https://chat.whatsapp.com/GQkhMWvNqk42yiY6foCQg5"
+              href="https://chat.whatsapp.com/C5p7oDAY6opKvXbAAxdU5M?s=cl&p=a&mlu=4&ilr=4&iam=2"
               target="_blank"
               rel="noopener noreferrer"
               className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
